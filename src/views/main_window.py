@@ -145,6 +145,13 @@ class MainWindow(QMainWindow):
         export_menu = QMenu("&Export", self)
         export_menu.addAction("Export Selected Devices as CSV...")
         export_menu.addAction("Export All Devices as CSV...")
+        export_menu.addSeparator()
+        
+        # Add PDF export actions
+        export_pdf_action = QAction("Export Selected to PDF...", self)
+        export_pdf_action.triggered.connect(self.export_to_pdf)
+        export_menu.addAction(export_pdf_action)
+        
         device_menu.addMenu(export_menu)
         
         import_action = QAction("&Import Devices from CSV...", self)
@@ -419,6 +426,13 @@ class MainWindow(QMainWindow):
         load_action.setShortcut("Ctrl+O")
         load_action.triggered.connect(self.load_canvas)
         file_menu.addAction(load_action)
+        
+        # Export to PDF action
+        file_menu.addSeparator()
+        export_pdf_action = QAction("Export to PDF...", self)
+        export_pdf_action.setShortcut("Ctrl+E")
+        export_pdf_action.triggered.connect(self.export_to_pdf)
+        file_menu.addAction(export_pdf_action)
         
         # Exit action
         file_menu.addSeparator()
@@ -712,3 +726,8 @@ class MainWindow(QMainWindow):
             )
             
         self.device_alignment_controller.align_devices(alignment_type, devices)
+
+    def export_to_pdf(self):
+        """Export the canvas to PDF format."""
+        from dialogs.pdf_export_dialog import PDFExportDialog
+        PDFExportDialog.export_canvas(self, self.canvas)

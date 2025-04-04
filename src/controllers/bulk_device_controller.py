@@ -126,7 +126,8 @@ class BulkDeviceAddDialog(QDialog):
         self.device_counts = {}
         row = 0
         
-        for device_type in DeviceTypes:
+        # Use the get_all_types method to get all device types
+        for device_type in DeviceTypes.get_all_types():
             if device_type == DeviceTypes.GENERIC:
                 continue  # Skip generic type
                 

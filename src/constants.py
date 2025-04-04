@@ -21,6 +21,19 @@ class DeviceTypes:
     CLOUD = "cloud"
     WORKSTATION = "workstation"
     GENERIC = "generic"
+    
+    @classmethod
+    def get_all_types(cls):
+        """Return a list of all device types."""
+        return [
+            cls.ROUTER,
+            cls.SWITCH,
+            cls.FIREWALL,
+            cls.SERVER,
+            cls.CLOUD,
+            cls.WORKSTATION,
+            cls.GENERIC
+        ]
 
 class ConnectionTypes:
     """Constants for connection types."""
