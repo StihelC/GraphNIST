@@ -406,41 +406,62 @@ class BulkChangePropertyCommand(Command):
         return True
 
 class BulkTogglePropertyDisplayCommand(Command):
-    """Command for toggling display properties on multiple devices at once."""
+    """Command to toggle display of properties for multiple devices at once."""
     
     def __init__(self, devices, property_name, display_enabled, original_states, event_bus=None):
-        """Initialize the command."""
-        super().__init__(f"Toggle display of {property_name} on multiple devices")
+        super().__init__(f"Toggle Display of {property_name}")
         self.devices = devices
         self.property_name = property_name
         self.display_enabled = display_enabled
-        self.original_states = original_states  # Dictionary mapping devices to original display states
+        self.original_states = original_states
         self.event_bus = event_bus
-        
+    
     def execute(self):
-        """Execute the command by updating display settings on all devices."""
+        """Apply the display setting to all devices."""
         for device in self.devices:
-            if not hasattr(device, 'display_properties'):
-                device.display_properties = {}
+            if hasattr(device, 'display_properties'):
+                device.display_properties[self.property_name] = self.display_enabled
+                device.update()
                 
-            device.display_properties[self.property_name] = self.display_enabled
-            device.update_property_labels()
-            
-            # Notify via event bus
-            if self.event_bus:
-                self.event_bus.emit('device_display_properties_changed', device)
-        
-        return True
-        
-    def undo(self):
-        """Undo the command by restoring original display settings."""
-        for device, orig_state in self.original_states.items():
-            if orig_state is not None:  # Only restore if there was an original state
-                device.display_properties[self.property_name] = orig_state
-                device.update_property_labels()
-                
-                # Notify via event bus
+                # Notify event bus if available
                 if self.event_bus:
-                    self.event_bus.emit('device_display_properties_changed', device)
-        
-        return True
+                    self.event_bus.emit("device_display_properties_changed", 
+                                      device, self.property_name, self.display_enabled)
+    
+    def undo(self):
+        """Restore original display settings for all devices."""
+        for device_id, original_state in self.original_states.items():
+            # Find the device by ID
+            for device in self.devices:
+                if device.id == device_id:
+                    if hasattr(device, 'display_properties'):
+                        device.display_properties[self.property_name] = original_state
+                        device.update()
+                        
+                        # Notify event bus if available
+                        if self.event_bus:
+                            self.event_bus.emit("device_display_properties_changed", 
+                                              device, self.property_name, original_state)
+                    break
+
+class DevicePropertyCommand(Command):
+    """Command to change a device property."""
+    
+    def __init__(self, device, property_name, old_value, new_value):
+        super().__init__(f"Change {device.name} {property_name}")
+        self.device = device
+        self.property_name = property_name
+        self.old_value = old_value
+        self.new_value = new_value
+    
+    def execute(self):
+        """Set the new property value."""
+        if hasattr(self.device, 'properties'):
+            self.device.properties[self.property_name] = self.new_value
+            self.device.update()
+    
+    def undo(self):
+        """Restore the old property value."""
+        if hasattr(self.device, 'properties'):
+            self.device.properties[self.property_name] = self.old_value
+            self.device.update()

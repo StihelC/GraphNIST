@@ -5,6 +5,7 @@ import uuid
 import os
 import logging
 from constants import DeviceTypes
+import traceback
 
 class DeviceSignals(QObject):
     """Signals emitted by devices."""
@@ -357,6 +358,13 @@ class Device(QGraphicsPixmapItem):
     
     def upload_custom_icon(self):
         """Open a file dialog to upload a custom high-resolution icon."""
+        stack = traceback.extract_stack()
+        self.logger.critical(f"ICON DEBUG: upload_custom_icon called from:")
+        for frame in stack[:-1]:  # Skip the current frame
+            self.logger.critical(f"ICON DEBUG: - {frame.filename}:{frame.lineno} in {frame.name}")
+        
+        self.logger.critical(f"ICON DEBUG: Opening file dialog for device: {self.name}, id: {id(self)}")
+        
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(
             None, 
@@ -366,18 +374,20 @@ class Device(QGraphicsPixmapItem):
             options=options
         )
         if file_path:
+            self.logger.critical(f"ICON DEBUG: Custom icon selected: {file_path}")
             self.custom_icon_path = file_path
-            self.logger.debug(f"Custom high-resolution icon uploaded: {self.custom_icon_path}")
             # Remove existing icon if any
             if hasattr(self, 'icon_item') and self.icon_item:
                 if self.icon_item.scene():
                     self.scene().removeItem(self.icon_item)
                 self.icon_item = None
-            # Load the new icon with high quality
-            self._load_icon(self.custom_icon_path)
+            # Reload the icon
+            self._try_load_icon()
             self.update()  # Force redraw
             return True
-        return False
+        else:
+            self.logger.critical(f"ICON DEBUG: Custom icon selection canceled for device: {self.name}")
+            return False
     
     def boundingRect(self):
         """Return the bounding rectangle of the device."""
@@ -536,26 +546,45 @@ class Device(QGraphicsPixmapItem):
         """Handle item changes."""
         if change == QGraphicsItem.ItemPositionChange and self.scene():
             # Item is about to move
-            pass
+            self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' position changing")
+            
         elif change == QGraphicsItem.ItemPositionHasChanged and self.scene():
             # Item has moved
+            self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' position changed")
             if hasattr(self.signals, 'moved'):
                 self.signals.moved.emit(self)
+            
+            # Ensure property labels are maintained in correct positions
+            self.update_property_labels()
+            
         elif change == QGraphicsItem.ItemSelectedChange:
-            # Selection state is about to change
+            # Selection state is about to change - only store state, don't trigger any actions
             self.is_selected = bool(value)
+            self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' selection changing to {self.is_selected}")
+            
         elif change == QGraphicsItem.ItemSelectedHasChanged:
-            # Selection state has changed
-            if hasattr(self.signals, 'selected'):
+            # Selection state has changed - only emit signal, don't trigger any other actions
+            self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' selection state changed to {self.isSelected()}")
+            if hasattr(self.signals, 'selected') and self.signals.selected:
                 self.signals.selected.emit(self, self.isSelected())
             
         return super().itemChange(change, value)
     
+    def mousePressEvent(self, event):
+        """Handle mouse press events, make sure no dialog appears."""
+        # Just call parent implementation, ensure no dialog triggers
+        super().mousePressEvent(event)
+        
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events, make sure no dialog appears."""
+        # Just call parent implementation, ensure no dialog triggers
+        super().mouseReleaseEvent(event)
+    
     def mouseDoubleClickEvent(self, event):
-        """Handle double click events."""
-        if hasattr(self.signals, 'double_clicked'):
-            self.signals.double_clicked.emit(self)
-        super().mouseDoubleClickEvent(event)
+        """Completely disable double click behavior to prevent dialog opening."""
+        self.logger.critical(f"DEVICE DEBUG: Double click event intercepted on device: {self.name}, id: {id(self)}")
+        event.accept()  # Accept the event without doing anything
+        # DO NOT call parent implementation to ensure no dialog opens
     
     def mouseMoveEvent(self, event):
         """Handle mouse move events to keep all components together."""
@@ -572,7 +601,7 @@ class Device(QGraphicsPixmapItem):
                 text_x = (self.width - text_width) / 2
                 child.setPos(text_x, self.height + 5)
             # All other children should be at 0,0 relative to device
-            elif child.pos() != QPointF(0, 0):
+            elif child.pos() != QPointF(0, 0) and child not in self.property_labels.values():
                 child.setPos(QPointF(0, 0))
         
         # Emit signal that device has moved
@@ -581,6 +610,14 @@ class Device(QGraphicsPixmapItem):
         
         # Update connections
         self.update_connections()
+        
+        # Make sure property labels are correctly positioned after movement
+        self.update_property_labels()
+        
+        # Debug log
+        self.logger.debug(f"MOVE DEBUG: Device '{self.name}' moved. Property labels count: {len(self.property_labels)}")
+        if self.property_labels:
+            self.logger.debug(f"MOVE DEBUG: Displayed properties: {list(self.property_labels.keys())}")
 
     def update_connections(self):
         """Update all connections attached to this device."""
@@ -688,12 +725,11 @@ class Device(QGraphicsPixmapItem):
 
     def update_property_labels(self):
         """Update the property labels displayed under the device icon."""
-        # Remove all existing property labels
-        for label in self.property_labels.values():
-            scene = label.scene()
-            if scene:
-                scene.removeItem(label)
-        self.property_labels.clear()
+        self.logger.debug(f"UPDATE PROPS DEBUG: Updating property labels for '{self.name}', current count: {len(self.property_labels)}")
+        
+        # If display_properties dict doesn't exist yet, initialize it
+        if not hasattr(self, 'display_properties'):
+            self.display_properties = {}
         
         # Get properties to display
         display_props = []
@@ -701,27 +737,66 @@ class Device(QGraphicsPixmapItem):
             if show and prop in self.properties:
                 display_props.append((prop, str(self.properties[prop])))
         
-        # If no properties to display, just return
+        self.logger.debug(f"UPDATE PROPS DEBUG: Found {len(display_props)} properties to display: {[p[0] for p in display_props]}")
+        
+        # If no properties to display, remove all existing labels and return
         if not display_props:
+            for label in self.property_labels.values():
+                scene = label.scene()
+                if scene:
+                    scene.removeItem(label)
+            self.property_labels.clear()
             return
+        
+        # First, identify any property labels that are no longer needed
+        to_remove = [prop for prop in self.property_labels if prop not in [p[0] for p in display_props]]
+        for prop in to_remove:
+            if prop in self.property_labels:
+                label = self.property_labels.pop(prop)
+                scene = label.scene()
+                if scene:
+                    scene.removeItem(label)
         
         # Start positioning from the bottom of the device plus the name label height
         # First, calculate where the name text ends
-        name_bottom = self.height + self.text_item.boundingRect().height() + 5
+        name_bottom = self.height
+        if hasattr(self, 'text_item') and self.text_item:
+            name_bottom += self.text_item.boundingRect().height() + 5
         
-        # Create new labels for selected properties
+        # Create or update labels for selected properties
         for i, (prop, value) in enumerate(display_props):
-            label = QGraphicsTextItem(self)
-            # Show only the value without the property name
-            label.setPlainText(f"{value}")
-            label.setFont(QFont("Arial", 8))
+            # If label already exists, update its text
+            if prop in self.property_labels:
+                label = self.property_labels[prop]
+                # Only update text if the value has changed
+                if label.toPlainText() != value:
+                    label.setPlainText(value)
+            else:
+                # Create new label if it doesn't exist
+                label = QGraphicsTextItem(self)  # Make the device its parent
+                label.setPlainText(value)
+                label.setFont(QFont("Arial", 8))
+                self.property_labels[prop] = label
             
+            # Update position (this needs to happen either way)
             # Center the label horizontally
             x_pos = (self.width - label.boundingRect().width()) / 2
             
             # Position each property below the name, with spacing between properties
-            # Add additional offset to ensure it's below both the device and name
             y_pos = name_bottom + (i * (label.boundingRect().height() + 2))
             
+            # Set the position
             label.setPos(x_pos, y_pos)
-            self.property_labels[prop] = label
+        
+        # Log the final state
+        self.logger.debug(f"UPDATE PROPS DEBUG: Updated property labels, final count: {len(self.property_labels)}")
+
+    # Override the parent's update method to ensure property labels are refreshed
+    def update(self):
+        """Override QGraphicsPixmapItem's update method to refresh property labels."""
+        # Call the parent class's update method first
+        super().update()
+        
+        # Update the property labels
+        if hasattr(self, 'display_properties') and hasattr(self, 'property_labels'):
+            self.update_property_labels()

@@ -25,7 +25,7 @@ class MultiConnectionDialog(QDialog):
         
         # Connection type selection
         self.connection_type_combo = QComboBox()
-        for conn_type in ConnectionTypes:
+        for conn_type in ConnectionTypes.get_all_types():
             display_name = ConnectionTypes.DISPLAY_NAMES.get(conn_type, conn_type)
             self.connection_type_combo.addItem(display_name, conn_type)
         form.addRow("Connection Type:", self.connection_type_combo)

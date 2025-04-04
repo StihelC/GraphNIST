@@ -26,6 +26,8 @@ class DeviceController:
     def on_add_device_requested(self, pos=None):
         """Show dialog to add a new device."""
         try:
+            # Only create dialog when explicitly requested
+            self.logger.info("Explicitly opening device dialog for adding a new device")
             dialog = DeviceDialog(self.canvas.parent())
             if dialog.exec_() == QDialog.Accepted:
                 device_data = dialog.get_device_data()

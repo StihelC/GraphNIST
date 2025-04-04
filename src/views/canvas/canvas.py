@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QGraphicsItem
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QEvent, QTimer
-from PyQt5.QtGui import QPainter, QBrush, QColor
+from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
 
 import logging
 from constants import Modes
@@ -78,6 +78,11 @@ class Canvas(QGraphicsView):
         
         # Setup appearance
         self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
+        
+        # Grid settings
+        self.show_grid = False
+        self.grid_size = 20  # Grid size in pixels
+        self.grid_color = QColor(200, 200, 200)  # Light gray grid
         
         # Enable drag and drop
         self.setAcceptDrops(True)
@@ -620,3 +625,43 @@ class Canvas(QGraphicsView):
         main_window = self.window()
         if hasattr(main_window, '_on_edit_selected_devices'):
             main_window._on_edit_selected_devices()
+
+    def drawBackground(self, painter, rect):
+        """Draw the background with an optional grid."""
+        # Call the parent implementation to fill the background
+        super().drawBackground(painter, rect)
+        
+        # Draw grid if enabled
+        if self.show_grid:
+            # Save the painter state
+            painter.save()
+            
+            # Create a thin pen for the grid
+            grid_pen = QPen(self.grid_color)
+            grid_pen.setWidth(1)
+            painter.setPen(grid_pen)
+            
+            # Get the visible rectangle in scene coordinates
+            visible_rect = self.mapToScene(self.viewport().rect()).boundingRect()
+            
+            # Calculate grid start and end positions
+            start_x = int(visible_rect.left() / self.grid_size) * self.grid_size
+            start_y = int(visible_rect.top() / self.grid_size) * self.grid_size
+            end_x = int(visible_rect.right() / self.grid_size + 1) * self.grid_size
+            end_y = int(visible_rect.bottom() / self.grid_size + 1) * self.grid_size
+            
+            # Draw vertical lines
+            for x in range(start_x, end_x, self.grid_size):
+                painter.drawLine(QPointF(x, visible_rect.top()), QPointF(x, visible_rect.bottom()))
+            
+            # Draw horizontal lines
+            for y in range(start_y, end_y, self.grid_size):
+                painter.drawLine(QPointF(visible_rect.left(), y), QPointF(visible_rect.right(), y))
+            
+            # Restore the painter state
+            painter.restore()
+            
+    def toggle_grid(self):
+        """Toggle the grid visibility."""
+        self.show_grid = not self.show_grid
+        self.viewport().update()

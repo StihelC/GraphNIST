@@ -336,14 +336,14 @@ class MainWindow(QMainWindow):
             self.alignment_button.setToolTip("Alignment (select at least 2 devices)")
 
     # Event handler methods
-    def _on_device_property_changed(self, device, property_name):
+    def _on_device_property_changed(self, device, property_name, value=None):
         """Handle device property change events."""
         # If the property is being displayed, update the label
         if hasattr(device, 'display_properties') and property_name in device.display_properties:
             if device.display_properties[property_name]:
                 device.update_property_labels()
 
-    def _on_device_display_properties_changed(self, device):
+    def _on_device_display_properties_changed(self, device, property_name=None, enabled=None):
         """Handle changes to which properties are displayed under devices."""
         device.update_property_labels()
         
@@ -539,7 +539,22 @@ class MainWindow(QMainWindow):
         
         view_menu.addSeparator()
         
+        # Grid toggle action
+        self.toggle_grid_action = QAction("Show Grid", self)
+        self.toggle_grid_action.setCheckable(True)
+        self.toggle_grid_action.setChecked(self.canvas.show_grid)
+        self.toggle_grid_action.setShortcut("Ctrl+G")  # Add keyboard shortcut
+        self.toggle_grid_action.triggered.connect(self._toggle_grid)
+        view_menu.addAction(self.toggle_grid_action)
+        
         return view_menu
+
+    def _toggle_grid(self):
+        """Toggle grid visibility and update the action text accordingly."""
+        self.canvas.toggle_grid()
+        self.toggle_grid_action.setChecked(self.canvas.show_grid)
+        grid_state = "on" if self.canvas.show_grid else "off"
+        self.statusBar().showMessage(f"Grid turned {grid_state}")
 
     def _set_current_as_home(self):
         """Set the current view center as the home position."""

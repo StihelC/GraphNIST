@@ -4,19 +4,33 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QFormLayout, QLineEdit,
 from PyQt5.QtCore import Qt
 from constants import DeviceTypes, ConnectionTypes
 import os
+import logging
 
 class DeviceDialog(QDialog):
     """Dialog for creating or editing a device."""
     
     def __init__(self, parent=None, device=None):
+        """Initialize the dialog for creating or editing a device."""
         super().__init__(parent)
-        self.setWindowTitle("Device Properties")
+        self.logger = logging.getLogger(__name__)
+        self.logger.critical(f"DIALOG DEBUG: DeviceDialog constructor called with device: {device}")
         
-        # Store the device if editing
+        # Store existing device if we're editing one
         self.device = device
         
-        # Initialize custom_icon_path for new device creation
-        self.custom_icon_path = None
+        # Path for custom icon
+        self.custom_icon_path = ""
+        if device and hasattr(device, 'custom_icon_path'):
+            self.custom_icon_path = device.custom_icon_path
+            self.logger.critical(f"DIALOG DEBUG: Using custom icon path from device: {self.custom_icon_path}")
+        
+        self.setWindowTitle("Add Device" if not device else "Edit Device")
+        self.resize(450, 300)
+        
+        # Create layout
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(10, 10, 10, 10)
         
         # Create the UI
         self._create_ui()
