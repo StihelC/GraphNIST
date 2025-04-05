@@ -1,6 +1,6 @@
 import logging
 from PyQt5.QtCore import Qt, QPointF
-from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsPixmapItem
+from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsPixmapItem, QDialog
 from PyQt5.QtGui import QPen, QColor
 
 from views.canvas.modes.base_mode import DeviceInteractionMode
@@ -121,27 +121,34 @@ class AddConnectionMode(DeviceInteractionMode):
             # If we already have a source device, try to connect to target
             elif device and device != self.source_device:
                 self.logger.debug(f"AddConnectionMode: Connecting {self.source_device} to {device}")
-                # Create empty connection data dictionary
-                connection_data = {
-                    'type': 'ethernet',  # Default connection type
-                    'label': '',         # No label by default
-                    'bandwidth': '',     # No bandwidth specification
-                    'latency': ''        # No latency specification
-                }
                 
-                self.canvas.add_connection_requested.emit(self.source_device, device, connection_data)
+                # Import connection dialog here to avoid circular imports
+                from dialogs.connection_type_dialog import ConnectionTypeDialog
                 
-                # Reset state
-                self.source_device = None
-                if self.temp_line is not None:
-                    try:
-                        self.canvas.temp_graphics.remove_item(self.temp_line)
-                    except:
-                        pass
-                    self.temp_line = None
-                
-                self.canvas.statusMessage.emit("Connection created. Click on a device to start a new connection.")
-                return True
+                # Show dialog to configure connection type
+                dialog = ConnectionTypeDialog(self.canvas.parent())
+                if dialog.exec_() == QDialog.Accepted:
+                    # Get connection data from dialog
+                    connection_data = dialog.get_connection_data()
+                    
+                    # Create the connection
+                    self.canvas.add_connection_requested.emit(self.source_device, device, connection_data)
+                    
+                    # Reset state
+                    self.source_device = None
+                    if self.temp_line is not None:
+                        try:
+                            self.canvas.temp_graphics.remove_item(self.temp_line)
+                        except:
+                            pass
+                        self.temp_line = None
+                    
+                    self.canvas.statusMessage.emit("Connection created. Click on a device to start a new connection.")
+                    return True
+                else:
+                    # User cancelled dialog
+                    self.canvas.statusMessage.emit("Connection cancelled. Click on a device to start again.")
+                    return True
                 
             # Reset if clicking on empty space
             elif not device:

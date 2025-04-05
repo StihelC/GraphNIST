@@ -9,7 +9,8 @@ class EditableTextItem(QGraphicsTextItem):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTextInteractionFlags(Qt.NoTextInteraction)
-        self.setFlag(self.ItemIsFocusable, True)
+        self.setFlag(QGraphicsTextItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsTextItem.ItemIsFocusable, True)
         
         # Background appearance
         self.background_color = QColor(255, 255, 255, 220)  # Slightly transparent white
@@ -19,12 +20,35 @@ class EditableTextItem(QGraphicsTextItem):
         # Store reference to the label manager
         self.label_manager = None
         
+        # Add a hover state
+        self.hover = False
+        self.setAcceptHoverEvents(True)
+    
+    def hoverEnterEvent(self, event):
+        """Handle hover enter event."""
+        self.hover = True
+        # Show a different cursor to indicate editability
+        self.setCursor(Qt.IBeamCursor)
+        super().hoverEnterEvent(event)
+    
+    def hoverLeaveEvent(self, event):
+        """Handle hover leave event."""
+        self.hover = False
+        self.setCursor(Qt.ArrowCursor)
+        super().hoverLeaveEvent(event)
+        
     def paint(self, painter, option, widget):
         """Paint a background rect behind the text."""
         # Draw background rectangle
         painter.save()
-        painter.setBrush(self.background_color)
-        painter.setPen(QPen(self.border_color, 1))
+        
+        # Different background color when hovered
+        if self.hover:
+            painter.setBrush(QColor(245, 245, 245, 240))  # Slightly brighter when hovered
+            painter.setPen(QPen(QColor(180, 180, 180), 1.5))  # Darker border when hovered
+        else:
+            painter.setBrush(self.background_color)
+            painter.setPen(QPen(self.border_color, 1))
         
         # Get text rect with padding
         rect = self.boundingRect()
@@ -57,25 +81,38 @@ class EditableTextItem(QGraphicsTextItem):
         """Enter edit mode on double click."""
         self.setTextInteractionFlags(Qt.TextEditorInteraction)
         self.setFocus()
+        # Position cursor at click position
         super().mouseDoubleClickEvent(event)
         
     def focusOutEvent(self, event):
         """Finish editing when focus is lost."""
+        # Disable text editing when focus is lost
         self.setTextInteractionFlags(Qt.NoTextInteraction)
+        
+        # Notify parent of text change
         if self.parentItem() and hasattr(self.parentItem(), 'on_label_edited'):
             self.parentItem().on_label_edited(self.toPlainText())
         elif self.label_manager:
             # Notify the connection label manager
             self.label_manager.on_label_edited(self.toPlainText())
+            
         super().focusOutEvent(event)
         
     def keyPressEvent(self, event):
         """Handle Enter key to finish editing."""
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.clearFocus()
+            self.clearFocus()  # This will trigger focusOutEvent
             event.accept()
         else:
             super().keyPressEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release event."""
+        super().mouseReleaseEvent(event)
+        
+        # Make sure the parent connection stays selected
+        if self.parentItem():
+            self.parentItem().setSelected(True)
     
     def parentObject(self):
         """This method is no longer needed."""
@@ -130,6 +167,10 @@ class ConnectionLabelManager:
             font = QFont()
             font.setPointSize(8)
             self.label.setFont(font)
+            
+            # Make sure the label is focusable and accepts hover events
+            self.label.setFlag(self.label.ItemIsFocusable, True)
+            self.label.setAcceptHoverEvents(True)
         
         # Set the text - safely
         if hasattr(self, '_label_text') and self._label_text and not isinstance(self._label_text, QPointF):
@@ -192,4 +233,5 @@ class ConnectionLabelManager:
         
         # Update any properties dictionary on the connection
         if hasattr(self.connection, 'properties') and isinstance(self.connection.properties, dict):
-            self.connection.properties["Label"] = new_text 
+            # Use the standard "label_text" property instead of adding a duplicate "Label" property
+            self.connection.properties["label_text"] = new_text 

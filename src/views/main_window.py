@@ -14,6 +14,8 @@ from controllers.clipboard_manager import ClipboardManager
 from controllers.bulk_device_controller import BulkDeviceController
 from controllers.bulk_property_controller import BulkPropertyController
 from utils.event_bus import EventBus
+from utils.recent_files import RecentFiles
+from utils.theme_manager import ThemeManager
 from models.device import Device
 from models.connection import Connection
 from models.boundary import Boundary
@@ -35,9 +37,15 @@ class MainWindow(QMainWindow):
                           format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
+        # Initialize theme manager before creating UI elements
+        self.theme_manager = ThemeManager()
+
         # Create canvas
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
+        
+        # Register canvas with theme manager
+        self.theme_manager.register_canvas(self.canvas)
         
         # Create status bar
         self.statusBar().showMessage("Ready")
@@ -47,6 +55,9 @@ class MainWindow(QMainWindow):
         
         # Create event bus for communication between components
         self.event_bus = EventBus()
+        
+        # Initialize recent files manager
+        self.recent_files_manager = RecentFiles(self)
         
         # Initialize command_manager with a None value to avoid attribute errors
         self.command_manager = None
@@ -72,6 +83,9 @@ class MainWindow(QMainWindow):
         
         # Register event handlers
         self._register_event_handlers()
+        
+        # Apply the initial theme
+        self.theme_manager.apply_theme()
         
         # Remove the line that maximizes the window on startup
         # self.showMaximized()
@@ -255,6 +269,13 @@ class MainWindow(QMainWindow):
         # Create the menu for the button
         alignment_menu = QMenu(self)
         
+        # Auto-layout optimization (new section)
+        optimize_layout_action = alignment_menu.addAction("Optimize Network Layout...")
+        optimize_layout_action.setToolTip("Automatically arrange devices to minimize connection crossings")
+        optimize_layout_action.triggered.connect(self._on_optimize_layout_requested)
+        
+        alignment_menu.addSeparator()
+        
         # Basic alignment submenu
         basic_align = alignment_menu.addMenu("Basic Alignment")
         
@@ -415,17 +436,36 @@ class MainWindow(QMainWindow):
         """Create the File menu with save/load actions."""
         file_menu = self.menuBar().addMenu("File")
         
+        # New canvas action
+        new_action = QAction("New Canvas", self)
+        new_action.setShortcut("Ctrl+N")
+        new_action.triggered.connect(self.new_canvas)
+        file_menu.addAction(new_action)
+        
         # Save canvas action
         save_action = QAction("Save Canvas", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_canvas)
         file_menu.addAction(save_action)
         
+        # Save As canvas action
+        save_as_action = QAction("Save Canvas As...", self)
+        save_as_action.setShortcut("Ctrl+Shift+S")
+        save_as_action.triggered.connect(self.save_canvas_as)
+        file_menu.addAction(save_as_action)
+        
         # Load canvas action
-        load_action = QAction("Load Canvas", self)
+        load_action = QAction("Open Canvas", self)
         load_action.setShortcut("Ctrl+O")
         load_action.triggered.connect(self.load_canvas)
         file_menu.addAction(load_action)
+        
+        # Add Recent Files submenu
+        self.recent_files_menu = QMenu("Recent Files", self)
+        file_menu.addMenu(self.recent_files_menu)
+        
+        # Set up the recent files menu
+        self.recent_files_manager.setup_menu(self.recent_files_menu, self.load_from_recent)
         
         # Export to PDF action
         file_menu.addSeparator()
@@ -546,6 +586,18 @@ class MainWindow(QMainWindow):
         self.toggle_grid_action.setShortcut("Ctrl+G")  # Add keyboard shortcut
         self.toggle_grid_action.triggered.connect(self._toggle_grid)
         view_menu.addAction(self.toggle_grid_action)
+        
+        # Add theme toggle
+        view_menu.addSeparator()
+        
+        # Theme toggle action
+        self.toggle_theme_action = QAction("Toggle Dark Mode", self)
+        self.toggle_theme_action.setShortcut("Ctrl+T")
+        self.toggle_theme_action.triggered.connect(self._toggle_theme)
+        # Set initial state based on current theme
+        self.toggle_theme_action.setCheckable(True)
+        self.toggle_theme_action.setChecked(self.theme_manager.is_dark_theme())
+        view_menu.addAction(self.toggle_theme_action)
         
         return view_menu
 
@@ -710,25 +762,61 @@ class MainWindow(QMainWindow):
             # Pass to parent for default handling
             super().keyPressEvent(event)
     
+    def new_canvas(self):
+        """Create a new empty canvas."""
+        # Check if current canvas has changes that need to be saved
+        # For simplicity, always ask to confirm
+        confirm = QMessageBox.question(
+            self,
+            "New Canvas",
+            "Creating a new canvas will discard any unsaved changes. Continue?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if confirm != QMessageBox.Yes:
+            return
+        
+        # Clear the canvas
+        self.canvas.clear()
+        
+        # Update status
+        self.statusBar().showMessage("New canvas created")
+    
     def save_canvas(self):
         """Save the current canvas to a file."""
         from views.file_dialog import SaveCanvasDialog
         
-        success, message = SaveCanvasDialog.save_canvas(self, self.canvas)
+        success, message = SaveCanvasDialog.save_canvas(self, self.canvas, self.recent_files_manager)
         if success:
             self.logger.info("Canvas saved successfully")
         else:
             self.logger.warning(f"Canvas save failed: {message}")
+    
+    def save_canvas_as(self):
+        """Save the current canvas to a new file."""
+        # This is the same as save_canvas since the dialog always asks for a filepath
+        self.save_canvas()
 
     def load_canvas(self):
         """Load a canvas from a file."""
         from views.file_dialog import LoadCanvasDialog
         
-        success, message = LoadCanvasDialog.load_canvas(self, self.canvas)
+        success, message = LoadCanvasDialog.load_canvas(self, self.canvas, self.recent_files_manager)
         if success:
             self.logger.info("Canvas loaded successfully")
         else:
             self.logger.warning(f"Canvas load failed: {message}")
+    
+    def load_from_recent(self, filepath):
+        """Load a canvas from a recent file."""
+        from views.file_dialog import LoadCanvasDialog
+        
+        success, message = LoadCanvasDialog.load_canvas(self, self.canvas, self.recent_files_manager, filepath)
+        if success:
+            self.logger.info(f"Canvas loaded successfully from recent file: {filepath}")
+        else:
+            self.logger.warning(f"Canvas load failed from recent file: {message}")
 
     def _on_align_devices_requested(self, alignment_type, devices):
         """Handle request to align devices."""
@@ -741,8 +829,26 @@ class MainWindow(QMainWindow):
             )
             
         self.device_alignment_controller.align_devices(alignment_type, devices)
-
+    
     def export_to_pdf(self):
         """Export the canvas to PDF format."""
         from dialogs.pdf_export_dialog import PDFExportDialog
         PDFExportDialog.export_canvas(self, self.canvas)
+
+    def _on_optimize_layout_requested(self):
+        """Handle request to optimize the network layout."""
+        if hasattr(self, 'connection_controller') and self.connection_controller:
+            self.connection_controller.show_layout_optimization_dialog()
+        else:
+            self.logger.error("Connection controller not initialized")
+
+    def _toggle_theme(self):
+        """Toggle between light and dark themes."""
+        theme = self.theme_manager.toggle_theme()
+        is_dark = theme == ThemeManager.DARK_THEME
+        theme_name = "dark" if is_dark else "light"
+        self.toggle_theme_action.setChecked(is_dark)
+        self.statusBar().showMessage(f"Switched to {theme_name} theme")
+        
+        # Update checkmark state
+        self.toggle_theme_action.setChecked(is_dark)

@@ -388,22 +388,16 @@ class DeviceController:
             self._show_error(f"Failed to create connections: {str(e)}")
 
     def _connect_devices_with_commands(self, device_info, connection_data, composite_cmd):
-        """Connect devices in a grid pattern with undo/redo support."""
+        """Connect devices with chosen connection strategy and undo/redo support."""
         try:
             devices = device_info['devices']
-            positions = device_info['positions']
-            grid_size = device_info['grid_size']
-            rows, cols = grid_size
-            
-            # Create a 2D grid representation for easier lookup
-            grid = {}
-            for row, col, device in positions:
-                grid[(row, col)] = device
+            strategy = connection_data.get('strategy', 'mesh')
+            bidirectional = connection_data.get('bidirectional', True)
             
             # Import the necessary command class
             from controllers.commands import AddConnectionCommand
             
-            # Get the connection controller - improved method to find it
+            # Get the connection controller
             connection_controller = self._get_connection_controller()
             
             # Log detailed connection controller retrieval attempts
@@ -425,89 +419,215 @@ class DeviceController:
                     self._connect_devices(device_info, connection_data)
                     return
             
-            self.logger.debug(f"Creating connections with commands for grid of {rows}x{cols}")
-            for row in range(rows):
-                for col in range(cols):
-                    # Connect horizontally to the right
-                    if col < cols-1 and (row, col) in grid and (row, col+1) in grid:
-                        source = grid[(row, col)]
-                        target = grid[(row, col+1)]
-                        
-                        self.logger.debug(f"Adding horizontal connection command: {source.name} -> {target.name}")
-                        conn_cmd = AddConnectionCommand(
-                            connection_controller,
-                            source,
-                            target,
-                            None,  # source_port (will be calculated)
-                            None,  # target_port (will be calculated)
-                            connection_data
-                        )
-                        
-                        composite_cmd.add_command(conn_cmd)
-                    
-                    # Connect vertically downward
-                    if row < rows-1 and (row, col) in grid and (row+1, col) in grid:
-                        source = grid[(row, col)]
-                        target = grid[(row+1, col)]
-                        
-                        self.logger.debug(f"Adding vertical connection command: {source.name} -> {target.name}")
-                        conn_cmd = AddConnectionCommand(
-                            connection_controller,
-                            source,
-                            target,
-                            None,
-                            None,
-                            connection_data
-                        )
-                        
-                        composite_cmd.add_command(conn_cmd)
-                        
+            self.logger.info(f"Connecting devices using strategy: {strategy}")
+            
+            # Apply the selected connection strategy
+            if strategy == "mesh":
+                # All-to-all connections (mesh)
+                self._create_mesh_connections(devices, connection_controller, connection_data, composite_cmd, bidirectional)
+            
+            elif strategy == "chain":
+                # Sequential chain connections (1→2→3→...)
+                self._create_chain_connections(devices, connection_controller, connection_data, composite_cmd, bidirectional)
+            
+            elif strategy == "closest":
+                # Each device connects to its closest neighbor
+                self._create_closest_connections(devices, connection_controller, connection_data, composite_cmd, bidirectional)
+            
+            elif strategy == "closest_type":
+                # Each device connects to its closest neighbor of a specific type
+                target_type = connection_data.get('target_device_type')
+                self._create_closest_type_connections(devices, target_type, connection_controller, 
+                                                    connection_data, composite_cmd, bidirectional)
+            else:
+                self.logger.warning(f"Unknown connection strategy: {strategy}, defaulting to mesh")
+                self._create_mesh_connections(devices, connection_controller, connection_data, composite_cmd, bidirectional)
+                
         except Exception as e:
             self.logger.error(f"Error creating connections with commands: {str(e)}")
             traceback.print_exc()
-    
-    def _create_connection(self, source, target, connection_data):
-        """Helper method to create a single connection between two devices."""
-        try:
-            # Create connection
-            connection = Connection(source, target)
+
+    def _create_mesh_connections(self, devices, connection_controller, connection_data, composite_cmd, bidirectional):
+        """Create all-to-all (mesh) connections between devices."""
+        from controllers.commands import AddConnectionCommand
+        
+        self.logger.debug(f"Creating mesh connections between {len(devices)} devices")
+        
+        for i, source in enumerate(devices):
+            for j, target in enumerate(devices):
+                if source != target:  # Don't connect to self
+                    if not bidirectional and j <= i:
+                        # Skip if we only want one-direction connections and
+                        # we've already created the reciprocal connection
+                        continue
+                        
+                    self.logger.debug(f"Adding connection: {source.name} → {target.name}")
+                    conn_cmd = AddConnectionCommand(
+                        connection_controller,
+                        source,
+                        target,
+                        None,  # source_port (will be calculated)
+                        None,  # target_port (will be calculated)
+                        connection_data
+                    )
+                    composite_cmd.add_command(conn_cmd)
+
+    def _create_chain_connections(self, devices, connection_controller, connection_data, composite_cmd, bidirectional):
+        """Create sequential chain connections between devices (1→2→3→...)."""
+        from controllers.commands import AddConnectionCommand
+        
+        self.logger.debug(f"Creating chain connections between {len(devices)} devices")
+        
+        # Sort devices by position (left to right, then top to bottom) for better logical flow
+        devices_sorted = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
+        
+        for i in range(len(devices_sorted) - 1):
+            source = devices_sorted[i]
+            target = devices_sorted[i + 1]
             
-            # Set connection type
-            connection_type = connection_data['type']
-            connection.connection_type = connection_type
+            self.logger.debug(f"Adding chain connection: {source.name} → {target.name}")
+            conn_cmd = AddConnectionCommand(
+                connection_controller,
+                source,
+                target,
+                None,
+                None,
+                connection_data
+            )
+            composite_cmd.add_command(conn_cmd)
             
-            # Set the label text based on connection data
-            if 'label' in connection_data and connection_data['label']:
-                connection.label_text = connection_data['label']
-            else:
-                # Get display name from the connection type
-                connection.label_text = ConnectionTypes.DISPLAY_NAMES.get(connection_type)
+            # Add reverse connection if bidirectional
+            if bidirectional:
+                self.logger.debug(f"Adding reverse chain connection: {target.name} → {source.name}")
+                conn_cmd = AddConnectionCommand(
+                    connection_controller,
+                    target,
+                    source,
+                    None,
+                    None,
+                    connection_data
+                )
+                composite_cmd.add_command(conn_cmd)
+
+    def _create_closest_connections(self, devices, connection_controller, connection_data, composite_cmd, bidirectional):
+        """Connect each device to its closest neighbor."""
+        from controllers.commands import AddConnectionCommand
+        import math
+        
+        self.logger.debug(f"Creating closest-neighbor connections for {len(devices)} devices")
+        
+        # For each device, find the closest other device
+        for source in devices:
+            closest_device = None
+            min_distance = float('inf')
             
-            # Set other connection properties
-            if 'bandwidth' in connection_data:
-                connection.bandwidth = connection_data['bandwidth']
-            if 'latency' in connection_data:
-                connection.latency = connection_data['latency']
+            source_pos = source.scenePos()
             
-            # Make connection selectable and focusable
-            connection.setFlag(connection.ItemIsSelectable, True)
-            connection.setFlag(connection.ItemIsFocusable, True)
+            for target in devices:
+                if source == target:  # Skip self
+                    continue
+                    
+                target_pos = target.scenePos()
+                # Calculate Euclidean distance
+                distance = math.sqrt(
+                    (source_pos.x() - target_pos.x()) ** 2 + 
+                    (source_pos.y() - target_pos.y()) ** 2
+                )
+                
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_device = target
             
-            # Add to scene
-            self.canvas.scene().addItem(connection)
+            if closest_device:
+                self.logger.debug(f"Adding closest connection: {source.name} → {closest_device.name}")
+                conn_cmd = AddConnectionCommand(
+                    connection_controller,
+                    source,
+                    closest_device,
+                    None,
+                    None,
+                    connection_data
+                )
+                composite_cmd.add_command(conn_cmd)
+                
+                # If bidirectional and we haven't already created the reverse connection
+                if bidirectional:
+                    self.logger.debug(f"Adding reverse closest connection: {closest_device.name} → {source.name}")
+                    conn_cmd = AddConnectionCommand(
+                        connection_controller,
+                        closest_device,
+                        source,
+                        None,
+                        None,
+                        connection_data
+                    )
+                    composite_cmd.add_command(conn_cmd)
+
+    def _create_closest_type_connections(self, devices, target_type, connection_controller, 
+                                      connection_data, composite_cmd, bidirectional):
+        """Connect each device to its closest neighbor of a specific type."""
+        from controllers.commands import AddConnectionCommand
+        import math
+        
+        self.logger.debug(f"Creating closest-type connections for {len(devices)} devices, targeting type: {target_type}")
+        
+        # Filter devices by the target type
+        target_devices = [d for d in devices if d.device_type == target_type]
+        
+        if not target_devices:
+            self.logger.warning(f"No devices of type '{target_type}' found for connection")
+            return
+        
+        # For each device, find the closest device of the target type
+        for source in devices:
+            # Skip if source is of the target type and we only want connections to different types
+            if source.device_type == target_type and not connection_data.get('connect_same_type', False):
+                continue
             
-            # Add to connections list
-            self.canvas.connections.append(connection)
+            closest_device = None
+            min_distance = float('inf')
             
-            # Notify through event bus
-            self.event_bus.emit("connection_created", connection)
+            source_pos = source.scenePos()
             
-            self.logger.info(f"Created connection from {source.name} to {target.name}")
-            return connection
+            for target in target_devices:
+                if source == target:  # Skip self
+                    continue
+                    
+                target_pos = target.scenePos()
+                # Calculate Euclidean distance
+                distance = math.sqrt(
+                    (source_pos.x() - target_pos.x()) ** 2 + 
+                    (source_pos.y() - target_pos.y()) ** 2
+                )
+                
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_device = target
             
-        except Exception as e:
-            self.logger.error(f"Error creating connection: {str(e)}")
-            return None
+            if closest_device:
+                self.logger.debug(f"Adding closest-type connection: {source.name} → {closest_device.name}")
+                conn_cmd = AddConnectionCommand(
+                    connection_controller,
+                    source,
+                    closest_device,
+                    None,
+                    None,
+                    connection_data
+                )
+                composite_cmd.add_command(conn_cmd)
+                
+                # If bidirectional and target device isn't of the same type as source
+                if bidirectional and closest_device not in target_devices:
+                    self.logger.debug(f"Adding reverse closest-type connection: {closest_device.name} → {source.name}")
+                    conn_cmd = AddConnectionCommand(
+                        connection_controller,
+                        closest_device,
+                        source,
+                        None,
+                        None,
+                        connection_data
+                    )
+                    composite_cmd.add_command(conn_cmd)
 
     def create_device(self, device_data, pos=None):
         """Create a device with the specified properties."""

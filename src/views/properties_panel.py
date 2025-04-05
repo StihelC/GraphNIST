@@ -342,8 +342,15 @@ class PropertiesPanel(QWidget):
                 properties.append(("Bandwidth", connection.bandwidth if connection.bandwidth else ""))
             if hasattr(connection, 'latency'):
                 properties.append(("Latency", connection.latency if connection.latency else ""))
-            if hasattr(connection, '_label_text'):
+            
+            # Use consistent label_text property for display
+            if hasattr(connection, 'properties') and 'label_text' in connection.properties:
+                properties.append(("Label", connection.properties['label_text']))
+            elif hasattr(connection, 'label_text'):
+                properties.append(("Label", connection.label_text))
+            elif hasattr(connection, '_label_text'):
                 properties.append(("Label", connection._label_text if connection._label_text else ""))
+            
             properties.append(("Type", connection.connection_type if hasattr(connection, 'connection_type') else "ethernet"))
             
             # Add source and target info

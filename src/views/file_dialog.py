@@ -10,7 +10,7 @@ class FileHandler:
     """Handles file operations for saving and loading canvas data."""
     
     @staticmethod
-    def save_canvas(canvas, filepath, options=None):
+    def save_canvas(canvas, filepath, options=None, recent_files_manager=None):
         """Save the canvas to the given filepath with specified options."""
         try:
             # Get serialized data
@@ -34,6 +34,10 @@ class FileHandler:
                 with open(filepath, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2)
             
+            # Add to recent files if manager is provided
+            if recent_files_manager:
+                recent_files_manager.add_file(filepath)
+                
             return True, "Canvas saved successfully."
             
         except Exception as e:
@@ -42,7 +46,7 @@ class FileHandler:
             return False, f"Error saving canvas: {str(e)}"
     
     @staticmethod
-    def load_canvas(canvas, filepath):
+    def load_canvas(canvas, filepath, recent_files_manager=None):
         """Load the canvas from the given filepath."""
         try:
             print(f"Loading canvas from: {filepath}")
@@ -71,6 +75,10 @@ class FileHandler:
             # Deserialize into canvas
             CanvasSerializer.deserialize_canvas(data, canvas)
             
+            # Add to recent files if manager is provided
+            if recent_files_manager:
+                recent_files_manager.add_file(filepath)
+                
             return True, f"Canvas loaded successfully: {device_count} devices, {connection_count} connections, {boundary_count} boundaries."
             
         except Exception as e:
@@ -137,7 +145,7 @@ class SaveCanvasDialog:
     """Handles the save dialog and canvas saving process."""
     
     @staticmethod
-    def save_canvas(parent, canvas):
+    def save_canvas(parent, canvas, recent_files_manager=None):
         """Show save dialog and save the canvas if confirmed."""
         # First show options dialog
         options_dialog = SaveOptionsDialog(parent)
@@ -167,7 +175,7 @@ class SaveCanvasDialog:
             filepath += extension
         
         # Save the file
-        success, message = FileHandler.save_canvas(canvas, filepath, options)
+        success, message = FileHandler.save_canvas(canvas, filepath, options, recent_files_manager)
         
         # Show result message
         if success:
@@ -181,18 +189,41 @@ class LoadCanvasDialog:
     """Handles the load dialog and canvas loading process."""
     
     @staticmethod
-    def load_canvas(parent, canvas):
-        """Show load dialog and load the canvas if file selected."""
-        # Show file dialog
-        filepath, _ = QFileDialog.getOpenFileName(
-            parent,
-            "Open Canvas",
-            "",
-            "Canvas Files (*.canvas);;JSON Files (*.json);;All Files (*)",
-        )
+    def load_canvas(parent, canvas, recent_files_manager=None, filepath=None):
+        """Show load dialog and load the canvas if file selected.
         
+        Args:
+            parent: Parent widget
+            canvas: Canvas to load into
+            recent_files_manager: RecentFiles manager if available
+            filepath: Optional filepath if opening directly from recent files menu
+        """
+        # If no filepath provided, show file dialog
         if not filepath:
-            return False, "Load canceled"
+            filepath, _ = QFileDialog.getOpenFileName(
+                parent,
+                "Open Canvas",
+                "",
+                "Canvas Files (*.canvas);;JSON Files (*.json);;All Files (*)",
+            )
+            
+            if not filepath:
+                return False, "Load canceled"
+        
+        # Check if file exists
+        if not os.path.exists(filepath):
+            QMessageBox.critical(
+                parent, 
+                "File Not Found", 
+                f"The file {filepath} does not exist."
+            )
+            if recent_files_manager:
+                # Remove from recent files list
+                if filepath in recent_files_manager.get_recent_files():
+                    recent_files_manager.get_recent_files().remove(filepath)
+                    recent_files_manager._save_recent_files()
+                    recent_files_manager.update_actions()
+            return False, "File not found"
         
         # Confirm loading (will overwrite current canvas)
         confirm = QMessageBox.question(
@@ -207,7 +238,7 @@ class LoadCanvasDialog:
             return False, "Load canceled"
         
         # Load the file
-        success, message = FileHandler.load_canvas(canvas, filepath)
+        success, message = FileHandler.load_canvas(canvas, filepath, recent_files_manager)
         
         # Show result message
         if success:

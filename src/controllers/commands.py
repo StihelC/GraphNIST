@@ -171,46 +171,44 @@ class DeleteBoundaryCommand(Command):
 class AddConnectionCommand(Command):
     """Command to add a connection between two devices."""
     
-    def __init__(self, connection_controller, source_device, target_device, source_port=None, target_port=None, properties=None):
+    def __init__(self, controller, source_device, target_device, source_port=None, target_port=None, properties=None):
         # Make sure we have name attributes for the description, with fallbacks
         source_name = getattr(source_device, 'name', 'Source')
         target_name = getattr(target_device, 'name', 'Target')
         
         super().__init__(f"Add Connection {source_name} to {target_name}")
         
-        self.connection_controller = connection_controller
+        self.connection_controller = controller
         self.source_device = source_device
         self.target_device = target_device
         self.source_port = source_port
         self.target_port = target_port
         self.properties = properties or {}
-        self.connection = None
+        self.connection = None  # Store the created connection here
     
     def execute(self):
         """Create and add the connection."""
         if self.connection_controller.undo_redo_manager:
             self.connection_controller.undo_redo_manager.is_executing_command = True
         
-        self.created_connection = self.connection_controller.create_connection(
-            self.source_device,
-            self.target_device,
-            self.source_port,
-            self.target_port,
-            self.properties
+        self.connection = self.connection_controller.create_connection(
+            source_device=self.source_device,
+            target_device=self.target_device,
+            properties=self.properties
         )
         
         if self.connection_controller.undo_redo_manager:
             self.connection_controller.undo_redo_manager.is_executing_command = False
             
-        return self.created_connection
+        return self.connection
     
     def undo(self):
         """Remove the connection."""
-        if self.created_connection:
+        if self.connection:
             if self.connection_controller.undo_redo_manager:
                 self.connection_controller.undo_redo_manager.is_executing_command = True
                 
-            self.connection_controller._delete_connection(self.created_connection)
+            self.connection_controller._delete_connection(self.connection)
             
             if self.connection_controller.undo_redo_manager:
                 self.connection_controller.undo_redo_manager.is_executing_command = False
@@ -465,3 +463,65 @@ class DevicePropertyCommand(Command):
         if hasattr(self.device, 'properties'):
             self.device.properties[self.property_name] = self.old_value
             self.device.update()
+
+class OptimizeLayoutCommand(Command):
+    """Command for optimizing the layout of devices with undo/redo support."""
+    
+    def __init__(self, controller, devices, algorithm="force_directed"):
+        """Initialize the layout optimization command.
+        
+        Args:
+            controller: ConnectionController instance
+            devices: List of devices to optimize
+            algorithm: Layout algorithm to use
+        """
+        super().__init__(f"Optimize Layout ({algorithm})")
+        self.controller = controller
+        self.devices = devices
+        self.algorithm = algorithm
+        self.original_positions = {device: device.scenePos() for device in devices}
+        self.new_positions = {}  # Will be populated after execute
+    
+    def execute(self):
+        """Execute the layout optimization."""
+        # Run the layout optimization
+        result = self.controller.optimize_topology_layout(self.devices, self.algorithm)
+        
+        # Store the new positions for undo/redo
+        self.new_positions = {device: device.scenePos() for device in self.devices}
+        
+        return result
+    
+    def undo(self):
+        """Undo the layout optimization by restoring original positions."""
+        for device, position in self.original_positions.items():
+            device.setPos(position)
+        
+        # Update all connections
+        for device in self.devices:
+            for connection in device.connections:
+                if hasattr(connection, 'update_path'):
+                    connection.update_path()
+                elif hasattr(connection, '_update_path'):
+                    connection._update_path()
+        
+        # Force update the canvas
+        if hasattr(self.controller, 'canvas') and self.controller.canvas:
+            self.controller.canvas.viewport().update()
+    
+    def redo(self):
+        """Redo the layout optimization by applying new positions."""
+        for device, position in self.new_positions.items():
+            device.setPos(position)
+        
+        # Update all connections
+        for device in self.devices:
+            for connection in device.connections:
+                if hasattr(connection, 'update_path'):
+                    connection.update_path()
+                elif hasattr(connection, '_update_path'):
+                    connection._update_path()
+        
+        # Force update the canvas
+        if hasattr(self.controller, 'canvas') and self.controller.canvas:
+            self.controller.canvas.viewport().update()

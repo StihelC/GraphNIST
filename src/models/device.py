@@ -85,7 +85,7 @@ class Device(QGraphicsPixmapItem):
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
         
-        # Set Z value to be above connections
+        # Set z-value to be above connections and boundaries (layer 10)
         self.setZValue(10)
         
         # Size settings

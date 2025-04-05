@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
 from PyQt5.QtGui import QColor, QPen, QBrush, QFont
 from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal, QObject
+import logging
 
 class BoundarySignals(QObject):
     """Signals for the Boundary class."""
@@ -73,10 +74,23 @@ class EditableTextItem(QGraphicsTextItem):
         super().keyPressEvent(event)
 
 class Boundary(QGraphicsRectItem):
-    """A visual boundary region on the network topology with editable label."""
+    """A rectangular grouping boundary for grouping devices together."""
     
-    def __init__(self, rect, name="Boundary", color=QColor(40, 120, 200, 80)):
-        super().__init__(rect)
+    def __init__(self, rect, name=None, color=None, parent=None):
+        """Initialize the boundary.
+        
+        Args:
+            rect: QRectF defining the boundary's size and position
+            name: Optional name for the boundary
+            color: Optional color for the boundary
+            parent: Optional parent item
+        """
+        super().__init__(rect, parent)
+        
+        # Set z-value to be behind everything else (layer 0)
+        self.setZValue(0)
+        
+        self.logger = logging.getLogger(__name__)
         
         # Create signals object
         self.signals = BoundarySignals()
@@ -103,9 +117,6 @@ class Boundary(QGraphicsRectItem):
         
         # Set fill with transparency
         self.setBrush(QBrush(self.color))
-        
-        # Set Z-value to be below devices but above background
-        self.setZValue(-10)
     
     def _create_label(self):
         """Create and position the editable label text."""

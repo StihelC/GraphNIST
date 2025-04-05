@@ -35,6 +35,21 @@ class DeviceTypes:
             cls.GENERIC
         ]
 
+class RoutingStyle:
+    """Constants for connection routing styles."""
+    STRAIGHT = "straight"
+    ORTHOGONAL = "orthogonal"
+    CURVED = "curved"
+    
+    @classmethod
+    def get_all_styles(cls):
+        """Return a list of all routing styles."""
+        return [
+            cls.STRAIGHT,
+            cls.ORTHOGONAL,
+            cls.CURVED
+        ]
+
 class ConnectionTypes:
     """Constants for connection types."""
     # Basic connection types

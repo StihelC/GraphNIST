@@ -293,7 +293,9 @@ class PropertiesController:
             # Update the value in the properties dictionary
             old_value = self.selected_item.properties.get(key)
             if old_value != value:
-                self.selected_item.properties[key] = value
+                # If the key is "Label", use "label_text" in the properties dictionary
+                property_key = "label_text" if key == "Label" else key
+                self.selected_item.properties[property_key] = value
                 
                 # Also update the corresponding attribute
                 if key == "Bandwidth":
@@ -303,7 +305,7 @@ class PropertiesController:
                 elif key == "Label":
                     self.selected_item.label_text = value
                     
-                self.event_bus.emit("connection_property_changed", self.selected_item, key)
+                self.event_bus.emit("connection_property_changed", self.selected_item, property_key)
     
     def _on_boundary_property_changed(self, key, value):
         """Handle boundary property change in properties panel."""

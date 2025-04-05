@@ -665,3 +665,33 @@ class Canvas(QGraphicsView):
         """Toggle the grid visibility."""
         self.show_grid = not self.show_grid
         self.viewport().update()
+        
+    def clear(self):
+        """Clear the canvas by removing all items and resetting to an empty state."""
+        # Clear all devices
+        for device in list(self.devices):
+            self.scene().removeItem(device)
+        self.devices.clear()
+        
+        # Clear all connections
+        for connection in list(self.connections):
+            self.scene().removeItem(connection)
+        self.connections.clear()
+        
+        # Clear all boundaries
+        for boundary in list(self.boundaries):
+            self.scene().removeItem(boundary)
+        self.boundaries.clear()
+        
+        # Clear any temporary graphics
+        self.temp_graphics.clear()
+        
+        # Reset view to default 
+        self.reset_zoom()
+        
+        # Force a viewport update
+        self.viewport().update()
+        
+        # Let interested parties know the canvas is now empty
+        if self.event_bus:
+            self.event_bus.emit('canvas_cleared')
