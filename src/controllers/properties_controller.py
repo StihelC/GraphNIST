@@ -1,10 +1,16 @@
+from PyQt5.QtWidgets import QDialog, QComboBox, QVBoxLayout, QLabel, QCheckBox, QPushButton, QMessageBox
+from PyQt5.QtCore import Qt, QPointF
 import logging
-from PyQt5.QtCore import QRectF
-from PyQt5.QtGui import QColor, QBrush
+import traceback
+
 from models.device import Device
 from models.connection import Connection
 from models.boundary import Boundary
-from controllers.commands import Command
+from controllers.commands import (
+    UpdatePropertyCommand, SetZValueCommand, UpdateNameCommand, Command,
+    TogglePropertyDisplayCommand, UpdateConnectionTypeCommand,
+    UpdateConnectionStyleCommand
+)
 
 class SetItemNameCommand(Command):
     """Command to change an item's name."""
@@ -326,23 +332,20 @@ class PropertiesController:
         if self.selected_items:
             # Apply the change to all selected devices
             for device in self.selected_items:
-                if hasattr(device, 'display_properties'):
-                    device.display_properties[key] = enabled
-                    device.update()
+                if isinstance(device, Device):
+                    # Use device's toggle method 
+                    device.toggle_property_display(key, enabled)
             return
                 
         # For single device selected
         if not self.selected_item or not isinstance(self.selected_item, Device):
             return
             
-        # Update display_properties dictionary
-        if hasattr(self.selected_item, 'display_properties'):
-            self.selected_item.display_properties[key] = enabled
-            self.selected_item.update()
-            
-            # Notify via event bus
-            self.event_bus.emit("device_display_properties_changed", 
-                              self.selected_item, key, enabled)
+        # Use device's toggle method
+        self.selected_item.toggle_property_display(key, enabled)
+        
+        # Notify via event bus
+        self.event_bus.emit("device_display_properties_changed", self.selected_item, key, enabled)
 
     def on_property_changed(self, property_name, value):
         """Handle property changes from the panel."""

@@ -297,18 +297,28 @@ class PropertiesPanel(QWidget):
         """Remove all widgets from a layout."""
         if layout is None:
             return
-            
-        while layout.count():
-            item = layout.takeAt(0)
-            if item.widget():
-                item.widget().hide()
-                item.widget().deleteLater()
-            elif item.layout():
-                self._reset_layout(item.layout())
-            elif item.spacerItem():
-                # Just remove spacer items
-                pass
-                
+        
+        # Handle the case when layout is actually a QGroupBox
+        if isinstance(layout, QGroupBox):
+            # Get the actual layout from the group box
+            box_layout = layout.layout()
+            if box_layout:
+                self._reset_layout(box_layout)
+            return
+        
+        # Handle the case when it's a real layout with a count method
+        if hasattr(layout, 'count'):
+            while layout.count():
+                item = layout.takeAt(0)
+                if item.widget():
+                    item.widget().hide()
+                    item.widget().deleteLater()
+                elif item.layout():
+                    self._reset_layout(item.layout())
+                elif item.spacerItem():
+                    # Just remove spacer items
+                    pass
+    
     def _display_connection_properties(self, connection):
         """Update the panel with connection-specific properties."""
         self.connection_group.show()
@@ -644,59 +654,56 @@ class PropertiesPanel(QWidget):
         self.property_display_toggled.emit(prop_name, display_enabled)
 
     def _update_device_display_options(self, device):
-        """Update the device display options checkboxes."""
+        """Update the display options checkboxes for device properties."""
         logger = logging.getLogger(__name__)
-        logger.info(f"PANEL DEBUG: Updating display options for device: {device.name}")
         
-        # Clear existing checkboxes
-        self.display_checkboxes.clear()
-        
-        # Find the display group within the device group
+        # Get the display options group box
         display_group = self._get_display_options_group()
         if not display_group:
-            logger.warning("PANEL DEBUG: Display options group not found")
+            logger.warning("Display options group not found")
             return
         
-        # Reset the layout contents of the display group properly
-        if display_group.layout():
-            self._reset_layout(display_group.layout())
+        # Get the layout of the group box
+        display_layout = display_group.layout()
+        if not display_layout:
+            logger.warning("Display options group has no layout")
+            # Create a layout if none exists
+            display_layout = QVBoxLayout(display_group)
         
-        # Create fresh layout for the display group
-        display_layout = QVBoxLayout(display_group)
-        display_layout.addWidget(QLabel("Show properties under icon:"))
+        # Clear existing layout content
+        self._reset_layout(display_layout)
+        self.display_checkboxes.clear()
         
-        # Create and configure grid layout for checkboxes
-        grid_layout = QGridLayout()
-        grid_layout.setHorizontalSpacing(10)
-        grid_layout.setVerticalSpacing(8)
-        display_layout.addLayout(grid_layout)
+        # Add header label
+        header_label = QLabel("Show properties under icon:")
+        header_label.setStyleSheet("font-weight: bold;")
+        display_layout.addWidget(header_label)
         
-        # Add checkboxes for relevant properties
-        if hasattr(device, 'properties'):
-            row = 0
-            col = 0
-            for key in device.properties.keys():
-                # Skip properties that shouldn't be displayed under the icon
-                if key in ['name', 'device_type', 'width', 'height', 'color']:
-                    continue
-                    
-                checkbox = QCheckBox(key)
-                # Set checked status based on device's display_properties
-                is_checked = False
-                if hasattr(device, 'display_properties') and key in device.display_properties:
-                    is_checked = device.display_properties[key]
-                checkbox.setChecked(is_checked)
-                
-                # Store property name as object property for signal handler
-                checkbox.setProperty("property_name", key)
-                checkbox.stateChanged.connect(self._handle_checkbox_state_changed)
-                self.display_checkboxes[key] = checkbox
-                
-                # Add to grid, 3 columns
-                grid_layout.addWidget(checkbox, row, col)
-                col += 1
-                if col >= 3:
-                    col = 0
-                    row += 1
+        # Get device properties (exclude certain built-in properties)
+        exclude_props = ['name', 'device_type', 'width', 'height', 'icon']
+        properties = [prop for prop in device.properties.keys() if prop not in exclude_props]
+        
+        if not properties:
+            display_layout.addWidget(QLabel("No displayable properties available"))
+            return
+        
+        # Sort properties alphabetically for consistent UI
+        properties.sort()
+        
+        # Create a checkbox for each property
+        for prop in properties:
+            checkbox = QCheckBox(prop)
             
-            logger.info(f"PANEL DEBUG: Added {len(self.display_checkboxes)} display option checkboxes")
+            # Get current state from the device
+            is_displayed = device.get_property_display_state(prop)
+            checkbox.setChecked(is_displayed)
+            
+            # Store property name for the callback
+            checkbox.setProperty("property_name", prop)
+            
+            # Connect state change signal
+            checkbox.stateChanged.connect(self._handle_checkbox_state_changed)
+            
+            # Add to layout and store reference
+            display_layout.addWidget(checkbox)
+            self.display_checkboxes[prop] = checkbox

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox, QAction, QDockWidget, QMenu
+from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox, QAction, QDockWidget, QMenu, QApplication
 from PyQt5.QtCore import QPointF, QTimer, Qt
 from PyQt5.QtGui import QColor, QIcon
 import logging
@@ -16,6 +16,7 @@ from controllers.bulk_property_controller import BulkPropertyController
 from utils.event_bus import EventBus
 from utils.recent_files import RecentFiles
 from utils.theme_manager import ThemeManager
+from utils.font_settings_manager import FontSettingsManager
 from models.device import Device
 from models.connection import Connection
 from models.boundary import Boundary
@@ -24,6 +25,7 @@ from controllers.properties_controller import PropertiesController
 from views.alignment_toolbar import AlignmentToolbar
 from controllers.commands import AlignDevicesCommand
 from controllers.device_alignment_controller import DeviceAlignmentController
+from dialogs.font_settings_dialog import FontSettingsDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -39,6 +41,9 @@ class MainWindow(QMainWindow):
 
         # Initialize theme manager before creating UI elements
         self.theme_manager = ThemeManager()
+        
+        # Initialize font settings manager
+        self.font_settings_manager = FontSettingsManager()
 
         # Create canvas
         self.canvas = Canvas(self)
@@ -87,6 +92,9 @@ class MainWindow(QMainWindow):
         # Apply the initial theme
         self.theme_manager.apply_theme()
         
+        # Connect font change signals
+        self._connect_font_signals()
+        
         # Remove the line that maximizes the window on startup
         # self.showMaximized()
 
@@ -107,7 +115,38 @@ class MainWindow(QMainWindow):
         # Initialize bulk controllers - these will be fully set up after command_manager is initialized
         self.bulk_device_controller = None
         self.bulk_property_controller = None
+        
+    def _connect_font_signals(self):
+        """Connect signals for font setting changes."""
+        # UI font changes
+        self.font_settings_manager.ui_font_changed.connect(self._apply_ui_font)
+        
+        # Device label font changes
+        self.font_settings_manager.device_label_font_changed.connect(self._apply_device_label_font)
+        
+        # Device property font changes
+        self.font_settings_manager.device_property_font_changed.connect(self._apply_device_property_font)
 
+    def _apply_ui_font(self, font):
+        """Apply UI font to the application."""
+        # Update application font
+        app = QApplication.instance()
+        if app:
+            app.setFont(font)
+            self.statusBar().showMessage(f"UI font size updated to {font.pointSize()}pt")
+
+    def _apply_device_label_font(self, font):
+        """Apply device label font to all devices."""
+        # Update all devices on canvas
+        for device in self.canvas.devices:
+            device.update_font_settings(self.font_settings_manager)
+        self.statusBar().showMessage(f"Device label font size updated to {font.pointSize()}pt")
+
+    def _apply_device_property_font(self, font):
+        """Apply device property font to all devices."""
+        # Update is handled by the same method as label font
+        self.statusBar().showMessage(f"Property label font size updated to {font.pointSize()}pt")
+        
     def _create_ui_components(self):
         """Create UI components like menus, panels, and toolbars."""
         # Create menus
@@ -544,31 +583,30 @@ class MainWindow(QMainWindow):
             self.redo_action.setText(self.command_manager.get_redo_text())
 
     def _create_view_menu(self):
-        """Create the View menu."""
-        view_menu = self.menuBar().addMenu("&View")
+        """Create the View menu with zoom actions and visualization options."""
+        view_menu = self.menuBar().addMenu("View")
         
-        # Zoom In action - Fix shortcut
+        # Zoom submenu
+        zoom_menu = view_menu.addMenu("Zoom")
+        
         zoom_in_action = QAction("Zoom In", self)
-        # Using equals sign for plus to avoid issues with Qt shortcut parsing
-        zoom_in_action.setShortcut("Ctrl+=")  # This works for both Ctrl++ and Ctrl+=
+        zoom_in_action.setShortcut("Ctrl++")
         zoom_in_action.triggered.connect(self.canvas.zoom_in)
-        view_menu.addAction(zoom_in_action)
+        zoom_menu.addAction(zoom_in_action)
         
-        # Zoom Out action
         zoom_out_action = QAction("Zoom Out", self)
         zoom_out_action.setShortcut("Ctrl+-")
         zoom_out_action.triggered.connect(self.canvas.zoom_out)
-        view_menu.addAction(zoom_out_action)
+        zoom_menu.addAction(zoom_out_action)
         
-        # Reset Zoom action
         reset_zoom_action = QAction("Reset Zoom", self)
         reset_zoom_action.setShortcut("Ctrl+0")
         reset_zoom_action.triggered.connect(self.canvas.reset_zoom)
-        view_menu.addAction(reset_zoom_action)
+        zoom_menu.addAction(reset_zoom_action)
         
-        # Reset View action (zoom + center)
-        reset_view_action = QAction("Reset View to Home", self)
-        reset_view_action.setShortcut("Ctrl+Home")
+        # Reset view action
+        reset_view_action = QAction("Reset View", self)
+        reset_view_action.setShortcut("Home")
         reset_view_action.triggered.connect(self.canvas.reset_view)
         view_menu.addAction(reset_view_action)
         
@@ -599,8 +637,21 @@ class MainWindow(QMainWindow):
         self.toggle_theme_action.setChecked(self.theme_manager.is_dark_theme())
         view_menu.addAction(self.toggle_theme_action)
         
+        # Add font settings action
+        view_menu.addSeparator()
+        
+        # Font settings action
+        font_settings_action = QAction("Font Settings...", self)
+        font_settings_action.setShortcut("Ctrl+F")
+        font_settings_action.triggered.connect(self._show_font_settings)
+        view_menu.addAction(font_settings_action)
+        
         return view_menu
-
+        
+    def _show_font_settings(self):
+        """Show the font settings dialog."""
+        FontSettingsDialog.show_dialog(self, self.font_settings_manager)
+        
     def _toggle_grid(self):
         """Toggle grid visibility and update the action text accordingly."""
         self.canvas.toggle_grid()

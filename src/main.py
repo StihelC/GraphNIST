@@ -36,6 +36,9 @@ def main():
     main_window.connection_controller.undo_redo_manager = undo_redo_manager
     main_window.boundary_controller.undo_redo_manager = undo_redo_manager
     
+    # Set font settings manager on the device controller
+    main_window.device_controller.font_settings_manager = main_window.font_settings_manager
+    
     # Set theme manager on the connection controller
     main_window.connection_controller.theme_manager = main_window.theme_manager
     
@@ -44,6 +47,10 @@ def main():
     
     # Show window
     main_window.show()
+    
+    # Apply font settings to existing devices
+    for device in main_window.canvas.devices:
+        device.update_font_settings(main_window.font_settings_manager)
     
     # Run application
     sys.exit(app.exec_())

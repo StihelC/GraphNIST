@@ -1,4 +1,5 @@
 import copy
+from venv import logger
 from PyQt5.QtCore import QPointF, QRectF
 from controllers.undo_redo_manager import Command
 from models.device import Device
@@ -171,76 +172,107 @@ class DeleteBoundaryCommand(Command):
 class AddConnectionCommand(Command):
     """Command to add a connection between two devices."""
     
-    def __init__(self, controller, source_device, target_device, source_port=None, target_port=None, properties=None):
-        # Make sure we have name attributes for the description, with fallbacks
-        source_name = getattr(source_device, 'name', 'Source')
-        target_name = getattr(target_device, 'name', 'Target')
+    def __init__(self, controller, source_device, target_device, properties=None):
+        # Get device names safely for the command description
+        source_name = source_device.name if hasattr(source_device, 'name') else "Unknown source"
+        target_name = target_device.name if hasattr(target_device, 'name') else "Unknown target"
         
         super().__init__(f"Add Connection {source_name} to {target_name}")
-        
-        self.connection_controller = controller
+        self.controller = controller
         self.source_device = source_device
         self.target_device = target_device
-        self.source_port = source_port
-        self.target_port = target_port
         self.properties = properties or {}
-        self.connection = None  # Store the created connection here
+        self.connection = None
     
     def execute(self):
-        """Create and add the connection."""
-        if self.connection_controller.undo_redo_manager:
-            self.connection_controller.undo_redo_manager.is_executing_command = True
-        
-        self.connection = self.connection_controller.create_connection(
+        """Create the connection."""
+        self.connection = self.controller.create_connection(
             source_device=self.source_device,
             target_device=self.target_device,
             properties=self.properties
         )
-        
-        if self.connection_controller.undo_redo_manager:
-            self.connection_controller.undo_redo_manager.is_executing_command = False
-            
         return self.connection
     
     def undo(self):
-        """Remove the connection."""
+        """Delete the connection."""
         if self.connection:
-            if self.connection_controller.undo_redo_manager:
-                self.connection_controller.undo_redo_manager.is_executing_command = True
-                
-            self.connection_controller._delete_connection(self.connection)
-            
-            if self.connection_controller.undo_redo_manager:
-                self.connection_controller.undo_redo_manager.is_executing_command = False
+            self.controller._delete_connection(self.connection)
+            self.connection = None
 
 
 class DeleteConnectionCommand(Command):
-    """Command to delete a connection."""
+    """Command to delete a connection from the network topology."""
     
     def __init__(self, connection_controller, connection):
-        super().__init__(f"Delete Connection {connection.source_device.name} to {connection.target_device.name}")
-        self.connection_controller = connection_controller
+        """Initialize the command.
+        
+        Args:
+            connection_controller: The controller that manages connections
+            connection: The connection to delete
+        """
+        logger = logging.getLogger(__name__)
+        
+        # First, set up basic properties to ensure they're always available
+        self.controller = connection_controller
         self.connection = connection
-        self.source_device = connection.source_device
-        self.target_device = connection.target_device
-        self.source_port = connection.source_port
-        self.target_port = connection.target_port
-        self.properties = copy.deepcopy(connection.properties) if hasattr(connection, 'properties') else None
+        
+        # Safely extract source device info
+        self.source_device = None
+        source_name = "Unknown Source"
+        if hasattr(connection, 'source_device') and connection.source_device:
+            self.source_device = connection.source_device
+            source_name = getattr(self.source_device, 'name', 'Unknown Source')
+            
+        # Safely extract target device info (handling both naming conventions)
+        self.target_device = None
+        target_name = "Unknown Target"
+        
+        # Handle both naming conventions (dest_device and target_device)
+        if hasattr(connection, 'dest_device') and connection.dest_device:
+            self.target_device = connection.dest_device
+            target_name = getattr(self.target_device, 'name', 'Unknown Target')
+            # Add target_device attribute to maintain consistency
+            connection.target_device = self.target_device
+        elif hasattr(connection, 'target_device') and connection.target_device:
+            self.target_device = connection.target_device
+            target_name = getattr(self.target_device, 'name', 'Unknown Target')
+            
+        # Initialize with safe command name 
+        super().__init__(f"Delete Connection {source_name} to {target_name}")
+        logger.info(f"Initializing DeleteConnectionCommand from {source_name} to {target_name}")
+            
+        # Get other properties safely
+        self.connection_type = getattr(connection, 'connection_type', 'ethernet')
+        self.routing_style = getattr(connection, 'routing_style', 'straight')
+        self.properties = {}
+        
+        # Safely copy properties
+        if hasattr(connection, 'properties') and connection.properties:
+            import copy
+            self.properties = copy.deepcopy(connection.properties)
     
     def execute(self):
         """Delete the connection."""
-        self.connection_controller.on_delete_connection_requested(self.connection)
+        self.controller._delete_connection(self.connection)
     
     def undo(self):
         """Recreate the connection."""
-        new_connection = self.connection_controller.create_connection(
-            self.source_device,
-            self.target_device,
-            self.source_port,
-            self.target_port,
-            self.properties
-        )
-        return new_connection
+        if self.source_device and self.target_device:
+            # Create the properties dictionary with all needed parameters
+            conn_properties = self.properties.copy() if self.properties else {}
+            
+            # Ensure connection_type and other essential properties are included
+            conn_properties['connection_type'] = self.connection_type
+            conn_properties['routing_style'] = self.routing_style
+            
+            # Create the connection using the controller
+            new_connection = self.controller.create_connection(
+                source_device=self.source_device, 
+                target_device=self.target_device,
+                properties=conn_properties
+            )
+            return new_connection
+        return None
 
 
 class MoveItemCommand(Command):
@@ -463,6 +495,202 @@ class DevicePropertyCommand(Command):
         if hasattr(self.device, 'properties'):
             self.device.properties[self.property_name] = self.old_value
             self.device.update()
+
+class UpdatePropertyCommand(Command):
+    """Command to update a property of an item with undo/redo support."""
+    
+    def __init__(self, item, property_name, old_value, new_value):
+        """Initialize the command.
+        
+        Args:
+            item: The item whose property is being changed
+            property_name: Name of the property to change
+            old_value: Original value of the property
+            new_value: New value to set
+        """
+        item_name = getattr(item, 'name', 'Unknown')
+        super().__init__(f"Update {item_name} {property_name}")
+        self.item = item
+        self.property_name = property_name
+        self.old_value = old_value
+        self.new_value = new_value
+    
+    def execute(self):
+        """Set the new property value."""
+        if hasattr(self.item, 'properties'):
+            self.item.properties[self.property_name] = self.new_value
+            if hasattr(self.item, 'update'):
+                self.item.update()
+    
+    def undo(self):
+        """Restore the old property value."""
+        if hasattr(self.item, 'properties'):
+            self.item.properties[self.property_name] = self.old_value
+            if hasattr(self.item, 'update'):
+                self.item.update()
+
+class SetZValueCommand(Command):
+    """Command to change an item's Z value (layer)."""
+    
+    def __init__(self, item, old_value, new_value):
+        """Initialize the command.
+        
+        Args:
+            item: The item whose Z value is being changed
+            old_value: Original Z value
+            new_value: New Z value to set
+        """
+        item_name = getattr(item, 'name', type(item).__name__)
+        super().__init__(f"Change {item_name} Layer")
+        self.item = item
+        self.old_value = old_value
+        self.new_value = new_value
+    
+    def execute(self):
+        """Set the new Z value."""
+        self.item.setZValue(self.new_value)
+    
+    def undo(self):
+        """Restore the old Z value."""
+        self.item.setZValue(self.old_value)
+
+class UpdateNameCommand(Command):
+    """Command to update an item's name with undo/redo support."""
+    
+    def __init__(self, item, old_name, new_name):
+        """Initialize the command.
+        
+        Args:
+            item: The item whose name is being changed
+            old_name: Original name
+            new_name: New name to set
+        """
+        super().__init__(f"Rename {type(item).__name__}")
+        self.item = item
+        self.old_name = old_name
+        self.new_name = new_name
+    
+    def execute(self):
+        """Set the new name."""
+        self.item.name = self.new_name
+        if hasattr(self.item, 'update_name'):
+            self.item.update_name()
+        elif hasattr(self.item, 'text_item'):
+            self.item.text_item.setPlainText(self.new_name)
+    
+    def undo(self):
+        """Restore the old name."""
+        self.item.name = self.old_name
+        if hasattr(self.item, 'update_name'):
+            self.item.update_name()
+        elif hasattr(self.item, 'text_item'):
+            self.item.text_item.setPlainText(self.old_name)
+
+class TogglePropertyDisplayCommand(Command):
+    """Command to toggle whether a property is displayed under a device."""
+    
+    def __init__(self, device, property_name, old_state, new_state):
+        """Initialize the command.
+        
+        Args:
+            device: The device whose property display is being toggled
+            property_name: Name of the property to toggle display for
+            old_state: Original display state (True/False)
+            new_state: New display state (True/False)
+        """
+        super().__init__(f"Toggle {device.name} {property_name} Display")
+        self.device = device
+        self.property_name = property_name
+        self.old_state = old_state
+        self.new_state = new_state
+    
+    def execute(self):
+        """Set the new display state."""
+        if hasattr(self.device, 'display_properties'):
+            self.device.display_properties[self.property_name] = self.new_state
+            self.device.update()
+    
+    def undo(self):
+        """Restore the old display state."""
+        if hasattr(self.device, 'display_properties'):
+            self.device.display_properties[self.property_name] = self.old_state
+            self.device.update()
+
+class UpdateConnectionTypeCommand(Command):
+    """Command to update a connection's type with undo/redo support."""
+    
+    def __init__(self, connection, old_type, new_type):
+        """Initialize the command.
+        
+        Args:
+            connection: The connection whose type is being changed
+            old_type: Original connection type
+            new_type: New connection type to set
+        """
+        super().__init__("Change Connection Type")
+        self.connection = connection
+        self.old_type = old_type
+        self.new_type = new_type
+    
+    def execute(self):
+        """Set the new connection type."""
+        if hasattr(self.connection, 'set_connection_type'):
+            self.connection.set_connection_type(self.new_type)
+        else:
+            self.connection.connection_type = self.new_type
+            # Update appearance if possible
+            if hasattr(self.connection, 'update_appearance'):
+                self.connection.update_appearance()
+            elif hasattr(self.connection, 'update'):
+                self.connection.update()
+    
+    def undo(self):
+        """Restore the old connection type."""
+        if hasattr(self.connection, 'set_connection_type'):
+            self.connection.set_connection_type(self.old_type)
+        else:
+            self.connection.connection_type = self.old_type
+            # Update appearance if possible
+            if hasattr(self.connection, 'update_appearance'):
+                self.connection.update_appearance()
+            elif hasattr(self.connection, 'update'):
+                self.connection.update()
+
+class UpdateConnectionStyleCommand(Command):
+    """Command to update a connection's routing style with undo/redo support."""
+    
+    def __init__(self, connection, old_style, new_style):
+        """Initialize the command.
+        
+        Args:
+            connection: The connection whose routing style is being changed
+            old_style: Original routing style
+            new_style: New routing style to set
+        """
+        super().__init__("Change Connection Style")
+        self.connection = connection
+        self.old_style = old_style
+        self.new_style = new_style
+    
+    def execute(self):
+        """Set the new routing style."""
+        if hasattr(self.connection, 'set_routing_style'):
+            self.connection.set_routing_style(self.new_style)
+        else:
+            self.connection.routing_style = self.new_style
+            # Update path if possible
+            if hasattr(self.connection, 'update_path'):
+                self.connection.update_path()
+    
+    def undo(self):
+        """Restore the old routing style."""
+        if hasattr(self.connection, 'set_routing_style'):
+            self.connection.set_routing_style(self.old_style)
+        else:
+            self.connection.routing_style = self.old_style
+            # Update path if possible
+            if hasattr(self.connection, 'update_path'):
+                self.connection.update_path()
 
 class OptimizeLayoutCommand(Command):
     """Command for optimizing the layout of devices with undo/redo support."""

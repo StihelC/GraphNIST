@@ -236,6 +236,10 @@ class Connection(QGraphicsPathItem):
         self.source_device = source_device
         self.dest_device = dest_device
         
+        # Set target_device as a direct attribute for compatibility with older code
+        # (property getter might not be accessible during initialization)
+        self.target_device = self.dest_device
+        
         # Add to device connection lists
         if hasattr(source_device, 'connections'):
             source_device.connections.append(self)
@@ -659,4 +663,14 @@ class Connection(QGraphicsPathItem):
         # Force update the scene
         if self.scene():
             update_rect = self.sceneBoundingRect().adjusted(-100, -100, 100, 100)
-            self.scene().update(update_rect) 
+            self.scene().update(update_rect)
+    
+    @property
+    def target_device(self):
+        """Get the target device (alias for dest_device)."""
+        return self.dest_device
+    
+    @target_device.setter
+    def target_device(self, device):
+        """Set both dest_device and target_device to the same value."""
+        self.dest_device = device 

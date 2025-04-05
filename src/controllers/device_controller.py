@@ -22,7 +22,114 @@ class DeviceController:
         # Initialize device counter for generating unique names
         self.device_counter = 0
         self.undo_redo_manager = undo_redo_manager
+        
+        # Font settings manager reference (will be set externally)
+        self.font_settings_manager = None
     
+    def create_device(self, device_type, pos=None, use_command=True, show_dialog=True,
+                      device_data=None, custom_icon_path=None, properties=None):
+        """Create a new device on the canvas.
+        
+        Args:
+            device_type: Type of device to create
+            pos: Position to place the device (optional, center if None)
+            use_command: Whether to use command pattern for undo/redo
+            show_dialog: Whether to show the device dialog
+            device_data: Pre-filled device data dictionary
+            custom_icon_path: Path to custom icon
+            properties: Custom device properties
+            
+        Returns:
+            The created device, or None if creation was cancelled
+        """
+        try:
+            self.logger.info(f"Creating device of type {device_type}")
+            
+            # Default position at center if none provided
+            if pos is None:
+                scene_rect = self.canvas.scene().sceneRect()
+                pos = QPointF(scene_rect.width() / 2, scene_rect.height() / 2)
+                self.logger.info(f"Using default position: {pos}")
+            
+            # Show dialog to get device details if requested
+            if show_dialog:
+                dialog = DeviceDialog(device_data=device_data, device_type=device_type)
+                result = dialog.exec_()
+                
+                # If dialog was accepted, get the device data
+                if result == QDialog.Accepted:
+                    device_data = dialog.get_values()
+                    self.logger.info(f"Device dialog accepted, creating device with name: {device_data.get('name')}")
+                    
+                    # Check if multiple devices should be created
+                    if dialog.is_multiple():
+                        count = dialog.get_multiplier()
+                        spacing_data = dialog.get_spacing_data()
+                        connection_data = dialog.get_connection_data()
+                        
+                        # Create multiple devices
+                        if use_command and self.undo_redo_manager:
+                            from controllers.commands import CompositeCommand
+                            cmd = CompositeCommand("Create multiple devices")
+                            devices = self._create_multiple_devices_with_commands(
+                                device_data, pos, count, cmd, 
+                                should_connect=dialog.should_connect(),
+                                connection_data=connection_data,
+                                spacing_data=spacing_data
+                            )
+                            self.undo_redo_manager.execute_command(cmd)
+                            return devices
+                        else:
+                            return self._create_multiple_devices(
+                                device_data, pos, count, 
+                                should_connect=dialog.should_connect(),
+                                connection_data=connection_data,
+                                spacing_data=spacing_data
+                            )
+                else:
+                    self.logger.info("Device dialog cancelled, not creating device")
+                    return None
+            
+            # If no dialog shown, or dialog accepted, create the device
+            name = device_data.get('name') if device_data else f"{device_type}_{self.device_counter}"
+            properties = device_data.get('properties') if device_data else properties
+            custom_icon = device_data.get('custom_icon_path') if device_data else custom_icon_path
+            
+            # Create device object
+            device = Device(name, device_type, properties, custom_icon)
+            self.logger.info(f"Created device object: {device.name}, type: {device.device_type}")
+            
+            # Set position
+            device.setPos(pos)
+            
+            # Apply font settings if available
+            if self.font_settings_manager:
+                device.update_font_settings(self.font_settings_manager)
+            
+            # Increment counter for next device
+            self.device_counter += 1
+            
+            # Create and execute command if using command pattern
+            if use_command and self.undo_redo_manager:
+                self.logger.info("Using command pattern to add device")
+                cmd = AddDeviceCommand(self.canvas, device)
+                self.undo_redo_manager.execute_command(cmd)
+            else:
+                # Otherwise add directly to canvas
+                self.logger.info("Adding device directly to canvas")
+                self.canvas.scene().addItem(device)
+                self.canvas.devices.append(device)
+            
+            # Log success
+            self.logger.info(f"Successfully created device: {device.name}")
+            return device
+            
+        except Exception as e:
+            self.logger.error(f"Error creating device: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            QMessageBox.critical(None, "Error", f"Failed to create device: {str(e)}")
+            return None
+            
     def on_add_device_requested(self, pos=None):
         """Show dialog to add a new device."""
         try:
@@ -62,7 +169,7 @@ class DeviceController:
                         return True
                     else:
                         # Create without undo support
-                        self.create_device(device_data, pos)
+                        self.create_device(device_data['type'], pos)
                 else:
                     # Create multiple devices in a grid
                     self.logger.debug(f"BULK ADD: Starting creation of {multiplier} devices with spacing: {spacing_data}")
@@ -175,7 +282,7 @@ class DeviceController:
                     current_data['name'] = f"{base_name}{devices_created+1}"
                 
                 # Create the device
-                device = self.create_device(current_data, device_pos)
+                device = self.create_device(current_data['type'], device_pos)
                 if device:
                     created_devices.append(device)
                     device_positions.append((row, col, device))

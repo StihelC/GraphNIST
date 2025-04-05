@@ -39,6 +39,11 @@ class ConnectionController:
                 self.logger.error("Invalid device objects provided for connection")
                 return False
             
+            # Check if a connection already exists between these devices
+            if self._connection_exists(source_device, target_device):
+                self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}")
+                return False
+            
             # Calculate optimal connection ports
             target_center = target_device.get_center_position()
             source_center = source_device.get_center_position()
@@ -77,42 +82,67 @@ class ConnectionController:
     
     def on_delete_connection_requested(self, connection):
         """Handle request to delete a specific connection."""
-        # Use command pattern if undo_redo_manager is available and not already in command
-        if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
-            command = DeleteConnectionCommand(self, connection)
-            self.undo_redo_manager.push_command(command)
-        else:
-            # Original implementation
-            self._delete_connection(connection)
+        try:
+            # Use command pattern if undo_redo_manager is available and not already in command
+            if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
+                from controllers.commands import DeleteConnectionCommand
+                command = DeleteConnectionCommand(self, connection)
+                self.undo_redo_manager.push_command(command)
+            else:
+                # Direct implementation
+                self._delete_connection(connection)
+        except Exception as e:
+            self.logger.error(f"Error in on_delete_connection_requested: {str(e)}")
+            self.logger.error(traceback.format_exc())
 
     def _delete_connection(self, connection):
         """Actual implementation of connection deletion."""
         if connection is None:
             self.logger.warning("Attempted to delete a null connection")
             return
-            
+        
         try:
-            if hasattr(connection, 'source_device') and hasattr(connection, 'target_device'):
-                self.logger.info(f"Deleting connection between {connection.source_device.name} and {connection.target_device.name}")
+            # Get devices - handle both target_device and dest_device naming
+            source_device = getattr(connection, 'source_device', None)
+            
+            # Handle both target_device and dest_device naming conventions
+            if hasattr(connection, 'target_device'):
+                target_device = connection.target_device
+            elif hasattr(connection, 'dest_device'):
+                target_device = connection.dest_device
+                # Add target_device attribute for consistency
+                connection.target_device = target_device
             else:
-                self.logger.info(f"Deleting connection (unknown endpoints)")
+                target_device = None
             
-            # Remove from devices' connection lists
-            if hasattr(connection, 'source_device') and connection.source_device:
-                if hasattr(connection.source_device, 'connections'):
-                    if connection in connection.source_device.connections:
-                        connection.source_device.connections.remove(connection)
+            if source_device and target_device:
+                self.logger.info(f"Deleting connection between {source_device.name} and {target_device.name}")
+            else:
+                self.logger.info("Deleting connection with unknown endpoints")
             
-            if hasattr(connection, 'target_device') and connection.target_device:
-                if hasattr(connection.target_device, 'connections'):
-                    if connection in connection.target_device.connections:
-                        connection.target_device.connections.remove(connection)
+            # Remove from device connections list
+            if source_device:
+                if hasattr(source_device, 'remove_connection'):
+                    source_device.remove_connection(connection)
+                elif hasattr(source_device, 'connections') and isinstance(source_device.connections, list):
+                    if connection in source_device.connections:
+                        source_device.connections.remove(connection)
+            
+            if target_device:
+                if hasattr(target_device, 'remove_connection'):
+                    target_device.remove_connection(connection)
+                elif hasattr(target_device, 'connections') and isinstance(target_device.connections, list):
+                    if connection in target_device.connections:
+                        target_device.connections.remove(connection)
             
             # Remove from scene
-            if connection.scene():
+            if hasattr(connection, 'scene') and callable(connection.scene) and connection.scene():
                 self.canvas.scene().removeItem(connection)
             else:
-                self.logger.warning("Connection not in scene")
+                # Find the connection renderer and remove it if present
+                for item in self.canvas.scene().items():
+                    if hasattr(item, 'connection') and item.connection == connection:
+                        self.canvas.scene().removeItem(item)
             
             # Remove from canvas connections list
             if connection in self.canvas.connections:
@@ -121,13 +151,13 @@ class ConnectionController:
                 self.logger.warning("Connection not in canvas connections list")
             
             # Notify through event bus
-            self.event_bus.emit("connection_deleted", connection)
+            self.event_bus.emit("connection_removed", connection)
             
             # Force update the canvas view
             self.canvas.viewport().update()
         except Exception as e:
             self.logger.error(f"Error in _delete_connection: {str(e)}")
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
 
     def create_connection(self, source_device, target_device, source_port=None, target_port=None, properties=None):
         """Create a connection between two devices."""
@@ -457,12 +487,24 @@ class ConnectionController:
         
         return False
 
-    def _connection_exists(self, device1, device2):
-        """Check if a connection already exists between two devices."""
+    def _connection_exists(self, source_device, target_device):
+        """Check if a connection already exists between source and target devices."""
+        # Check each connection in the canvas
         for conn in self.canvas.connections:
-            if ((conn.source_device == device1 and conn.target_device == device2) or
-                (conn.source_device == device2 and conn.target_device == device1)):
+            # Get source and target of existing connection
+            conn_source = getattr(conn, 'source_device', None)
+            
+            # Get target using either target_device or dest_device attribute
+            conn_target = None
+            if hasattr(conn, 'target_device'):
+                conn_target = conn.target_device
+            elif hasattr(conn, 'dest_device'):
+                conn_target = conn.dest_device
+            
+            # Check if this connection matches our source/target pair
+            if (conn_source == source_device and conn_target == target_device):
                 return True
+            
         return False
 
     def _show_error(self, message):

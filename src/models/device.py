@@ -132,6 +132,9 @@ class Device(QGraphicsPixmapItem):
         
         # Create property labels
         self.property_labels = {}
+        
+        # Font settings manager reference (will be set externally)
+        self.font_settings_manager = None
     
     def _init_properties(self, custom_properties=None):
         """Initialize the device properties based on type and custom values."""
@@ -775,7 +778,13 @@ class Device(QGraphicsPixmapItem):
                 # Create new label if it doesn't exist
                 label = QGraphicsTextItem(self)  # Make the device its parent
                 label.setPlainText(value)
-                label.setFont(QFont("Arial", 8))
+                
+                # Use font settings from manager if available
+                if self.font_settings_manager:
+                    label.setFont(self.font_settings_manager.get_device_property_font())
+                else:
+                    label.setFont(QFont("Arial", 8))
+                    
                 self.property_labels[prop] = label
             
             # Update position (this needs to happen either way)
@@ -791,12 +800,53 @@ class Device(QGraphicsPixmapItem):
         # Log the final state
         self.logger.debug(f"UPDATE PROPS DEBUG: Updated property labels, final count: {len(self.property_labels)}")
 
-    # Override the parent's update method to ensure property labels are refreshed
+    def update_font_settings(self, font_settings_manager):
+        """Update the device's font settings."""
+        self.font_settings_manager = font_settings_manager
+        
+        # Update device name font
+        if hasattr(self, 'text_item') and self.text_item:
+            self.text_item.setFont(font_settings_manager.get_device_label_font())
+            
+            # Recenter the name text
+            text_width = self.text_item.boundingRect().width()
+            text_x = (self.width - text_width) / 2
+            self.text_item.setPos(text_x, self.height + 5)
+        
+        # Update property label fonts
+        for label in self.property_labels.values():
+            label.setFont(font_settings_manager.get_device_property_font())
+        
+        # Reposition property labels after font change
+        self.update_property_labels()
+    
+    def toggle_property_display(self, property_name, show):
+        """Toggle display of a specific property under the device."""
+        # Initialize display_properties if it doesn't exist
+        if not hasattr(self, 'display_properties'):
+            self.display_properties = {}
+        
+        # Update the display state for the property
+        self.display_properties[property_name] = show
+        
+        # Update property labels
+        self.update_property_labels()
+    
+    def get_property_display_state(self, property_name):
+        """Get the display state of a specific property."""
+        # Initialize display_properties if it doesn't exist
+        if not hasattr(self, 'display_properties'):
+            self.display_properties = {}
+            
+        # Return display state (False if not set)
+        return self.display_properties.get(property_name, False)
+        
     def update(self):
-        """Override QGraphicsPixmapItem's update method to refresh property labels."""
-        # Call the parent class's update method first
+        """Update the device's visual appearance."""
         super().update()
         
-        # Update the property labels
-        if hasattr(self, 'display_properties') and hasattr(self, 'property_labels'):
-            self.update_property_labels()
+        # Update the name label
+        self.update_name()
+        
+        # Update property labels
+        self.update_property_labels()
