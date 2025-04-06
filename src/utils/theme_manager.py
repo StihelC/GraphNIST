@@ -1,8 +1,9 @@
 import logging
+import os
 import qdarktheme
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QSettings
-from PyQt5.QtGui import QColor
+from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtGui import QColor, QPalette
 
 class ThemeManager:
     """Manages application themes (light and dark mode)."""
@@ -65,12 +66,7 @@ class ThemeManager:
             if app is None:
                 app = QApplication.instance()
             
-            if self.current_theme == self.DARK_THEME:
-                self.logger.info("Applying dark theme")
-                qdarktheme.setup_theme("dark")
-            else:
-                self.logger.info("Applying light theme")
-                qdarktheme.setup_theme("light")
+            set_theme(app, self.current_theme)
             
             # Update all registered theme-aware widgets
             self._update_theme_aware_widgets()
@@ -181,4 +177,19 @@ class ThemeManager:
         Returns:
             dict: Dictionary of connection colors
         """
-        return self.CONNECTION_COLORS[self.current_theme] 
+        return self.CONNECTION_COLORS[self.current_theme]
+
+def set_theme(app, theme_name):
+    try:
+        if theme_name.lower() == "dark":
+            # Replace setup_theme with apply_stylesheet
+            app.setStyleSheet(qdarktheme.load_stylesheet(theme="dark"))
+        elif theme_name.lower() == "light":
+            # Replace setup_theme with apply_stylesheet
+            app.setStyleSheet(qdarktheme.load_stylesheet(theme="light"))
+        else:
+            # Default fallback theme handling
+            app.setStyleSheet("")
+    except Exception as e:
+        import logging
+        logging.error(f"Error applying theme: {str(e)}")
