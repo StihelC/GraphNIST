@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Top shading -->
+  <path d="M20 40 L80 40 L75 35 L25 35 Z" fill="#94a3b8"/>
+  
+  <!-- Device body -->
+  <rect x="20" y="40" width="60" height="30" rx="3" ry="3" fill="#64748b" stroke="#475569" stroke-width="2"/>
+  
+  <!-- Bottom shadow -->
+  <path d="M20 70 L80 70 L75 75 L25 75 Z" fill="#475569"/>
+  
+  <!-- Screen/Display -->
+  <rect x="28" y="45" width="44" height="20" rx="1" ry="1" fill="#0f172a"/>
+  
+  <!-- Network symbol on screen -->
+  <circle cx="40" cy="55" r="2" fill="#f8fafc"/>
+  <circle cx="60" cy="55" r="2" fill="#f8fafc"/>
+  <circle cx="50" cy="60" r="2" fill="#f8fafc"/>
+  <line x1="40" y1="55" x2="50" y2="60" stroke="#f8fafc" stroke-width="1"/>
+  <line x1="60" y1="55" x2="50" y2="60" stroke="#f8fafc" stroke-width="1"/>
+  <line x1="40" y1="55" x2="60" y2="55" stroke="#f8fafc" stroke-width="1"/>
+  
+  <!-- Status lights -->
+  <circle cx="74" cy="46" r="1.5" fill="#10b981"/>
+  <circle cx="74" cy="52" r="1.5" fill="#f59e0b"/>
+  <circle cx="74" cy="58" r="1.5" fill="#3b82f6"/>
+  <circle cx="74" cy="64" r="1.5" fill="#ef4444"/>
+</svg> 

@@ -16,8 +16,20 @@ class BoundaryController:
         self.logger = logging.getLogger(__name__)
         self.undo_redo_manager = undo_redo_manager
         
+        # Get theme manager reference from canvas
+        self.theme_manager = getattr(canvas, 'theme_manager', None)
+        if not self.theme_manager:
+            # Try to get from parent
+            parent = getattr(canvas, 'parent', lambda: None)()
+            if parent:
+                self.theme_manager = getattr(parent, 'theme_manager', None)
+        
         # Initialize boundary counter for naming
         self.boundary_counter = 0
+        
+        # Register with event bus for theme changes
+        if self.event_bus:
+            self.event_bus.on('theme_changed', self.update_boundaries_theme)
     
     def on_add_boundary_requested(self, rect, name=None, color=None):
         """Handle request to add a boundary with the given rect."""
@@ -74,8 +86,8 @@ class BoundaryController:
         if not color:
             color = QColor(40, 120, 200, 80)
         
-        # Create the boundary
-        boundary = Boundary(rect, name, color)
+        # Create the boundary with theme manager
+        boundary = Boundary(rect, name, color, theme_manager=self.theme_manager)
         
         # Add to scene
         self.canvas.scene().addItem(boundary)
@@ -88,8 +100,29 @@ class BoundaryController:
         # Notify through event bus
         self.event_bus.emit("boundary_created", boundary)
         
+        # Register with theme manager if available
+        if self.theme_manager and hasattr(self.theme_manager, 'register_theme_observer'):
+            self.theme_manager.register_theme_observer(boundary)
+        
         return boundary
     
     def _show_error(self, message):
         """Show error message dialog."""
         QMessageBox.critical(self.canvas.parent(), "Error", message)
+
+    def update_boundaries_theme(self, theme_name=None):
+        """Update all boundaries with the current theme."""
+        if not self.theme_manager:
+            return
+            
+        self.logger.info(f"Updating boundaries for theme: {theme_name or self.theme_manager.get_theme()}")
+        
+        # Update all boundaries on the canvas
+        for boundary in getattr(self.canvas, 'boundaries', []):
+            # Ensure boundary has theme manager
+            if not hasattr(boundary, 'theme_manager') or boundary.theme_manager is None:
+                boundary.theme_manager = self.theme_manager
+                
+            # Update theme
+            if hasattr(boundary, 'update_theme'):
+                boundary.update_theme(theme_name)

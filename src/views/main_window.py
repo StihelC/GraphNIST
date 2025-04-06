@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox, QAction, QDockWidget, QMenu, QApplication
-from PyQt5.QtCore import QPointF, QTimer, Qt
-from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox, QAction, QDockWidget, QMenu, QApplication, QWidget, QSizePolicy, QToolButton, QToolBar, QLabel, QActionGroup
+from PyQt5.QtCore import QPointF, QTimer, Qt, QSize
+from PyQt5.QtGui import QColor, QIcon, QFont
 import logging
 import os
 
@@ -17,6 +17,7 @@ from utils.event_bus import EventBus
 from utils.recent_files import RecentFiles
 from utils.theme_manager import ThemeManager
 from utils.font_settings_manager import FontSettingsManager
+from utils.icon_manager import icon_manager
 from models.device import Device
 from models.connection import Connection
 from models.boundary import Boundary
@@ -30,9 +31,16 @@ from dialogs.font_settings_dialog import FontSettingsDialog
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NISTO")
+        self.setWindowTitle("GraphNIST")
         # Set a reasonable default size instead of maximizing
         self.setGeometry(100, 100, 1280, 800)
+        
+        # Set application icon
+        app_icon_path = os.path.join("src", "resources", "icons", "svg", "shield_logo.svg")
+        if os.path.exists(app_icon_path):
+            self.setWindowIcon(QIcon(app_icon_path))
+        else:
+            self.logger.warning(f"Application icon not found at: {app_icon_path}")
 
         # Setup logging
         logging.basicConfig(level=logging.INFO, 
@@ -61,6 +69,9 @@ class MainWindow(QMainWindow):
         # Create event bus for communication between components
         self.event_bus = EventBus()
         
+        # Connect event bus to theme manager
+        self.theme_manager.set_event_bus(self.event_bus)
+        
         # Initialize recent files manager
         self.recent_files_manager = RecentFiles(self)
         
@@ -73,12 +84,14 @@ class MainWindow(QMainWindow):
         # Initialize controllers
         self._init_controllers()
         
-        # Create menu manager and toolbar
+        # Create menu manager 
         self.menu_manager = MenuManager(self, self.canvas, self.event_bus)
-        self.menu_manager.create_toolbar()
         
         # Create UI components
         self._create_ui_components()
+        
+        # Setup alignment tools
+        self.setup_alignment_tools()
         
         # Connect signals
         self.connect_signals()
@@ -149,10 +162,14 @@ class MainWindow(QMainWindow):
         
     def _create_ui_components(self):
         """Create UI components like menus, panels, and toolbars."""
-        # Create menus
+        # Create menus (main window creates Edit menu directly, not via menu_manager)
         self._create_file_menu()
+        self._create_edit_menu()
         self._create_view_menu()
         self._create_device_menu()  # New menu for device operations
+        
+        # Create enhanced sidebar toolbar
+        self._create_enhanced_sidebar()
         
         # Set up keyboard shortcuts
         self._setup_shortcuts()
@@ -167,8 +184,71 @@ class MainWindow(QMainWindow):
         # Initialize properties controller - defer its creation until command_manager is properly set in main.py
         self.properties_controller = None
 
-        # Setup alignment tools
-        self.setup_alignment_tools()
+    def _create_edit_menu(self):
+        """Create the Edit menu with clipboard and undo/redo actions."""
+        edit_menu = self.menuBar().addMenu("&Edit")
+        
+        # Undo/redo actions (will be enabled once command_manager is initialized)
+        undo_action = QAction("&Undo", self)
+        undo_action.setShortcut("Ctrl+Z")
+        undo_action.setEnabled(False)
+        self.undo_action = undo_action
+        edit_menu.addAction(undo_action)
+        
+        redo_action = QAction("&Redo", self)
+        redo_action.setShortcut("Ctrl+Y")
+        redo_action.setEnabled(False)
+        self.redo_action = redo_action
+        edit_menu.addAction(redo_action)
+        
+        # Connect undo/redo actions if command manager is available
+        if self.command_manager:
+            undo_action.triggered.connect(self.command_manager.undo)
+            redo_action.triggered.connect(self.command_manager.redo)
+            undo_action.setEnabled(self.command_manager.can_undo())
+            redo_action.setEnabled(self.command_manager.can_redo())
+            # Connect to stack changed signal
+            self.command_manager.undo_redo_manager.stack_changed.connect(self._update_undo_redo_actions)
+        
+        edit_menu.addSeparator()
+        
+        # Cut action
+        cut_action = QAction("Cu&t", self)
+        cut_action.setShortcut("Ctrl+X")
+        cut_action.triggered.connect(self.clipboard_manager.cut_selected)
+        edit_menu.addAction(cut_action)
+        
+        # Copy action
+        copy_action = QAction("&Copy", self)
+        copy_action.setShortcut("Ctrl+C")
+        copy_action.triggered.connect(self.clipboard_manager.copy_selected)
+        edit_menu.addAction(copy_action)
+        
+        # Paste action
+        paste_action = QAction("&Paste", self)
+        paste_action.setShortcut("Ctrl+V")
+        paste_action.triggered.connect(self.clipboard_manager.paste)
+        edit_menu.addAction(paste_action)
+        
+        edit_menu.addSeparator()
+        
+        # Delete action
+        delete_action = QAction("&Delete", self)
+        delete_action.setShortcut("Delete")
+        delete_action.triggered.connect(self.on_delete_selected_requested)
+        edit_menu.addAction(delete_action)
+        
+        return edit_menu
+
+    def _update_undo_redo_actions(self):
+        """Update the undo/redo actions based on state."""
+        if self.command_manager and hasattr(self, 'undo_action'):
+            self.undo_action.setEnabled(self.command_manager.can_undo())
+            self.undo_action.setText(f"&Undo {self.command_manager.get_undo_text()}")
+            
+        if self.command_manager and hasattr(self, 'redo_action'):
+            self.redo_action.setEnabled(self.command_manager.can_redo())
+            self.redo_action.setText(f"&Redo {self.command_manager.get_redo_text()}")
 
     def _create_device_menu(self):
         """Create a dedicated device menu for device operations."""
@@ -266,9 +346,29 @@ class MainWindow(QMainWindow):
             
             # Connect canvas alignment signal to controller
             self.canvas.align_devices_requested.connect(self._on_align_devices_requested)
+        
+        # Update the undo/redo actions in the Edit menu if they exist
+        if self.command_manager and hasattr(self, 'undo_action') and hasattr(self, 'redo_action'):
+            # Disconnect any existing connections to avoid duplicates
+            if self.undo_action.receivers(self.undo_action.triggered) > 0:
+                self.undo_action.triggered.disconnect()
+            if self.redo_action.receivers(self.redo_action.triggered) > 0:
+                self.redo_action.triggered.disconnect()
+            
+            # Connect to command manager actions
+            self.undo_action.triggered.connect(self.command_manager.undo)
+            self.redo_action.triggered.connect(self.command_manager.redo)
+            
+            # Connect to stack changed signal if not already connected
+            if self.command_manager.undo_redo_manager.receivers(
+                self.command_manager.undo_redo_manager.stack_changed) == 0:
+                self.command_manager.undo_redo_manager.stack_changed.connect(self._update_undo_redo_actions)
+            
+            # Update initial state
+            self._update_undo_redo_actions()
 
     def setup_alignment_tools(self):
-        """Set up the alignment toolbar and controller."""
+        """Set up the alignment controller."""
         # Create alignment controller - use DeviceAlignmentController instead of undefined AlignmentController
         self.alignment_controller = DeviceAlignmentController(
             self.event_bus, 
@@ -278,37 +378,165 @@ class MainWindow(QMainWindow):
         # Store a reference to the canvas in the alignment controller
         self.alignment_controller.canvas = self.canvas
         
-        # Create alignment dropdown button instead of toolbar
-        self._create_alignment_button()
-        
-        # Connect selection changed signal to update button state
-        self.canvas.selection_changed.connect(self._update_alignment_button_state)
-        
         # Connect alignment signals
         if self.event_bus:
             self.event_bus.on('devices.aligned', self.on_devices_aligned)
 
-    def _create_alignment_button(self):
-        """Create a dropdown button for alignment options."""
-        from PyQt5.QtWidgets import QToolBar, QToolButton
-        from PyQt5.QtGui import QIcon
+    def _create_enhanced_sidebar(self):
+        """Create an enhanced sidebar with all tool actions."""
+        # Create toolbar on left side
+        toolbar = self.addToolBar("Canvas Tools")
+        toolbar.setObjectName("enhanced_sidebar")  # For saving state
         
-        # Create a small toolbar for the alignment button
-        alignment_toolbar = QToolBar("Alignment", self)
-        alignment_toolbar.setMovable(True)
-        alignment_toolbar.setFloatable(True)
+        # Use smaller icons with more compact text
+        toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         
-        # Create the dropdown button
-        self.alignment_button = QToolButton()
-        self.alignment_button.setText("Align")
-        self.alignment_button.setIcon(QIcon.fromTheme("format-justify-fill"))
-        self.alignment_button.setPopupMode(QToolButton.InstantPopup)
-        self.alignment_button.setToolTip("Alignment Options")
+        # Set orientation to vertical and place on left
+        toolbar.setOrientation(Qt.Vertical)
+        self.addToolBar(Qt.LeftToolBarArea, toolbar)
         
-        # Create the menu for the button
+        # Keep icons at a reasonable size
+        toolbar.setIconSize(QSize(24, 24))
+        
+        # Dictionary to store mode actions
+        self.canvas_actions = {}
+        
+        # === DRAWING TOOLS GROUP ===
+        toolbar.addWidget(self._create_toolbar_label("Drawing Tools"))
+        
+        # Select mode
+        select_action = QAction(icon_manager.get_icon("select_tool"), "Select", self)
+        select_action.setStatusTip("Select and move devices")
+        select_action.setCheckable(True)
+        select_action.setChecked(True)  # Default mode
+        select_action.triggered.connect(lambda: self._set_canvas_mode(Modes.SELECT))
+        toolbar.addAction(select_action)
+        self.canvas_actions[Modes.SELECT] = select_action
+        
+        # Add Device
+        add_device_action = QAction(icon_manager.get_icon("add_device"), "Add Device", self)
+        add_device_action.setStatusTip("Add a new device to the canvas")
+        add_device_action.setCheckable(True)
+        add_device_action.triggered.connect(lambda: self._set_canvas_mode(Modes.ADD_DEVICE))
+        toolbar.addAction(add_device_action)
+        self.canvas_actions[Modes.ADD_DEVICE] = add_device_action
+        
+        # Add Connection
+        add_connection_action = QAction(icon_manager.get_icon("add_connection"), "Add Connection", self)
+        add_connection_action.setStatusTip("Add a connection between devices")
+        add_connection_action.setCheckable(True)
+        add_connection_action.triggered.connect(lambda: self._set_canvas_mode(Modes.ADD_CONNECTION))
+        toolbar.addAction(add_connection_action)
+        self.canvas_actions[Modes.ADD_CONNECTION] = add_connection_action
+        
+        # Add Boundary
+        add_boundary_action = QAction(icon_manager.get_icon("add_boundary"), "Add Boundary", self)
+        add_boundary_action.setStatusTip("Add a boundary shape to the canvas")
+        add_boundary_action.setCheckable(True)
+        add_boundary_action.triggered.connect(lambda: self._set_canvas_mode(Modes.ADD_BOUNDARY))
+        toolbar.addAction(add_boundary_action)
+        self.canvas_actions[Modes.ADD_BOUNDARY] = add_boundary_action
+        
+        # Delete mode
+        delete_action = QAction(icon_manager.get_icon("delete"), "Delete", self)
+        delete_action.setStatusTip("Delete devices and connections")
+        delete_action.setCheckable(True)
+        delete_action.triggered.connect(lambda: self._set_canvas_mode(Modes.DELETE))
+        toolbar.addAction(delete_action)
+        self.canvas_actions[Modes.DELETE] = delete_action
+        
+        # === EDIT GROUP ===
+        toolbar.addSeparator()
+        toolbar.addWidget(self._create_toolbar_label("Edit"))
+        
+        # Copy action
+        copy_action = QAction(icon_manager.get_icon("copy"), "Copy", self)
+        copy_action.setShortcut("Ctrl+C")
+        copy_action.setStatusTip("Copy selected items")
+        copy_action.triggered.connect(self.clipboard_manager.copy_selected)
+        toolbar.addAction(copy_action)
+        
+        # Paste action
+        paste_action = QAction(icon_manager.get_icon("paste"), "Paste", self)
+        paste_action.setShortcut("Ctrl+V")
+        paste_action.setStatusTip("Paste items from clipboard")
+        paste_action.triggered.connect(self.clipboard_manager.paste)
+        toolbar.addAction(paste_action)
+        
+        # === FORMATTING GROUP ===
+        toolbar.addSeparator()
+        toolbar.addWidget(self._create_toolbar_label("Format"))
+        
+        # Connection style actions
+        # Straight Lines
+        straight_action = QAction(icon_manager.get_icon("connection_straight"), "Straight Lines", self)
+        straight_action.setStatusTip("Use straight line connections")
+        straight_action.setCheckable(True)
+        straight_action.setChecked(True)  # Default style
+        straight_action.triggered.connect(lambda: self.connection_controller.set_connection_style(Connection.STYLE_STRAIGHT))
+        toolbar.addAction(straight_action)
+        
+        # Orthogonal Lines
+        orthogonal_action = QAction(icon_manager.get_icon("connection_orthogonal"), "Right Angles", self)
+        orthogonal_action.setStatusTip("Use orthogonal (right angle) connections")
+        orthogonal_action.setCheckable(True)
+        orthogonal_action.triggered.connect(lambda: self.connection_controller.set_connection_style(Connection.STYLE_ORTHOGONAL))
+        toolbar.addAction(orthogonal_action)
+        
+        # Curved Lines
+        curved_action = QAction(icon_manager.get_icon("connection_curved"), "Curved Lines", self)
+        curved_action.setStatusTip("Use curved line connections")
+        curved_action.setCheckable(True)
+        curved_action.triggered.connect(lambda: self.connection_controller.set_connection_style(Connection.STYLE_CURVED))
+        toolbar.addAction(curved_action)
+        
+        # Create a style group for connection styles
+        style_group = QActionGroup(self)
+        style_group.setExclusive(True)
+        style_group.addAction(straight_action)
+        style_group.addAction(orthogonal_action)
+        style_group.addAction(curved_action)
+        
+        # Create the alignment button (simple without dropdown)
+        align_action = QAction(icon_manager.get_icon("align"), "Align", self)
+        align_action.setStatusTip("Align selected devices")
+        align_action.triggered.connect(self._show_alignment_menu)
+        toolbar.addAction(align_action)
+        self.align_action = align_action
+        
+        # === VIEW GROUP ===
+        toolbar.addSeparator()
+        toolbar.addWidget(self._create_toolbar_label("View"))
+        
+        # Magnify mode
+        magnify_action = QAction(icon_manager.get_icon("magnify"), "Magnify", self)
+        magnify_action.setStatusTip("Use magnifying glass to view details")
+        magnify_action.setCheckable(True)
+        magnify_action.triggered.connect(lambda: self._set_canvas_mode(Modes.MAGNIFY))
+        toolbar.addAction(magnify_action)
+        self.canvas_actions[Modes.MAGNIFY] = magnify_action
+        
+        # Add zoom actions
+        zoom_in_action = QAction(icon_manager.get_icon("zoom_in"), "Zoom In", self)
+        zoom_in_action.setStatusTip("Zoom in the canvas view")
+        zoom_in_action.triggered.connect(self.canvas.zoom_in)
+        toolbar.addAction(zoom_in_action)
+        
+        zoom_out_action = QAction(icon_manager.get_icon("zoom_out"), "Zoom Out", self)
+        zoom_out_action.setStatusTip("Zoom out the canvas view")
+        zoom_out_action.triggered.connect(self.canvas.zoom_out)
+        toolbar.addAction(zoom_out_action)
+        
+        reset_zoom_action = QAction(icon_manager.get_icon("zoom_reset"), "Reset Zoom", self)
+        reset_zoom_action.setStatusTip("Reset zoom to 100%")
+        reset_zoom_action.triggered.connect(self.canvas.reset_zoom)
+        toolbar.addAction(reset_zoom_action)
+
+    def _show_alignment_menu(self, position=None):
+        """Show the alignment menu when the align button is clicked."""
         alignment_menu = QMenu(self)
         
-        # Auto-layout optimization (new section)
+        # Auto-layout optimization
         optimize_layout_action = alignment_menu.addAction("Optimize Network Layout...")
         optimize_layout_action.setToolTip("Automatically arrange devices to minimize connection crossings")
         optimize_layout_action.triggered.connect(self._on_optimize_layout_requested)
@@ -332,7 +560,7 @@ class MainWindow(QMainWindow):
         for action_text, alignment_type in basic_actions.items():
             action = basic_align.addAction(action_text)
             action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                   self.canvas.align_selected_devices(a_type))
+                                    self.canvas.align_selected_devices(a_type))
         
         # Network layouts submenu
         network_layouts = alignment_menu.addMenu("Network Layouts")
@@ -347,53 +575,15 @@ class MainWindow(QMainWindow):
         for action_text, alignment_type in layout_actions.items():
             action = network_layouts.addAction(action_text)
             action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                   self.canvas.align_selected_devices(a_type))
+                                    self.canvas.align_selected_devices(a_type))
         
-        # NIST RMF related layouts
-        security_layouts = alignment_menu.addMenu("Security Architectures")
-        
-        security_actions = {
-            "DMZ Architecture": "dmz",
-            "Defense-in-Depth Layers": "defense_in_depth",
-            "Segmented Network": "segments",
-            "Zero Trust Architecture": "zero_trust",
-            "SCADA/ICS Zones": "ics_zones"
-        }
-        
-        for action_text, alignment_type in security_actions.items():
-            action = security_layouts.addAction(action_text)
-            action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                   self.canvas.align_selected_devices(a_type))
-        
-        # Set the menu to the button
-        self.alignment_button.setMenu(alignment_menu)
-        
-        # Add the button to the toolbar
-        alignment_toolbar.addWidget(self.alignment_button)
-        
-        # Add the toolbar to the main window
-        self.addToolBar(Qt.TopToolBarArea, alignment_toolbar)
-        
-        # Set initial state
-        self._update_alignment_button_state()
-    
-    def _update_alignment_button_state(self, selected_items=None):
-        """Update alignment button state based on selection."""
-        # Get selected devices if not provided
-        if selected_items is None:
-            selected_items = self.canvas.scene().selectedItems()
-        
-        # Count selected devices
-        selected_devices = [item for item in selected_items if item in self.canvas.devices]
-        
-        # Enable/disable the button based on selection count
-        self.alignment_button.setEnabled(len(selected_devices) >= 2)
-        
-        # Update tooltip to show how many devices are selected
-        if len(selected_devices) >= 2:
-            self.alignment_button.setToolTip(f"Align {len(selected_devices)} selected devices")
+        # Show the menu at the cursor position or below the button
+        if position:
+            alignment_menu.exec_(position)
         else:
-            self.alignment_button.setToolTip("Alignment (select at least 2 devices)")
+            button_pos = self.align_action.parentWidget().mapToGlobal(
+                self.align_action.parentWidget().rect().bottomLeft())
+            alignment_menu.exec_(button_pos)
 
     # Event handler methods
     def _on_device_property_changed(self, device, property_name, value=None):
@@ -472,41 +662,38 @@ class MainWindow(QMainWindow):
             self.logger.error("Bulk property controller not initialized")
 
     def _create_file_menu(self):
-        """Create the File menu with save/load actions."""
-        file_menu = self.menuBar().addMenu("File")
+        """Create the File menu with file operations."""
+        file_menu = self.menuBar().addMenu("&File")
         
         # New canvas action
-        new_action = QAction("New Canvas", self)
+        new_action = QAction("&New", self)
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self.new_canvas)
         file_menu.addAction(new_action)
         
-        # Save canvas action
-        save_action = QAction("Save Canvas", self)
+        # Open action
+        open_action = QAction("&Open...", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.load_canvas)
+        file_menu.addAction(open_action)
+        
+        # Recent files sub-menu (will be populated by recent_files_manager)
+        self.recent_menu = file_menu.addMenu("Open &Recent")
+        self.recent_files_manager.setup_menu(self.recent_menu, self.load_from_recent)
+        
+        file_menu.addSeparator()
+        
+        # Save actions
+        save_action = QAction("&Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_canvas)
         file_menu.addAction(save_action)
         
-        # Save As canvas action
-        save_as_action = QAction("Save Canvas As...", self)
+        save_as_action = QAction("Save &As...", self)
         save_as_action.setShortcut("Ctrl+Shift+S")
         save_as_action.triggered.connect(self.save_canvas_as)
         file_menu.addAction(save_as_action)
         
-        # Load canvas action
-        load_action = QAction("Open Canvas", self)
-        load_action.setShortcut("Ctrl+O")
-        load_action.triggered.connect(self.load_canvas)
-        file_menu.addAction(load_action)
-        
-        # Add Recent Files submenu
-        self.recent_files_menu = QMenu("Recent Files", self)
-        file_menu.addMenu(self.recent_files_menu)
-        
-        # Set up the recent files menu
-        self.recent_files_manager.setup_menu(self.recent_files_menu, self.load_from_recent)
-        
-        # Export to PDF action
         file_menu.addSeparator()
         export_pdf_action = QAction("Export to PDF...", self)
         export_pdf_action.setShortcut("Ctrl+E")
@@ -515,72 +702,12 @@ class MainWindow(QMainWindow):
         
         # Exit action
         file_menu.addSeparator()
-        exit_action = QAction("Exit", self)
+        exit_action = QAction("E&xit GraphNIST", self)
         exit_action.setShortcut("Alt+F4")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
-
-    def _create_edit_menu(self):
-        """Create the Edit menu with clipboard and undo/redo actions."""
-        edit_menu = self.menuBar().addMenu("Edit")
         
-        # Only add undo/redo actions if command_manager is initialized
-        if self.command_manager:
-            # Undo action
-            undo_action = QAction("Undo", self)
-            undo_action.setShortcut("Ctrl+Z")
-            undo_action.triggered.connect(self.command_manager.undo)
-            undo_action.setEnabled(self.command_manager.can_undo())
-            self.undo_action = undo_action
-            edit_menu.addAction(undo_action)
-            
-            # Redo action
-            redo_action = QAction("Redo", self)
-            redo_action.setShortcut("Ctrl+Y")
-            redo_action.triggered.connect(self.command_manager.redo)
-            redo_action.setEnabled(self.command_manager.can_redo())
-            self.redo_action = redo_action
-            edit_menu.addAction(redo_action)
-            
-            # Add separator after undo/redo
-            edit_menu.addSeparator()
-            
-            # Connect to undo/redo manager signals for updates
-            self.command_manager.undo_redo_manager.stack_changed.connect(self._update_undo_redo_actions)
-        
-        # Cut action
-        cut_action = QAction("Cut", self)
-        cut_action.setShortcut("Ctrl+X")
-        cut_action.triggered.connect(self.clipboard_manager.cut_selected)
-        edit_menu.addAction(cut_action)
-        
-        # Copy action
-        copy_action = QAction("Copy", self)
-        copy_action.setShortcut("Ctrl+C")
-        copy_action.triggered.connect(self.clipboard_manager.copy_selected)
-        edit_menu.addAction(copy_action)
-        
-        # Paste action
-        paste_action = QAction("Paste", self)
-        paste_action.setShortcut("Ctrl+V")
-        paste_action.triggered.connect(self.clipboard_manager.paste)
-        edit_menu.addAction(paste_action)
-        
-        # Delete action
-        delete_action = QAction("Delete", self)
-        delete_action.setShortcut("Delete")
-        delete_action.triggered.connect(self.on_delete_selected_requested)
-        edit_menu.addAction(delete_action)
-
-    def _update_undo_redo_actions(self):
-        """Update the undo/redo actions based on state."""
-        if self.command_manager and hasattr(self, 'undo_action'):
-            self.undo_action.setEnabled(self.command_manager.can_undo())
-            self.undo_action.setText(self.command_manager.get_undo_text())
-            
-        if self.command_manager and hasattr(self, 'redo_action'):
-            self.redo_action.setEnabled(self.command_manager.can_redo())
-            self.redo_action.setText(self.command_manager.get_redo_text())
+        return file_menu
 
     def _create_view_menu(self):
         """Create the View menu with zoom actions and visualization options."""
@@ -603,6 +730,14 @@ class MainWindow(QMainWindow):
         reset_zoom_action.setShortcut("Ctrl+0")
         reset_zoom_action.triggered.connect(self.canvas.reset_zoom)
         zoom_menu.addAction(reset_zoom_action)
+        
+        # Magnify glass action
+        magnify_action = QAction("Magnifying Glass", self)
+        magnify_action.setShortcut("M")
+        magnify_action.setCheckable(True)
+        magnify_action.triggered.connect(self._toggle_magnify_mode)
+        view_menu.addAction(magnify_action)
+        self.magnify_action = magnify_action  # Store for later use
         
         # Reset view action
         reset_view_action = QAction("Reset View", self)
@@ -819,8 +954,8 @@ class MainWindow(QMainWindow):
         # For simplicity, always ask to confirm
         confirm = QMessageBox.question(
             self,
-            "New Canvas",
-            "Creating a new canvas will discard any unsaved changes. Continue?",
+            "New GraphNIST Diagram",
+            "Creating a new diagram will discard any unsaved changes. Continue?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -832,7 +967,7 @@ class MainWindow(QMainWindow):
         self.canvas.clear()
         
         # Update status
-        self.statusBar().showMessage("New canvas created")
+        self.statusBar().showMessage("New GraphNIST diagram created")
     
     def save_canvas(self):
         """Save the current canvas to a file."""
@@ -840,9 +975,11 @@ class MainWindow(QMainWindow):
         
         success, message = SaveCanvasDialog.save_canvas(self, self.canvas, self.recent_files_manager)
         if success:
-            self.logger.info("Canvas saved successfully")
+            self.logger.info("GraphNIST diagram saved successfully")
+            self.statusBar().showMessage("GraphNIST diagram saved successfully")
         else:
-            self.logger.warning(f"Canvas save failed: {message}")
+            self.logger.warning(f"GraphNIST diagram save failed: {message}")
+            self.statusBar().showMessage(f"GraphNIST diagram save failed: {message}")
     
     def save_canvas_as(self):
         """Save the current canvas to a new file."""
@@ -855,9 +992,11 @@ class MainWindow(QMainWindow):
         
         success, message = LoadCanvasDialog.load_canvas(self, self.canvas, self.recent_files_manager)
         if success:
-            self.logger.info("Canvas loaded successfully")
+            self.logger.info("GraphNIST diagram loaded successfully")
+            self.statusBar().showMessage("GraphNIST diagram loaded successfully")
         else:
-            self.logger.warning(f"Canvas load failed: {message}")
+            self.logger.warning(f"GraphNIST diagram load failed: {message}")
+            self.statusBar().showMessage(f"GraphNIST diagram load failed: {message}")
     
     def load_from_recent(self, filepath):
         """Load a canvas from a recent file."""
@@ -865,9 +1004,11 @@ class MainWindow(QMainWindow):
         
         success, message = LoadCanvasDialog.load_canvas(self, self.canvas, self.recent_files_manager, filepath)
         if success:
-            self.logger.info(f"Canvas loaded successfully from recent file: {filepath}")
+            self.logger.info(f"GraphNIST diagram loaded successfully from recent file: {filepath}")
+            self.statusBar().showMessage(f"GraphNIST diagram loaded successfully")
         else:
-            self.logger.warning(f"Canvas load failed from recent file: {message}")
+            self.logger.warning(f"GraphNIST diagram load failed from recent file: {message}")
+            self.statusBar().showMessage(f"GraphNIST diagram load failed: {message}")
 
     def _on_align_devices_requested(self, alignment_type, devices):
         """Handle request to align devices."""
@@ -903,3 +1044,32 @@ class MainWindow(QMainWindow):
         
         # Update checkmark state
         self.toggle_theme_action.setChecked(is_dark)
+
+    def _toggle_magnify_mode(self):
+        """Toggle the magnify mode on and off."""
+        if self.canvas.mode_manager.current_mode == Modes.MAGNIFY:
+            self._set_canvas_mode(Modes.SELECT)  # Return to select mode
+            self.magnify_action.setChecked(False)
+        else:
+            self._set_canvas_mode(Modes.MAGNIFY)
+            self.magnify_action.setChecked(True)
+
+    def _set_canvas_mode(self, mode):
+        """Set the canvas interaction mode and update toolbar buttons."""
+        if self.canvas.set_mode(mode):
+            # Update checked state of all mode actions
+            for mode_id, action in self.canvas_actions.items():
+                action.setChecked(mode_id == mode)
+            
+            # If it's magnify mode, update the menu action as well
+            if hasattr(self, 'magnify_action'):
+                self.magnify_action.setChecked(mode == Modes.MAGNIFY)
+
+    def _create_toolbar_label(self, text):
+        """Create a bold label for toolbar sections."""
+        label = QLabel(text)
+        font = label.font()
+        font.setBold(True)
+        label.setFont(font)
+        label.setAlignment(Qt.AlignCenter)
+        return label

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Back copy -->
+  <rect x="40" y="15" width="50" height="60" 
+        fill="#e5e5e5" 
+        stroke="#505050" 
+        stroke-width="2"
+        rx="3" ry="3" />
+  
+  <!-- Front copy -->
+  <rect x="15" y="30" width="50" height="60" 
+        fill="#ffffff" 
+        stroke="#505050" 
+        stroke-width="2"
+        rx="3" ry="3" />
+        
+  <!-- Content lines -->
+  <rect x="25" y="45" width="30" height="3" fill="#505050" rx="1" ry="1" />
+  <rect x="25" y="55" width="30" height="3" fill="#505050" rx="1" ry="1" />
+  <rect x="25" y="65" width="20" height="3" fill="#505050" rx="1" ry="1" />
+</svg> 

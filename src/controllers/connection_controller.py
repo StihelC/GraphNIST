@@ -39,7 +39,7 @@ class ConnectionController:
                 self.logger.error("Invalid device objects provided for connection")
                 return False
             
-            # Check if a connection already exists between these devices
+            # Check if a connection already exists between these devices in EITHER direction
             if self._connection_exists(source_device, target_device):
                 self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}")
                 return False
@@ -282,7 +282,7 @@ class ConnectionController:
                         if not bidirectional and j <= i:
                             continue
                         
-                        # Skip if connection already exists
+                        # Skip if connection already exists in either direction
                         if self._connection_exists(source_device, target_device):
                             continue
                         
@@ -354,7 +354,7 @@ class ConnectionController:
                             closest_device = target_device
                     
                     if closest_device:
-                        # Create connection to closest device if it doesn't already exist
+                        # Create connection to closest device if it doesn't already exist in either direction
                         if not self._connection_exists(source_device, closest_device):
                             conn_cmd = AddConnectionCommand(
                                 controller=self,
@@ -414,7 +414,7 @@ class ConnectionController:
                             closest_device = target_device
                     
                     if closest_device:
-                        # Create connection to closest device of target type
+                        # Create connection to closest device of target type if it doesn't already exist in either direction
                         if not self._connection_exists(source_device, closest_device):
                             conn_cmd = AddConnectionCommand(
                                 controller=self,
@@ -458,7 +458,7 @@ class ConnectionController:
                     for j in range(i+1, len(devices)):
                         target_device = devices[j]
                         
-                        # Skip if connection already exists
+                        # Skip if connection already exists in either direction
                         if self._connection_exists(source_device, target_device):
                             continue
                         
@@ -473,7 +473,7 @@ class ConnectionController:
                     source_device = sorted_devices[i]
                     target_device = sorted_devices[i+1]
                     
-                    # Skip if connection already exists
+                    # Skip if connection already exists in either direction
                     if self._connection_exists(source_device, target_device):
                         continue
                     
@@ -488,7 +488,16 @@ class ConnectionController:
         return False
 
     def _connection_exists(self, source_device, target_device):
-        """Check if a connection already exists between source and target devices."""
+        """Check if a connection already exists between source and target devices.
+        
+        IMPORTANT: This method checks for connections in BOTH directions (source→target and target→source).
+        This prevents duplicate connections from being created when:
+        1. Adding single connections between two devices
+        2. Using the multiple connection strategies (mesh, chain, closest, etc.)
+        
+        Any code that calls this method should expect it to return True if ANY connection exists
+        between the two devices, regardless of direction.
+        """
         # Check each connection in the canvas
         for conn in self.canvas.connections:
             # Get source and target of existing connection
@@ -501,10 +510,11 @@ class ConnectionController:
             elif hasattr(conn, 'dest_device'):
                 conn_target = conn.dest_device
             
-            # Check if this connection matches our source/target pair
-            if (conn_source == source_device and conn_target == target_device):
+            # Check if this connection matches our source/target pair in either direction
+            if ((conn_source == source_device and conn_target == target_device) or
+                (conn_source == target_device and conn_target == source_device)):
                 return True
-            
+        
         return False
 
     def _show_error(self, message):
@@ -641,7 +651,11 @@ class ConnectionController:
         return True
 
     def _normalize_layout(self, devices):
-        """Apply final normalization to ensure devices fit well within the viewport."""
+        """Apply final normalization to ensure devices fit well within the viewport.
+        
+        This is an important final step that ensures all devices remain visible after layout optimization.
+        It centers the devices and scales them to fit within the visible area.
+        """
         if not devices:
             return
         
@@ -649,8 +663,8 @@ class ConnectionController:
         
         # Get scene dimensions
         scene_rect = self.canvas.scene().sceneRect()
-        target_width = scene_rect.width() * 0.7  # Use 70% of scene width
-        target_height = scene_rect.height() * 0.7  # Use 70% of scene height
+        target_width = scene_rect.width() * 0.8  # Use 80% of scene width (previously 70%)
+        target_height = scene_rect.height() * 0.8  # Use 80% of scene height (previously 70%)
         
         # Calculate current bounding box of all devices
         min_x = min(device.scenePos().x() for device in devices)
@@ -664,7 +678,7 @@ class ConnectionController:
         # Calculate scaling factors
         scale_x = target_width / current_width
         scale_y = target_height / current_height
-        scale = min(scale_x, scale_y, 1.0)  # Use the smaller scale, but don't exceed 1.0 (don't enlarge)
+        scale = min(scale_x, scale_y, 1.5)  # Use the smaller scale, but allow some enlargement up to 1.5x
         
         # Calculate the center of the scene
         scene_center_x = scene_rect.width() / 2
@@ -697,6 +711,9 @@ class ConnectionController:
         - Connected devices attract each other
         - All devices repel each other (avoiding overlap)
         - Devices are constrained to stay within canvas bounds
+        
+        NOTE: Parameters have been tuned to keep devices more contained within the user's view.
+        Previously devices could be positioned too far apart, making them hard to see.
         """
         import random
         from PyQt5.QtCore import QPointF
@@ -720,22 +737,22 @@ class ConnectionController:
             connection_map[src].append(tgt)
             connection_map[tgt].append(src)
         
-        # Parameters - adjusted for more compact layout
-        k = 35.0  # Optimal distance between nodes (smaller value = more compact)
-        temperature = width / 12  # Initial temperature for simulated annealing
-        cooling_factor = 0.9  # Faster cooling for quicker convergence
+        # Parameters - adjusted for a much more compact layout
+        k = 25.0  # Optimal distance between nodes (smaller = more compact)
+        temperature = width / 15  # Lower temperature for smaller movements
+        cooling_factor = 0.85  # Faster cooling for quicker convergence
         
-        # Position devices randomly in a central area for better initial layout
+        # Position devices randomly in a smaller central area for better initial layout
         center_x = width / 2
         center_y = height / 2
-        initial_radius = min(width, height) / 4
+        initial_radius = min(width, height) / 5  # Smaller initial radius
         
         # Only randomize positions if devices are very clustered
         positions = [device.scenePos() for device in devices]
         pos_x = [p.x() for p in positions]
         pos_y = [p.y() for p in positions]
-        x_range = max(pos_x) - min(pos_x)
-        y_range = max(pos_y) - min(pos_y)
+        x_range = max(pos_x) - min(pos_x) if pos_x else 0
+        y_range = max(pos_y) - min(pos_y) if pos_y else 0
         
         # If devices are too clustered, randomize positions
         if x_range < width / 10 or y_range < height / 10:
@@ -778,7 +795,7 @@ class ConnectionController:
                         
                         # Attractive force: proportional to distance
                         # Using higher attraction strength for more compact layout
-                        force = distance**2 / (k * 0.7)
+                        force = distance**2 / (k * 0.5)  # Stronger attraction (0.5 instead of 0.7)
                         
                         # Apply force against the direction vector
                         displacement[v] -= delta * (force / distance)
@@ -794,8 +811,8 @@ class ConnectionController:
                 # Update position
                 new_pos = v.scenePos() + limited_disp
                 
-                # Constrain to canvas bounds (with some margin)
-                margin = 50
+                # Constrain to canvas bounds (with larger margin for better visibility)
+                margin = width * 0.1  # 10% margin from edges
                 new_x = min(max(margin, new_pos.x()), width - margin)
                 new_y = min(max(margin, new_pos.y()), height - margin)
                 

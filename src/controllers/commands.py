@@ -81,8 +81,8 @@ class DeleteDeviceCommand(Command):
                 # Save connection info
                 source_id = conn.source_device.id
                 target_id = conn.target_device.id
-                source_port = conn.source_port
-                target_port = conn.target_port
+                source_port = getattr(conn, '_source_port', None)
+                target_port = getattr(conn, '_target_port', None)
                 properties = copy.deepcopy(conn.properties) if hasattr(conn, 'properties') else None
                 
                 # Create connection info dictionary
@@ -753,3 +753,23 @@ class OptimizeLayoutCommand(Command):
         # Force update the canvas
         if hasattr(self.controller, 'canvas') and self.controller.canvas:
             self.controller.canvas.viewport().update()
+
+class SetBoundaryColorCommand(Command):
+    """Command to change a boundary's color."""
+    
+    def __init__(self, boundary, old_color, new_color):
+        super().__init__(f"Change Boundary Color")
+        self.boundary = boundary
+        self.old_color = old_color
+        self.new_color = new_color
+        self.logger = logging.getLogger(__name__)
+    
+    def execute(self):
+        """Set the boundary's color to the new color."""
+        self.logger.debug(f"Setting boundary {self.boundary.name} color to {self.new_color.name()}")
+        self.boundary.set_color(self.new_color)
+    
+    def undo(self):
+        """Restore the boundary's original color."""
+        self.logger.debug(f"Restoring boundary {self.boundary.name} color to {self.old_color.name()}")
+        self.boundary.set_color(self.old_color)

@@ -42,8 +42,8 @@ def main():
     # Set theme manager on the connection controller
     main_window.connection_controller.theme_manager = main_window.theme_manager
     
-    # Create edit menu (requires command_manager to be set)
-    main_window._create_edit_menu()
+    # Update undo/redo in the edit menu that was already created
+    main_window._update_undo_redo_actions()
     
     # Show window
     main_window.show()

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QGroupBox, 
     QFormLayout, QLineEdit, QSpinBox, QComboBox,
     QPushButton, QScrollArea, QHBoxLayout, QTableWidget,
-    QTableWidgetItem, QHeaderView, QCheckBox, QPlainTextEdit, QSpacerItem, QSizePolicy, QFrame, QGridLayout
+    QTableWidgetItem, QHeaderView, QCheckBox, QPlainTextEdit, QSpacerItem, QSizePolicy, QFrame, QGridLayout, QColorDialog
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPalette
@@ -177,6 +177,21 @@ class PropertiesPanel(QWidget):
         layout = QFormLayout(group)
         layout.setVerticalSpacing(8)
         
+        # Add color selection button
+        self.color_button = QPushButton("Change Color")
+        self.color_button.setStyleSheet("QPushButton { padding: 4px 8px; }")
+        self.color_button.clicked.connect(self._on_boundary_color_change)
+        layout.addRow("Color:", self.color_button)
+        
+        # Add font size spinner
+        self.boundary_font_size_spin = QSpinBox()
+        self.boundary_font_size_spin.setRange(8, 24)
+        self.boundary_font_size_spin.setSuffix(" pt")
+        self.boundary_font_size_spin.valueChanged.connect(
+            lambda value: self.boundary_property_changed.emit("font_size", value)
+        )
+        layout.addRow("Text Size:", self.boundary_font_size_spin)
+        
         # Show contained devices
         self.boundary_devices_table = QTableWidget(0, 1)
         self.boundary_devices_table.setHorizontalHeaderLabels(["Contained Devices"])
@@ -190,6 +205,8 @@ class PropertiesPanel(QWidget):
         """Update the panel with the selected item's properties."""
         logger = logging.getLogger(__name__)
         logger.info(f"PANEL DEBUG: Displaying properties for item type: {type(item).__name__}, id: {id(item)}")
+        
+        # Important: No longer require double click to update panel
         
         # Clear the content layout first
         self._reset_layout(self.content_layout)
@@ -381,10 +398,20 @@ class PropertiesPanel(QWidget):
         self.connection_props_table.cellChanged.connect(self._on_connection_property_changed)
     
     def _display_boundary_properties(self, boundary):
-        """Display boundary-specific properties."""
-        self.boundary_group.show()
+        """Display properties specific to boundaries."""
+        # Show boundary specific properties
+        self.boundary_group.setVisible(True)
         
-        # Clear the devices table
+        # Update color button appearance based on boundary color
+        if hasattr(boundary, 'color'):
+            self._update_color_button(boundary.color)
+        
+        # Update font size spinner value based on boundary's label font size
+        if hasattr(boundary, 'get_font_size'):
+            font_size = boundary.get_font_size()
+            self.boundary_font_size_spin.setValue(font_size)
+        
+        # Note: Contained devices are displayed separately via set_boundary_contained_devices
         self.boundary_devices_table.setRowCount(0)
         
         # Find devices that are contained within this boundary
@@ -707,3 +734,46 @@ class PropertiesPanel(QWidget):
             # Add to layout and store reference
             display_layout.addWidget(checkbox)
             self.display_checkboxes[prop] = checkbox
+
+    def _on_boundary_color_change(self):
+        """Handle boundary color change request."""
+        if not self.current_item:
+            return
+            
+        current_color = None
+        if hasattr(self.current_item, 'color'):
+            current_color = self.current_item.color
+        
+        # Open color dialog with current color preselected
+        color_dialog = QColorDialog(self)
+        if current_color:
+            color_dialog.setCurrentColor(current_color)
+        
+        if color_dialog.exec_():
+            selected_color = color_dialog.selectedColor()
+            # Update the button appearance
+            self._update_color_button(selected_color)
+            # Pass the color to the controller
+            self.boundary_property_changed.emit("color", selected_color)
+    
+    def _update_color_button(self, color):
+        """Update the color button to show the current boundary color."""
+        if not hasattr(self, 'color_button'):
+            return
+            
+        # Create style with the current color as background
+        rgba = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha() / 255.0})"
+        text_color = "white" if color.lightness() < 128 else "black"
+        
+        style = f"""
+            QPushButton {{
+                background-color: {rgba};
+                color: {text_color};
+                padding: 4px 8px;
+                border: 1px solid #888;
+            }}
+            QPushButton:hover {{
+                border: 1px solid #333;
+            }}
+        """
+        self.color_button.setStyleSheet(style)

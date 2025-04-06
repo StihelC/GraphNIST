@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Server rack outer shape -->
+  <rect x="30" y="25" width="40" height="55" rx="2" ry="2" fill="#475569" stroke="#334155" stroke-width="2"/>
+  
+  <!-- Server Unit 1 (top) -->
+  <rect x="32" y="30" width="36" height="12" rx="1" ry="1" fill="#0f766e"/>
+  <!-- Unit 1 details -->
+  <rect x="35" y="33" width="20" height="6" rx="1" ry="1" fill="#0f172a"/>
+  <circle cx="62" cy="36" r="1.5" fill="#10b981"/>
+  
+  <!-- Server Unit 2 (middle) -->
+  <rect x="32" y="46" width="36" height="12" rx="1" ry="1" fill="#0284c7"/>
+  <!-- Unit 2 details -->
+  <rect x="35" y="49" width="20" height="6" rx="1" ry="1" fill="#0f172a"/>
+  <circle cx="62" cy="52" r="1.5" fill="#10b981"/>
+  
+  <!-- Server Unit 3 (bottom) -->
+  <rect x="32" y="62" width="36" height="12" rx="1" ry="1" fill="#6366f1"/>
+  <!-- Unit 3 details -->
+  <rect x="35" y="65" width="20" height="6" rx="1" ry="1" fill="#0f172a"/>
+  <circle cx="62" cy="68" r="1.5" fill="#10b981"/>
+  
+  <!-- Drive bays on each unit -->
+  <rect x="37" y="35" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="41" y="35" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="45" y="35" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="49" y="35" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  
+  <rect x="37" y="51" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="41" y="51" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="45" y="51" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="49" y="51" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  
+  <rect x="37" y="67" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="41" y="67" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="45" y="67" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+  <rect x="49" y="67" width="2" height="2" rx="0.5" ry="0.5" fill="#f1f5f9"/>
+</svg> 

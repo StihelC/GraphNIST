@@ -17,6 +17,12 @@ class LayoutOptimizationDialog(QDialog):
         """Initialize the dialog UI."""
         layout = QVBoxLayout(self)
         
+        # Experimental tag
+        experimental_label = QLabel("⚠️ EXPERIMENTAL: Topology optimization is still under development")
+        experimental_label.setStyleSheet("color: #FF6700; font-weight: bold; padding: 5px; border: 1px solid #FF6700; border-radius: 4px;")
+        experimental_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(experimental_label)
+        
         # Header
         header_label = QLabel("Select layout algorithm to organize the network topology:")
         header_label.setStyleSheet("font-weight: bold;")

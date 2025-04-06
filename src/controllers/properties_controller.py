@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QComboBox, QVBoxLayout, QLabel, QCheckBox, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtGui import QColor
 import logging
 import traceback
 
@@ -314,9 +315,76 @@ class PropertiesController:
                 self.event_bus.emit("connection_property_changed", self.selected_item, property_key)
     
     def _on_boundary_property_changed(self, key, value):
-        """Handle boundary property change in properties panel."""
+        """Handle boundary property change."""
         if not self.selected_item or not isinstance(self.selected_item, Boundary):
             return
+        
+        # Handle different boundary properties
+        if key == "color":
+            # Handle color change
+            if isinstance(value, QColor):
+                old_color = self.selected_item.color
+                if old_color != value:
+                    self.logger.info(f"Changing boundary color from {old_color.name()} to {value.name()}")
+                    
+                    if self.undo_redo_manager:
+                        # Create a command for undo/redo if available
+                        from controllers.commands import SetBoundaryColorCommand
+                        cmd = SetBoundaryColorCommand(self.selected_item, old_color, value)
+                        self.undo_redo_manager.push_command(cmd)
+                    else:
+                        # Direct change without undo/redo
+                        self.selected_item.set_color(value)
+                    
+                    # Notify via event bus
+                    self.event_bus.emit("boundary_color_changed", self.selected_item, value)
+        elif key == "font_size":
+            # Get the current font size
+            old_size = self.selected_item.get_font_size()
+            
+            if old_size != value:
+                # Create a command to change the font size
+                class SetBoundaryFontSizeCommand(Command):
+                    def __init__(self, boundary, old_size, new_size):
+                        super().__init__(f"Change Boundary Text Size")
+                        self.boundary = boundary
+                        self.old_size = old_size
+                        self.new_size = new_size
+                    
+                    def execute(self):
+                        self.boundary.set_font_size(self.new_size)
+                    
+                    def undo(self):
+                        self.boundary.set_font_size(self.old_size)
+                
+                # Execute the command via the undo/redo manager if available
+                if self.undo_redo_manager:
+                    cmd = SetBoundaryFontSizeCommand(self.selected_item, old_size, value)
+                    self.undo_redo_manager.push_command(cmd)
+                else:
+                    # Just set the font size directly
+                    self.selected_item.set_font_size(value)
+                
+                # Notify about the change
+                self.event_bus.emit("boundary_font_size_changed", self.selected_item)
+        elif key == "name":
+            # Handle name change
+            if hasattr(self.selected_item, 'name'):
+                old_name = self.selected_item.name
+                if old_name != value:
+                    self.logger.info(f"Changing boundary name from '{old_name}' to '{value}'")
+                    
+                    if self.undo_redo_manager:
+                        cmd = UpdateNameCommand(self.selected_item, old_name, value)
+                        self.undo_redo_manager.push_command(cmd)
+                    else:
+                        self.selected_item.name = value
+                        # Update visual text
+                        if hasattr(self.selected_item, 'update_name'):
+                            self.selected_item.update_name()
+                    
+                    # Notify via event bus
+                    self.event_bus.emit("boundary_name_changed", self.selected_item)
     
     def _on_change_icon_requested(self, item):
         """Handle explicit request to change a device's icon from the Change Icon button."""

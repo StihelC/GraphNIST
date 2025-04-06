@@ -17,8 +17,23 @@ class EditableTextItem(QGraphicsTextItem):
         self._original_text = text
         
         # Style
-        self.setDefaultTextColor(QColor(20, 20, 20, 200))
+        # Default to dark text, will update in refresh_theme
         self.setFont(QFont("Arial", 10, QFont.Bold))
+        self.refresh_theme()
+    
+    def refresh_theme(self):
+        """Update text color based on current theme."""
+        # Check if our parent is a Boundary and it has theme info
+        parent_boundary = self.parentItem()
+        if parent_boundary and hasattr(parent_boundary, 'theme_manager'):
+            # Set appropriate color based on theme
+            if parent_boundary.theme_manager.is_dark_theme():
+                self.setDefaultTextColor(QColor(240, 240, 240, 220))  # Light color for dark theme
+            else:
+                self.setDefaultTextColor(QColor(20, 20, 20, 200))  # Dark color for light theme
+        else:
+            # Default to dark text if no theme info
+            self.setDefaultTextColor(QColor(20, 20, 20, 200))
     
     def start_editing(self):
         """Make the text editable."""
@@ -76,7 +91,7 @@ class EditableTextItem(QGraphicsTextItem):
 class Boundary(QGraphicsRectItem):
     """A rectangular grouping boundary for grouping devices together."""
     
-    def __init__(self, rect, name=None, color=None, parent=None):
+    def __init__(self, rect, name=None, color=None, parent=None, theme_manager=None):
         """Initialize the boundary.
         
         Args:
@@ -84,6 +99,7 @@ class Boundary(QGraphicsRectItem):
             name: Optional name for the boundary
             color: Optional color for the boundary
             parent: Optional parent item
+            theme_manager: Optional theme manager for styling
         """
         super().__init__(rect, parent)
         
@@ -91,6 +107,9 @@ class Boundary(QGraphicsRectItem):
         self.setZValue(0)
         
         self.logger = logging.getLogger(__name__)
+        
+        # Store theme manager reference
+        self.theme_manager = theme_manager
         
         # Create signals object
         self.signals = BoundarySignals()
@@ -109,6 +128,9 @@ class Boundary(QGraphicsRectItem):
         # Create label
         self._create_label()
         
+        # Setup for resizing
+        self._setup_resize_handles()
+
     def _apply_style(self):
         """Apply visual styling to the boundary."""
         # Set border with semi-transparency
@@ -172,7 +194,8 @@ class Boundary(QGraphicsRectItem):
     
     def hoverLeaveEvent(self, event):
         """Handle hover leave event."""
-        # Restore original appearance
+        # Reset cursor and appearance when mouse leaves
+        self.setCursor(Qt.ArrowCursor)
         self._apply_style()
         super().hoverLeaveEvent(event)
     
@@ -227,7 +250,271 @@ class Boundary(QGraphicsRectItem):
             self.update()
 
     def update_name(self):
-        """Update boundary label text after name change."""
+        """Update the displayed name text."""
         if hasattr(self, 'label') and self.label:
             self.label.setPlainText(self.name)
+
+    def update_theme(self, theme_name=None):
+        """Update visual appearance based on theme."""
+        # Update label text color
+        if hasattr(self, 'label') and self.label:
+            self.label.refresh_theme()
+        
+        # Force redraw
+        self.update()
+    
+    def _setup_resize_handles(self):
+        """Set up resize handle properties and state."""
+        # Define resize handle properties
+        self._resizing = False
+        self._resize_handle_size = 10
+        self._resize_handle = None  # Will store which handle is being dragged
+        self._resize_start_pos = None
+        self._resize_start_rect = None
+        
+        # Define handle positions: NW, N, NE, E, SE, S, SW, W (8 handles)
+        self._handles = ['NW', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W']
+        
+        # Handle cursors for each position
+        self._handle_cursors = {
+            'NW': Qt.SizeFDiagCursor,
+            'SE': Qt.SizeFDiagCursor,
+            'NE': Qt.SizeBDiagCursor,
+            'SW': Qt.SizeBDiagCursor,
+            'N': Qt.SizeVerCursor,
+            'S': Qt.SizeVerCursor,
+            'E': Qt.SizeHorCursor,
+            'W': Qt.SizeHorCursor
+        }
+    
+    def _get_handle_rect(self, handle):
+        """Get the rectangle for a resize handle."""
+        rect = self.rect()
+        handle_size = self._resize_handle_size
+        half_handle = handle_size / 2
+        
+        # Get the center points for the sides
+        center_top = QPointF(rect.left() + rect.width() / 2, rect.top())
+        center_bottom = QPointF(rect.left() + rect.width() / 2, rect.bottom())
+        center_left = QPointF(rect.left(), rect.top() + rect.height() / 2)
+        center_right = QPointF(rect.right(), rect.top() + rect.height() / 2)
+        
+        # Create handle rectangles based on position
+        if handle == 'NW':
+            return QRectF(rect.left(), rect.top(), handle_size, handle_size)
+        elif handle == 'N':
+            return QRectF(center_top.x() - half_handle, rect.top(), handle_size, handle_size)
+        elif handle == 'NE':
+            return QRectF(rect.right() - handle_size, rect.top(), handle_size, handle_size)
+        elif handle == 'E':
+            return QRectF(rect.right() - handle_size, center_right.y() - half_handle, handle_size, handle_size)
+        elif handle == 'SE':
+            return QRectF(rect.right() - handle_size, rect.bottom() - handle_size, handle_size, handle_size)
+        elif handle == 'S':
+            return QRectF(center_bottom.x() - half_handle, rect.bottom() - handle_size, handle_size, handle_size)
+        elif handle == 'SW':
+            return QRectF(rect.left(), rect.bottom() - handle_size, handle_size, handle_size)
+        elif handle == 'W':
+            return QRectF(rect.left(), center_left.y() - half_handle, handle_size, handle_size)
+        
+        return QRectF()
+    
+    def _handle_at_position(self, pos):
+        """Determine if the given position is on a resize handle."""
+        # Check if position is on any of the resize handles
+        # Use a more generous hit area for easier selection
+        for handle in self._handles:
+            rect = self._get_handle_rect(handle)
+            # Create a larger hit area for better touch/mouse interaction
+            hit_rect = rect.adjusted(-5, -5, 5, 5)
+            if hit_rect.contains(pos):
+                return handle
+        return None
+    
+    def paint(self, painter, option, widget):
+        """Paint the boundary and its resize handles."""
+        # Draw the standard boundary
+        super().paint(painter, option, widget)
+        
+        # Only draw resize handles when selected
+        if self.isSelected():
+            # Determine handle colors based on theme
+            if self.theme_manager and self.theme_manager.is_dark_theme():
+                painter.setPen(QPen(Qt.white, 1))
+                painter.setBrush(QBrush(QColor(220, 220, 220)))
+            else:
+                painter.setPen(QPen(Qt.black, 1))
+                painter.setBrush(QBrush(Qt.white))
+            
+            # Draw each resize handle
+            for handle in self._handles:
+                handle_rect = self._get_handle_rect(handle)
+                painter.drawRect(handle_rect)
+    
+    def hoverMoveEvent(self, event):
+        """Handle hover move events for showing appropriate cursor over resize handles."""
+        # Only change cursor if selected
+        if not self.isSelected():
+            self.setCursor(Qt.ArrowCursor)
+            return super().hoverMoveEvent(event)
+        
+        # Check if hovering over a resize handle
+        handle = self._handle_at_position(event.pos())
+        if handle:
+            # Set the appropriate cursor based on handle position
+            self.setCursor(self._handle_cursors[handle])
+        else:
+            # Reset to default cursor when not over a handle
+            self.setCursor(Qt.ArrowCursor)
+            
+        super().hoverMoveEvent(event)
+    
+    def setRect(self, rect):
+        """Override setRect to ensure resize operations are properly applied.
+        
+        This is a critical method to ensure resize handles work correctly.
+        """
+        # Call the parent method
+        result = super().setRect(rect)
+        
+        # Since this method might be called during resize operations,
+        # ensure we update associated items like labels
+        self._update_label_position()
+        
+        # Force update to ensure visual appearance reflects the changes
+        self.update()
+        
+        return result
+    
+    def mousePressEvent(self, event):
+        """Handle mouse press events for selection and resizing."""
+        # Only log important debug info
+        if self.isSelected():
+            self.logger.debug(f"Boundary '{self.name}' received mousePressEvent")
+        
+        # Convert coordinates properly - must use event.pos() which returns item coordinates
+        pos = event.pos()
+        
+        # Check if clicking on a resize handle
+        handle = self._handle_at_position(pos)
+        
+        if handle and self.isSelected():
+            # Start resizing
+            self._resizing = True
+            self._resize_handle = handle
+            self._resize_start_pos = pos
+            self._resize_start_rect = self.rect()
+            
+            self.logger.debug(f"Starting resize operation with handle: {handle}")
+            
+            # Explicitly accept the event to indicate we're handling it
+            event.accept()
+            
+            # Disable movement during resize
+            self.setFlag(QGraphicsItem.ItemIsMovable, False)
+            
+            return  # Stop event propagation
+        else:
+            # Not resizing, proceed with normal selection/move
+            self._resizing = False
+            super().mousePressEvent(event)
+    
+    def mouseMoveEvent(self, event):
+        """Handle mouse move events for resizing."""
+        pos = event.pos()
+        
+        if self._resizing and self._resize_handle:
+            # Calculate how much the mouse has moved
+            delta = event.pos() - self._resize_start_pos
+            
+            # Create a copy of the start rect to modify
+            new_rect = QRectF(self._resize_start_rect)
+            
+            # Update the rectangle based on which handle is being dragged
+            if self._resize_handle == 'NW':
+                new_rect.setTopLeft(new_rect.topLeft() + delta)
+            elif self._resize_handle == 'N':
+                new_rect.setTop(new_rect.top() + delta.y())
+            elif self._resize_handle == 'NE':
+                new_rect.setTopRight(new_rect.topRight() + delta)
+            elif self._resize_handle == 'E':
+                new_rect.setRight(new_rect.right() + delta.x())
+            elif self._resize_handle == 'SE':
+                new_rect.setBottomRight(new_rect.bottomRight() + delta)
+            elif self._resize_handle == 'S':
+                new_rect.setBottom(new_rect.bottom() + delta.y())
+            elif self._resize_handle == 'SW':
+                new_rect.setBottomLeft(new_rect.bottomLeft() + delta)
+            elif self._resize_handle == 'W':
+                new_rect.setLeft(new_rect.left() + delta.x())
+            
+            # Ensure minimum size
+            if new_rect.width() < 50:
+                if self._resize_handle in ['NW', 'W', 'SW']:
+                    new_rect.setLeft(new_rect.right() - 50)
+                else:
+                    new_rect.setRight(new_rect.left() + 50)
+                    
+            if new_rect.height() < 50:
+                if self._resize_handle in ['NW', 'N', 'NE']:
+                    new_rect.setTop(new_rect.bottom() - 50)
+                else:
+                    new_rect.setBottom(new_rect.top() + 50)
+            
+            # Use our overridden setRect method to update the boundary
+            self.prepareGeometryChange()  # Important for QGraphicsItem to handle resize properly
+            self.setRect(new_rect)
+            
+            # Force scene update
+            if self.scene():
+                self.scene().update()
+                
+            # Explicitly accept the event
+            event.accept()
+        else:
+            # Not resizing, proceed with normal movement
+            super().mouseMoveEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events after resizing."""
+        if self._resizing:
+            # End resizing operation
+            self.logger.debug(f"Completed resize operation with handle: {self._resize_handle}")
+            
+            self._resizing = False
+            self._resize_handle = None
+            
+            # Re-enable moving
+            self.setFlag(QGraphicsItem.ItemIsMovable, True)
+            
+            event.accept()
+            
+            # Maintain selection state and update cursor
+            self.setSelected(True)
+            handle = self._handle_at_position(event.pos())
+            if handle:
+                self.setCursor(self._handle_cursors[handle])
+            else:
+                self.setCursor(Qt.ArrowCursor)
+                
+            # Force an update to ensure proper rendering
+            self.update()
+        else:
+            # Not resizing, proceed with normal release
+            super().mouseReleaseEvent(event)
+
+    def set_font_size(self, size):
+        """Change the boundary label's font size."""
+        if hasattr(self, 'label') and self.label:
+            font = self.label.font()
+            font.setPointSize(size)
+            self.label.setFont(font)
+            # Update label position to account for size change
+            self._update_label_position()
+    
+    def get_font_size(self):
+        """Get the boundary label's font size."""
+        if hasattr(self, 'label') and self.label:
+            return self.label.font().pointSize()
+        return 10  # Default font size
 

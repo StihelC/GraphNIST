@@ -81,7 +81,7 @@ class SelectMode(CanvasMode):
         # Handle left button press for potential drag or selection
         if event.button() == Qt.LeftButton:
             # Log for debugging
-            self.logger.debug(f"Mouse press in select mode at {scene_pos.x()}, {scene_pos.y()}")
+            self.logger.debug(f"Mouse press in select mode at {scene_pos.x():.1f}, {scene_pos.y():.1f}")
             
             # Check if we clicked on a selectable item
             selectable_item = None
@@ -105,6 +105,23 @@ class SelectMode(CanvasMode):
             elif isinstance(item, Boundary):
                 selectable_item = item
                 self.logger.debug(f"Clicked on boundary: {selectable_item.name}")
+                
+                # Special check for boundary resize handles
+                # Let the boundary handle mouse press directly for resize operations
+                if selectable_item.isSelected():
+                    # Check if position is on a resize handle
+                    scene_item_pos = selectable_item.mapFromScene(scene_pos)
+                    if hasattr(selectable_item, '_handle_at_position'):
+                        handle = selectable_item._handle_at_position(scene_item_pos)
+                        if handle:
+                            self.logger.debug(f"Clicked on boundary resize handle: {handle}, letting default handlers process it")
+                            
+                            # Make sure the boundary stays selected
+                            selectable_item.setSelected(True)
+                            
+                            # Do not handle the event here - let Qt's default event system
+                            # pass the event to the boundary item
+                            return False
             
             # If we found a selectable item
             if selectable_item:

@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsTextItem, QFileDialog
 from PyQt5.QtGui import QPixmap, QColor, QPen, QBrush, QPainterPath, QPainter, QFont
 from PyQt5.QtCore import QRectF, Qt, QPointF, QObject, pyqtSignal
+from PyQt5.QtSvg import QSvgRenderer, QGraphicsSvgItem
 import uuid
 import os
 import logging
@@ -20,42 +21,42 @@ class Device(QGraphicsPixmapItem):
     # Device properties organized by type
     DEVICE_PROPERTIES = {
         DeviceTypes.ROUTER: {
-            'icon': 'router.png',
+            'icon': 'router.svg',
             'color': QColor(200, 120, 60),  # Orange-brown
             'routing_protocol': 'OSPF',
             'forwarding_table': {}
         },
         DeviceTypes.SWITCH: {
-            'icon': 'switch.png',
+            'icon': 'switch.svg',
             'color': QColor(60, 120, 200),  # Blue
             'ports': 24,
             'managed': True,
             'vlan_support': True
         },
         DeviceTypes.FIREWALL: {
-            'icon': 'firewall.png',
+            'icon': 'firewall.svg',
             'color': QColor(200, 60, 60),  # Red
             'rules': [],
             'inspection_type': 'stateful'
         },
         DeviceTypes.SERVER: {
-            'icon': 'server.png',
+            'icon': 'server.svg',
             'color': QColor(60, 160, 60),  # Green
             'services': [],
             'os': 'Linux'
         },
         DeviceTypes.WORKSTATION: {
-            'icon': 'workstation.png',
+            'icon': 'workstation.svg',
             'color': QColor(150, 120, 180),  # Purple
             'os': 'Windows'
         },
         DeviceTypes.CLOUD: {
-            'icon': 'cloud.png',
+            'icon': 'cloud.svg',
             'color': QColor(100, 160, 220),  # Light blue
             'provider': 'AWS'
         },
         DeviceTypes.GENERIC: {
-            'icon': 'device.png',
+            'icon': 'device.svg',
             'color': QColor(150, 150, 150)  # Gray
         }
     }
@@ -88,9 +89,9 @@ class Device(QGraphicsPixmapItem):
         # Set z-value to be above connections and boundaries (layer 10)
         self.setZValue(10)
         
-        # Size settings
-        self.width = 60
-        self.height = 60
+        # Size settings - increased for better visibility
+        self.width = 80
+        self.height = 80
         
         # Track selection state
         self.is_selected = False
@@ -199,7 +200,7 @@ class Device(QGraphicsPixmapItem):
         # Try each type variation with each icon folder
         for folder in icon_folders:
             for type_var in type_variations:
-                icon_path = os.path.join(folder, f"{type_var}.png")
+                icon_path = os.path.join(folder, f"{type_var}.svg")
                 self.logger.info(f"ICON DEBUG: Checking type icon at: {icon_path}")
                 if os.path.exists(icon_path):
                     self.logger.info(f"ICON DEBUG: Found type icon at: {icon_path}")
@@ -207,7 +208,7 @@ class Device(QGraphicsPixmapItem):
                         return True
 
         # Try the icon name specified in properties
-        icon_name = self.properties.get('icon', 'device.png')
+        icon_name = self.properties.get('icon', 'device.svg')
         if icon_name:
             for folder in icon_folders:
                 icon_path = os.path.join(folder, icon_name)
@@ -223,7 +224,7 @@ class Device(QGraphicsPixmapItem):
         
         # Try default "generic" icon as last resort
         for folder in icon_folders:
-            default_icon = os.path.join(folder, "device.png")
+            default_icon = os.path.join(folder, "device.svg")
             if os.path.exists(default_icon):
                 self.logger.info(f"ICON DEBUG: Using default icon: {default_icon}")
                 if self._load_icon(default_icon):
@@ -248,10 +249,13 @@ class Device(QGraphicsPixmapItem):
         icon_dirs.extend([
             os.path.join(app_dir, "icons"),
             os.path.join(app_dir, "resources", "icons"),
+            os.path.join(app_dir, "resources", "icons", "svg"),  # Add SVG subdirectory
             os.path.join(app_dir, "src", "resources", "icons"),
+            os.path.join(app_dir, "src", "resources", "icons", "svg"),  # Add SVG subdirectory
             os.path.join(app_dir, "src", "icons"),
             # For development environments, try a few levels up
             os.path.join(app_dir, "..", "resources", "icons"),
+            os.path.join(app_dir, "..", "resources", "icons", "svg"),  # Add SVG subdirectory
             os.path.join(app_dir, "..", "icons"),
         ])
         
@@ -266,8 +270,8 @@ class Device(QGraphicsPixmapItem):
         # Normalize name (lowercase, remove spaces)
         normalized_name = name.lower().replace(" ", "_")
         
-        # Check for different image formats
-        extensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp']
+        # Check for different image formats, prioritize vector formats
+        extensions = ['.svg', '.png', '.jpg', '.jpeg', '.webp']
         
         # Get all possible icon folders
         icon_folders = self._get_icon_directories()
@@ -294,9 +298,80 @@ class Device(QGraphicsPixmapItem):
         """Load and set the icon from the given path, preserving quality."""
         self.logger.info(f"ICON DEBUG: Attempting to load icon from: {path}")
         
+        # Check if we already have an icon item and remove it
+        if hasattr(self, 'icon_item') and self.icon_item:
+            self.logger.info("ICON DEBUG: Removing existing icon item before adding new one")
+            if self.icon_item.scene():
+                self.scene().removeItem(self.icon_item)
+            self.icon_item = None
+        
+        # Check if this is an SVG file
+        if path.lower().endswith('.svg'):
+            return self._load_svg_icon(path)
+        else:
+            return self._load_pixmap_icon(path)
+            
+    def _load_svg_icon(self, path):
+        """Load and set SVG icon with high quality rendering."""
+        try:
+            # Create SVG renderer to check if SVG is valid
+            renderer = QSvgRenderer(path)
+            if not renderer.isValid():
+                self.logger.error(f"ICON DEBUG: Invalid SVG file: {path}")
+                return False
+                
+            # Create a new SVG item
+            svg_item = QGraphicsSvgItem(path)
+            
+            # Calculate aspect ratio to maintain proportions
+            default_size = renderer.defaultSize()
+            if default_size.width() == 0 or default_size.height() == 0:
+                self.logger.error(f"ICON DEBUG: Invalid SVG dimensions: {default_size.width()}x{default_size.height()}")
+                return False
+                
+            aspect_ratio = default_size.width() / default_size.height()
+            
+            # Determine dimensions while maintaining aspect ratio
+            if aspect_ratio >= 1:  # Wider than tall
+                dest_width = self.width
+                dest_height = int(self.width / aspect_ratio)
+                dest_x = 0
+                dest_y = (self.height - dest_height) // 2
+            else:  # Taller than wide
+                dest_height = self.height
+                dest_width = int(self.height * aspect_ratio)
+                dest_y = 0
+                dest_x = (self.width - dest_width) // 2
+            
+            # Scale and position the SVG
+            svg_item.setScale(dest_width / default_size.width())
+            svg_item.setPos(dest_x, dest_y)
+            svg_item.setZValue(1)  # Put icon above the background rectangle
+            
+            # Store as icon_item
+            self.icon_item = svg_item
+            self.icon_item.setParentItem(self)
+            
+            # Hide background rectangle when using SVG
+            if hasattr(self, 'rect_item') and self.rect_item:
+                self.rect_item.setVisible(False)
+            
+            self.logger.info(f"ICON DEBUG: Successfully loaded SVG icon from {path}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"ICON DEBUG: Error loading SVG: {str(e)}")
+            return False
+            
+    def _load_pixmap_icon(self, path):
+        """Load and set a bitmap icon (PNG, JPG, etc.)."""
         pixmap = QPixmap(path)
         if not pixmap.isNull():
             self.logger.info(f"ICON DEBUG: Successfully loaded pixmap from {path}, size: {pixmap.width()}x{pixmap.height()}")
+            
+            # Show background rectangle for bitmap icons
+            if hasattr(self, 'rect_item') and self.rect_item:
+                self.rect_item.setVisible(True)
             
             # Create a new pixmap with the exact device dimensions
             square_pixmap = QPixmap(self.width, self.height)
@@ -340,12 +415,6 @@ class Device(QGraphicsPixmapItem):
             )
             painter.end()
             
-            # Check if we already have an icon item and remove it
-            if hasattr(self, 'icon_item') and self.icon_item:
-                self.logger.info("ICON DEBUG: Removing existing icon item before adding new one")
-                if self.icon_item.scene():
-                    self.scene().removeItem(self.icon_item)
-            
             # Use the properly scaled pixmap
             self.icon_item = QGraphicsPixmapItem(square_pixmap, self)
             self.icon_item.setPos(0, 0)  # Position at top-left corner
@@ -371,9 +440,9 @@ class Device(QGraphicsPixmapItem):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(
             None, 
-            "Select High-Resolution Icon", 
+            "Select Icon (Vector graphics recommended)", 
             "", 
-            "Images (*.png *.jpg *.jpeg *.bmp *.tiff *.webp)", 
+            "Images (*.svg *.png *.jpg *.jpeg *.bmp *.tiff *.webp)", 
             options=options
         )
         if file_path:
@@ -469,40 +538,56 @@ class Device(QGraphicsPixmapItem):
     
     def get_connection_ports(self):
         """Get all available connection ports as local coordinates."""
-        # Define 8 compass points around the device
+        # Define 16 connection points around the device (doubled from the original 8)
         center_x = self.width / 2
         center_y = self.height / 2
         
+        # First port is at the top (North), additional ports follow clockwise
         ports = [
-            QPointF(center_x, 0),                # N
-            QPointF(self.width, 0),              # NE
-            QPointF(self.width, center_y),       # E
-            QPointF(self.width, self.height),    # SE
-            QPointF(center_x, self.height),      # S
-            QPointF(0, self.height),             # SW
-            QPointF(0, center_y),                # W
-            QPointF(0, 0)                        # NW
+            # Top quarter (North)
+            QPointF(center_x * 0.5, 0),                 # NNW
+            QPointF(center_x, 0),                       # N
+            QPointF(center_x * 1.5, 0),                 # NNE
+            
+            # Right top quarter (East-North)
+            QPointF(self.width, center_y * 0.25),       # ENE
+            QPointF(self.width, center_y * 0.5),        # ENE
+            QPointF(self.width, center_y * 0.75),       # E
+            
+            # Right bottom quarter (East-South)
+            QPointF(self.width, center_y),              # E
+            QPointF(self.width, center_y * 1.25),       # ESE
+            QPointF(self.width, center_y * 1.5),        # ESE
+            
+            # Bottom quarter (South)
+            QPointF(center_x * 1.5, self.height),       # SSE
+            QPointF(center_x, self.height),             # S
+            QPointF(center_x * 0.5, self.height),       # SSW
+            
+            # Left bottom quarter (West-South)
+            QPointF(0, center_y * 1.5),                 # WSW
+            QPointF(0, center_y * 1.25),                # WSW
+            QPointF(0, center_y),                       # W
+            
+            # Left top quarter (West-North)
+            QPointF(0, center_y * 0.75),                # WNW
+            QPointF(0, center_y * 0.5),                 # WNW
+            QPointF(0, center_y * 0.25)                 # WNW
         ]
         
         return ports
     
     def get_nearest_port(self, pos):
         """Get the nearest connection port to the given position."""
-        # Create port positions
-        center = self.mapToScene(QPointF(self.width / 2, self.height / 2))
+        # Create connection port positions in scene coordinates
+        ports_local = self.get_connection_ports()
+        ports_scene = [self.mapToScene(port) for port in ports_local]
         
-        # Define ports at the middle of each side
-        top = QPointF(center.x(), center.y() - self.height / 2)
-        right = QPointF(center.x() + self.width / 2, center.y())
-        bottom = QPointF(center.x(), center.y() + self.height / 2)
-        left = QPointF(center.x() - self.width / 2, center.y())
-        
-        # Find nearest edge point
-        ports = [top, right, bottom, left]
+        # Find nearest port
         nearest_port = None
         min_distance = float('inf')
         
-        for port in ports:
+        for port in ports_scene:
             dx = port.x() - pos.x()
             dy = port.y() - pos.y()
             distance = (dx * dx + dy * dy) ** 0.5

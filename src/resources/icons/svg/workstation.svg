@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monitor top shading -->
+  <path d="M20 25 L80 25 L77 22 L23 22 Z" fill="#64748b"/>
+  
+  <!-- Monitor body -->
+  <rect x="20" y="25" width="60" height="40" rx="2" ry="2" fill="#475569" stroke="#334155" stroke-width="2"/>
+  
+  <!-- Monitor screen -->
+  <rect x="23" y="28" width="54" height="34" rx="1" ry="1" fill="#1e293b"/>
+  
+  <!-- Screen content -->
+  <rect x="27" y="32" width="46" height="5" rx="1" ry="1" fill="#94a3b8"/>
+  <rect x="27" y="40" width="20" height="18" rx="1" ry="1" fill="#94a3b8"/>
+  <rect x="50" y="40" width="19" height="4" rx="1" ry="1" fill="#94a3b8"/>
+  <rect x="50" y="47" width="19" height="4" rx="1" ry="1" fill="#94a3b8"/>
+  <rect x="50" y="54" width="19" height="4" rx="1" ry="1" fill="#94a3b8"/>
+  
+  <!-- Monitor stand -->
+  <path d="M45 65 L55 65 L52 75 L48 75 Z" fill="#334155"/>
+  
+  <!-- Stand base -->
+  <rect x="40" y="75" width="20" height="2" rx="1" ry="1" fill="#334155"/>
+  
+  <!-- Keyboard -->
+  <rect x="65" y="70" width="20" height="10" rx="1" ry="1" fill="#334155" stroke="#1e293b" stroke-width="1"/>
+  <rect x="67" y="72" width="16" height="6" rx="0.5" ry="0.5" fill="#1e293b"/>
+</svg> 

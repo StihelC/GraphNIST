@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
     QGraphicsView, QGraphicsScene, QMenu, 
-    QGraphicsItem
+    QGraphicsItem, QApplication, QAction, QInputDialog
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QEvent, QTimer
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPen
+from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QEvent, QTimer, QRectF, QSettings
+from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QCursor, QTransform
 
 import logging
 from constants import Modes
@@ -19,6 +19,11 @@ from .modes.add_device_mode import AddDeviceMode
 from .modes.delete_mode import DeleteMode, DeleteSelectedMode
 from .modes.add_boundary_mode import AddBoundaryMode
 from .modes.add_connection_mode import AddConnectionMode
+from .modes.magnify_mode import MagnifyMode
+
+from models.device import Device
+from models.connection import Connection
+from models.boundary import Boundary
 
 class Canvas(QGraphicsView):
     """Canvas widget for displaying and interacting with network devices."""
@@ -141,7 +146,8 @@ class Canvas(QGraphicsView):
             Modes.DELETE: DeleteMode,
             Modes.DELETE_SELECTED: DeleteSelectedMode,
             Modes.ADD_BOUNDARY: AddBoundaryMode,
-            Modes.ADD_CONNECTION: AddConnectionMode
+            Modes.ADD_CONNECTION: AddConnectionMode,
+            Modes.MAGNIFY: MagnifyMode
         }
         
         # Create and register each mode with the manager
@@ -187,6 +193,26 @@ class Canvas(QGraphicsView):
             # Get item at click position
             scene_pos = self.mapToScene(event.pos())
             item = self.get_item_at(event.pos())
+            
+            # Special handling for boundary resize in select mode
+            if (event.button() == Qt.LeftButton and 
+                self.mode_manager.current_mode == Modes.SELECT and
+                isinstance(item, Boundary) and
+                item.isSelected()):
+                
+                # Convert scene position to boundary local coordinates
+                item_pos = item.mapFromScene(scene_pos)
+                
+                # Check if click is on a resize handle
+                if hasattr(item, '_handle_at_position') and item._handle_at_position(item_pos):
+                    self.logger.debug(f"Canvas detected click on boundary resize handle")
+                    
+                    # Simply fall through to default processing
+                    # Let the boundary handle the resize in its own mousePressEvent
+                    # No special handling needed here
+                    
+                    # Just let Qt's event system handle it naturally
+                    return
             
             # Special handling for device dragging in select mode
             if (event.button() == Qt.LeftButton and 
@@ -373,6 +399,40 @@ class Canvas(QGraphicsView):
             return
             
         super().keyReleaseEvent(event)
+    
+    def wheelEvent(self, event):
+        """Handle wheel events for zooming."""
+        try:
+            # Get the position before zoom to maintain the point under cursor
+            old_pos = self.mapToScene(event.pos())
+            
+            # Zoom in or out based on the wheel delta
+            if event.angleDelta().y() > 0:
+                # Zoom in
+                if self.current_zoom < self.max_zoom:
+                    self.scale(self.zoom_factor, self.zoom_factor)
+                    self.current_zoom *= self.zoom_factor
+                    self.statusMessage.emit(f"Zoom: {int(self.current_zoom * 100)}%")
+            else:
+                # Zoom out
+                if self.current_zoom > self.min_zoom:
+                    factor = 1.0 / self.zoom_factor
+                    self.scale(factor, factor)
+                    self.current_zoom *= factor
+                    self.statusMessage.emit(f"Zoom: {int(self.current_zoom * 100)}%")
+            
+            # Get the position after zoom
+            new_pos = self.mapToScene(event.pos())
+            
+            # Move the scene to keep the point under the cursor
+            delta = new_pos - old_pos
+            self.translate(delta.x(), delta.y())
+            
+            event.accept()
+        except Exception as e:
+            self.logger.error(f"Error in wheelEvent: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
     def scene(self):
         """Get the graphics scene."""
@@ -695,3 +755,25 @@ class Canvas(QGraphicsView):
         # Let interested parties know the canvas is now empty
         if self.event_bus:
             self.event_bus.emit('canvas_cleared')
+
+    def paintEvent(self, event):
+        """Override paintEvent to handle magnify lens drawing.
+        
+        This allows us to draw the magnified content on top of the normal scene.
+        """
+        # First, let Qt handle normal rendering
+        super().paintEvent(event)
+        
+        # Then, if we're in magnify mode, add the magnified content
+        if self.mode_manager.current_mode == Modes.MAGNIFY:
+            try:
+                magnify_mode = self.mode_manager.get_mode(Modes.MAGNIFY)
+                if magnify_mode and magnify_mode.active:
+                    # Create a painter for the viewport
+                    painter = QPainter(self.viewport())
+                    magnify_mode.draw_magnified_content(painter)
+                    painter.end()
+            except Exception as e:
+                self.logger.error(f"Error in magnify drawing: {str(e)}")
+                import traceback
+                traceback.print_exc()

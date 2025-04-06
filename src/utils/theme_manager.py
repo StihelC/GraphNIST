@@ -46,6 +46,13 @@ class ThemeManager:
         # Store references to theme-aware widgets
         self.canvas = None
         self.theme_observers = []
+        
+        # Reference to event bus (will be set by main window)
+        self.event_bus = None
+    
+    def set_event_bus(self, event_bus):
+        """Set the event bus for theme change notifications."""
+        self.event_bus = event_bus
     
     def apply_theme(self, app=None):
         """Apply the current theme to the application.
@@ -90,6 +97,11 @@ class ThemeManager:
         
         # Apply the new theme
         self.apply_theme(app)
+        
+        # Emit theme changed event if event bus is available
+        if self.event_bus:
+            self.event_bus.emit("theme_changed", self.current_theme)
+            self.logger.info(f"Emitted theme_changed event: {self.current_theme}")
         
         return self.current_theme
     

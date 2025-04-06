@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clipboard back -->
+  <rect x="25" y="15" width="50" height="70" 
+        fill="#e5e5e5" 
+        stroke="#505050" 
+        stroke-width="2"
+        rx="3" ry="3" />
+  
+  <!-- Clipboard clip -->
+  <path d="M45,15 L55,15 L55,25 L45,25 Z" 
+        fill="#b0b0b0" 
+        stroke="#505050" 
+        stroke-width="2" />
+        
+  <!-- Clipboard paper -->
+  <rect x="30" y="25" width="40" height="55" 
+        fill="#ffffff" 
+        stroke="#505050" 
+        stroke-width="1" />
+        
+  <!-- Content lines -->
+  <rect x="35" y="35" width="30" height="3" fill="#505050" rx="1" ry="1" />
+  <rect x="35" y="45" width="30" height="3" fill="#505050" rx="1" ry="1" />
+  <rect x="35" y="55" width="20" height="3" fill="#505050" rx="1" ry="1" />
+</svg> 

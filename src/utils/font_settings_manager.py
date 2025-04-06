@@ -11,9 +11,9 @@ class FontSettingsManager(QObject):
     device_property_font_changed = pyqtSignal(QFont)
     
     # Default settings
-    DEFAULT_UI_FONT_SIZE = 9
-    DEFAULT_DEVICE_LABEL_FONT_SIZE = 10
-    DEFAULT_DEVICE_PROPERTY_FONT_SIZE = 8
+    DEFAULT_UI_FONT_SIZE = 11
+    DEFAULT_DEVICE_LABEL_FONT_SIZE = 12
+    DEFAULT_DEVICE_PROPERTY_FONT_SIZE = 10
     
     def __init__(self):
         """Initialize the font settings manager."""

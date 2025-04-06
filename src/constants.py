@@ -11,6 +11,7 @@ class Modes:
     DELETE_SELECTED = "delete_selected"
     ADD_BOUNDARY = "add_boundary" 
     ADD_CONNECTION = "add_connection"
+    MAGNIFY = "magnify"
 
 class DeviceTypes:
     """Constants for device types."""
