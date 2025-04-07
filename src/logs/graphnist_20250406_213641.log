@@ -1,0 +1,395 @@
+2025-04-06 21:36:41,492 - root - INFO - Logging configured. Log file: c:\Users\catas\Desktop\GraphNIST-1\src\logs\graphnist_20250406_213641.log
+2025-04-06 21:36:41,505 - views.main_window - INFO - Application icon loaded from: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\shield_logo.svg
+2025-04-06 21:36:41,506 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 21:36:41,506 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 21:36:41,520 - utils.icon_manager - DEBUG - Trying to load icon: select_tool
+2025-04-06 21:36:41,520 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\select_tool.svg
+2025-04-06 21:36:41,521 - utils.icon_manager - DEBUG - Trying to load icon: add_device
+2025-04-06 21:36:41,521 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_device.svg
+2025-04-06 21:36:41,521 - utils.icon_manager - DEBUG - Trying to load icon: add_connection
+2025-04-06 21:36:41,522 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_connection.svg
+2025-04-06 21:36:41,522 - utils.icon_manager - DEBUG - Trying to load icon: add_boundary
+2025-04-06 21:36:41,522 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_boundary.svg
+2025-04-06 21:36:41,522 - utils.icon_manager - DEBUG - Trying to load icon: delete
+2025-04-06 21:36:41,523 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\delete.svg
+2025-04-06 21:36:41,523 - utils.icon_manager - DEBUG - Trying to load icon: copy
+2025-04-06 21:36:41,523 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\copy.svg
+2025-04-06 21:36:41,523 - utils.icon_manager - DEBUG - Trying to load icon: paste
+2025-04-06 21:36:41,523 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\paste.svg
+2025-04-06 21:36:41,524 - utils.icon_manager - DEBUG - Trying to load icon: connection_straight
+2025-04-06 21:36:41,524 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_straight.svg
+2025-04-06 21:36:41,524 - utils.icon_manager - DEBUG - Trying to load icon: connection_orthogonal
+2025-04-06 21:36:41,524 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_orthogonal.svg
+2025-04-06 21:36:41,525 - utils.icon_manager - DEBUG - Trying to load icon: connection_curved
+2025-04-06 21:36:41,525 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_curved.svg
+2025-04-06 21:36:41,525 - utils.icon_manager - DEBUG - Trying to load icon: align
+2025-04-06 21:36:41,525 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\align.svg
+2025-04-06 21:36:41,526 - utils.icon_manager - DEBUG - Trying to load icon: magnify
+2025-04-06 21:36:41,526 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\magnify.svg
+2025-04-06 21:36:41,526 - utils.icon_manager - DEBUG - Trying to load icon: zoom_in
+2025-04-06 21:36:41,526 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_in.svg
+2025-04-06 21:36:41,526 - utils.icon_manager - DEBUG - Trying to load icon: zoom_out
+2025-04-06 21:36:41,527 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_out.svg
+2025-04-06 21:36:41,527 - utils.icon_manager - DEBUG - Trying to load icon: zoom_reset
+2025-04-06 21:36:41,527 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_reset.svg
+2025-04-06 21:36:41,707 - views.main_window - INFO - Mode changed to: select
+2025-04-06 21:36:42,033 - views.main_window - INFO - Properties controller initialized
+2025-04-06 21:36:54,460 - views.canvas.modes.select_mode - DEBUG - SelectMode: Deactivated
+2025-04-06 21:36:54,460 - views.canvas.canvas - INFO - Canvas: Switching to mode AddDeviceMode
+2025-04-06 21:36:54,826 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at -65.0, -174.0
+2025-04-06 21:36:54,826 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 21:36:54,826 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None
+2025-04-06 21:37:25,105 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Checked is_in_command_execution, result=False
+2025-04-06 21:37:25,105 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Pushing command AddDeviceCommand: Add cloud Device
+2025-04-06 21:37:25,106 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Set is_executing_command to True (was False)
+2025-04-06 21:37:25,106 - controllers.commands - DEBUG - CMD: AddDeviceCommand execute for  1, in_bulk_creation=False
+2025-04-06 21:37:25,106 - models.device - DEBUG - Custom icon path set to: None
+2025-04-06 21:37:25,107 - models.device - INFO - ICON DEBUG: Current working directory: c:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 21:37:25,107 - models.device - INFO - ICON DEBUG: Application directory: c:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 21:37:25,108 - models.device - INFO - ICON DEBUG: Searching in icon folders: ['c:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons', 'c:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons\\svg', 'c:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\..\\resources\\icons']
+2025-04-06 21:37:25,108 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\cloud.svg
+2025-04-06 21:37:25,108 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\cloud.svg
+2025-04-06 21:37:25,108 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\CLOUD.svg
+2025-04-06 21:37:25,108 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\Cloud.svg
+2025-04-06 21:37:25,109 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\cloud.svg
+2025-04-06 21:37:25,109 - models.device - INFO - ICON DEBUG: Found type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\cloud.svg
+2025-04-06 21:37:25,109 - models.device - INFO - ICON DEBUG: Attempting to load icon from: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\cloud.svg
+2025-04-06 21:37:25,109 - models.device - INFO - ICON DEBUG: Successfully loaded SVG icon from c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\cloud.svg
+2025-04-06 21:37:25,112 - controllers.commands - DEBUG - CMD: Created device  1 through command execution
+2025-04-06 21:37:25,112 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Restored is_executing_command to False
+2025-04-06 21:37:25,112 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Command executed and pushed to stack (stack size: 1)
+2025-04-06 21:37:26,500 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at -12.0, -128.0
+2025-04-06 21:37:26,500 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 21:37:26,500 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None
+2025-04-06 21:37:29,486 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 21:37:29,486 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 21:37:29,994 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection changing to True
+2025-04-06 21:37:29,994 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection state changed to True
+2025-04-06 21:37:29,994 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  1, is_selected=True
+2025-04-06 21:37:29,994 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:29,995 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:29,996 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:29,996 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:29,996 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:29,996 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:29,996 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:29,996 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:29,997 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:29,997 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:29,999 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:29,999 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 1' with state True
+2025-04-06 21:37:30,006 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:30,007 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:30,007 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 0
+2025-04-06 21:37:30,011 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:30,011 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:30,011 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 0
+2025-04-06 21:37:30,017 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:30,017 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:30,017 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 0
+2025-04-06 21:37:30,025 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:30,025 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:30,025 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 0
+2025-04-06 21:37:30,032 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:30,032 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:30,032 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 0
+2025-04-06 21:37:30,055 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:30,055 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:30,055 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 0
+2025-04-06 21:37:30,152 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:30,152 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:30,152 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:30,152 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:30,152 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:30,153 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:30,153 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:30,153 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 21:37:30,169 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:30,170 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:30,170 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:30,172 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:37,530 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,530 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,530 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,530 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,553 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,553 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,553 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,553 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,560 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,560 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,560 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,560 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,568 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,568 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,568 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,568 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,575 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,576 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,576 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,576 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,583 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,583 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,583 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,583 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,591 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,591 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,591 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,591 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,598 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,598 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,598 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,598 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,606 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,606 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,606 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,606 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,613 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,613 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,613 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,613 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,621 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,621 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,621 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,621 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,629 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,629 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,629 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,629 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,636 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,636 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,636 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,636 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,644 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,644 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,644 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,644 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,651 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,651 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,652 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,652 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,659 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,659 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,659 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,659 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,667 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,667 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,667 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,667 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,674 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,674 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,675 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,675 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,682 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,682 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,682 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,682 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,690 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,690 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,690 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,690 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,697 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,697 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,697 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,697 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,704 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,704 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,704 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,704 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,765 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,765 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,765 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,765 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,773 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,773 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,774 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,774 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,780 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,780 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,780 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,780 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,788 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,788 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,788 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,788 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,796 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,796 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,796 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,796 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,803 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,803 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,803 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,803 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,811 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,811 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,811 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,811 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,818 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,818 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,818 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,818 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,826 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,826 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,826 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,826 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,834 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,834 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,834 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,834 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,841 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,841 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,841 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,841 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,849 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,849 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,849 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,849 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,856 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,856 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,856 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,856 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,864 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,864 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,864 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,864 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,872 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,872 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,872 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,872 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,879 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,879 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,879 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,879 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,887 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,887 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,887 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,887 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,986 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,986 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,986 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,986 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:37,993 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:37,993 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:37,993 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:37,993 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,001 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,001 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,001 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,001 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,008 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,008 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,009 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,009 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,016 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,016 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,016 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,016 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,024 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,024 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,024 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,024 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,031 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,031 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,032 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,032 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,054 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,054 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,054 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,054 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,099 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,099 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,099 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,099 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,198 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changing
+2025-04-06 21:37:38,198 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' position changed
+2025-04-06 21:37:38,198 - models.device - DEBUG - MOVE DEBUG: Device ' 1' moved. Property labels count: 1
+2025-04-06 21:37:38,198 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['model']
+2025-04-06 21:37:38,263 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:38,263 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:38,263 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:38,263 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:38,263 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:38,264 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:38,264 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:38,264 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:38,264 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:38,264 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:38,265 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:38,442 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection changing to False
+2025-04-06 21:37:38,442 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection state changed to False
+2025-04-06 21:37:38,442 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  1, is_selected=False
+2025-04-06 21:37:38,442 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 1' with state False
+2025-04-06 21:37:40,220 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection changing to True
+2025-04-06 21:37:40,220 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection state changed to True
+2025-04-06 21:37:40,220 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  1, is_selected=True
+2025-04-06 21:37:40,220 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:40,220 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:40,221 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:40,221 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:40,221 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:40,221 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:40,221 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:40,221 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 21:37:40,238 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:40,238 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:40,238 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:40,241 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:40,241 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 1' with state True
+2025-04-06 21:37:40,438 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:40,438 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:40,438 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:40,438 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:40,438 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:40,438 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:40,439 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:40,439 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:40,439 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:40,439 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:40,440 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:41,017 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection changing to False
+2025-04-06 21:37:41,017 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection state changed to False
+2025-04-06 21:37:41,017 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  1, is_selected=False
+2025-04-06 21:37:41,017 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 1' with state False
+2025-04-06 21:37:42,658 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection changing to True
+2025-04-06 21:37:42,658 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection state changed to True
+2025-04-06 21:37:42,658 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  1, is_selected=True
+2025-04-06 21:37:42,658 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:42,658 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:42,658 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:42,659 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:42,659 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:42,659 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:42,659 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:42,659 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 21:37:42,675 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:42,675 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:42,675 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:42,677 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:42,677 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 1' with state True
+2025-04-06 21:37:42,830 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:42,830 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:42,830 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:42,830 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:42,830 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:42,830 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:42,831 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:42,831 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:42,831 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:42,831 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:42,832 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:43,643 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 21:37:43,643 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2027116149296
+2025-04-06 21:37:43,643 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 21:37:43,643 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2027116149296
+2025-04-06 21:37:43,643 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 21:37:43,643 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2027116149296
+2025-04-06 21:37:43,644 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 21:37:43,644 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 21:37:43,659 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  1
+2025-04-06 21:37:43,659 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 21:37:43,659 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 21:37:43,662 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 21:37:44,262 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection changing to False
+2025-04-06 21:37:44,262 - models.device - DEBUG - CHANGE DEBUG: Device ' 1' selection state changed to False
+2025-04-06 21:37:44,262 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  1, is_selected=False
+2025-04-06 21:37:44,262 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 1' with state False

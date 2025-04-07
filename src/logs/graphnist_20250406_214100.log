@@ -1,0 +1,41 @@
+2025-04-06 21:41:00,809 - root - INFO - Logging configured. Log file: C:\Users\catas\Desktop\GraphNIST-1\src\logs\graphnist_20250406_214100.log
+2025-04-06 21:41:00,821 - views.main_window - INFO - Application icon loaded from: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\shield_logo.svg
+2025-04-06 21:41:00,823 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 21:41:00,823 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 21:41:00,834 - utils.icon_manager - DEBUG - Trying to load icon: select_tool
+2025-04-06 21:41:00,835 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\select_tool.svg
+2025-04-06 21:41:00,835 - utils.icon_manager - DEBUG - Trying to load icon: add_device
+2025-04-06 21:41:00,835 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_device.svg
+2025-04-06 21:41:00,836 - utils.icon_manager - DEBUG - Trying to load icon: add_connection
+2025-04-06 21:41:00,836 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_connection.svg
+2025-04-06 21:41:00,836 - utils.icon_manager - DEBUG - Trying to load icon: add_boundary
+2025-04-06 21:41:00,836 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_boundary.svg
+2025-04-06 21:41:00,836 - utils.icon_manager - DEBUG - Trying to load icon: delete
+2025-04-06 21:41:00,838 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\delete.svg
+2025-04-06 21:41:00,838 - utils.icon_manager - DEBUG - Trying to load icon: copy
+2025-04-06 21:41:00,838 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\copy.svg
+2025-04-06 21:41:00,839 - utils.icon_manager - DEBUG - Trying to load icon: paste
+2025-04-06 21:41:00,839 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\paste.svg
+2025-04-06 21:41:00,839 - utils.icon_manager - DEBUG - Trying to load icon: connection_straight
+2025-04-06 21:41:00,839 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_straight.svg
+2025-04-06 21:41:00,839 - utils.icon_manager - DEBUG - Trying to load icon: connection_orthogonal
+2025-04-06 21:41:00,839 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_orthogonal.svg
+2025-04-06 21:41:00,840 - utils.icon_manager - DEBUG - Trying to load icon: connection_curved
+2025-04-06 21:41:00,840 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_curved.svg
+2025-04-06 21:41:00,840 - utils.icon_manager - DEBUG - Trying to load icon: align
+2025-04-06 21:41:00,840 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\align.svg
+2025-04-06 21:41:00,841 - utils.icon_manager - DEBUG - Trying to load icon: magnify
+2025-04-06 21:41:00,841 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\magnify.svg
+2025-04-06 21:41:00,841 - utils.icon_manager - DEBUG - Trying to load icon: zoom_in
+2025-04-06 21:41:00,841 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_in.svg
+2025-04-06 21:41:00,842 - utils.icon_manager - DEBUG - Trying to load icon: zoom_out
+2025-04-06 21:41:00,842 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_out.svg
+2025-04-06 21:41:00,842 - utils.icon_manager - DEBUG - Trying to load icon: zoom_reset
+2025-04-06 21:41:00,842 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_reset.svg
+2025-04-06 21:41:01,019 - views.main_window - INFO - Mode changed to: select
+2025-04-06 21:41:01,347 - views.main_window - INFO - Properties controller initialized
+2025-04-06 21:41:04,548 - views.canvas.modes.select_mode - DEBUG - SelectMode: Deactivated
+2025-04-06 21:41:04,548 - views.canvas.canvas - INFO - Canvas: Switching to mode AddDeviceMode
+2025-04-06 21:41:04,753 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at -269.0, -276.0
+2025-04-06 21:41:04,753 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 21:41:04,753 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None

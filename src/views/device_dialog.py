@@ -25,7 +25,7 @@ class DeviceDialog(QDialog):
             self.logger.critical(f"DIALOG DEBUG: Using custom icon path from device: {self.custom_icon_path}")
         
         self.setWindowTitle("Add Device" if not device else "Edit Device")
-        self.resize(450, 300)
+        self.resize(450, 350)
         
         # Create layout
         main_layout = QVBoxLayout()
@@ -38,6 +38,72 @@ class DeviceDialog(QDialog):
         # If editing, populate fields
         if device:
             self._populate_from_device()
+
+    # Common device models for each device type
+    DEVICE_MODELS = {
+        DeviceTypes.ROUTER: [
+            "Cisco ISR 4451", "Cisco ASR 1001-X", "Cisco ASR 9000", "Cisco Catalyst 8300",
+            "Juniper MX204", "Juniper SRX380", "Juniper ACX7100", 
+            "Arista 7280R3", "Arista 7500R3", 
+            "Palo Alto PA-7000", "Fortinet FortiGate 600F",
+            "MikroTik CCR2004", "Ubiquiti EdgeRouter 4",
+            "HPE FlexNetwork MSR3000", "Huawei AR6000"
+        ],
+        DeviceTypes.SWITCH: [
+            "Cisco Catalyst 9300", "Cisco Nexus 9300", "Cisco 3850", 
+            "Juniper EX4650", "Juniper QFX5120",
+            "Arista 7050X3", "Arista 7060X4", 
+            "HPE Aruba 6300F", "HPE FlexFabric 5945", 
+            "Dell PowerSwitch S5248F", "Dell EMC S4148F",
+            "Ubiquiti UniFi USW-Pro-48-POE", "MikroTik CRS326",
+            "Extreme Networks X870", "Brocade ICX7650"
+        ],
+        DeviceTypes.FIREWALL: [
+            "Palo Alto PA-5450", "Palo Alto PA-3260", 
+            "Cisco Firepower 2130", "Cisco ASA 5555-X", 
+            "Fortinet FortiGate 600F", "Fortinet FortiGate 3400E",
+            "Check Point 16000", "Check Point 6800",
+            "Juniper SRX380", "Juniper SRX4600",
+            "Sophos XGS 5500", "Sophos XGS 6500",
+            "WatchGuard Firebox M590", "Barracuda CloudGen F900",
+            "SonicWall NSA 6700"
+        ],
+        DeviceTypes.SERVER: [
+            "Dell PowerEdge R750", "Dell PowerEdge R650",
+            "HPE ProLiant DL380 Gen10", "HPE ProLiant DL360 Gen10", 
+            "Lenovo ThinkSystem SR650", "Lenovo ThinkSystem SR630",
+            "Cisco UCS C240 M6", "Cisco UCS C220 M6",
+            "IBM Power System S1022", "IBM Power System S1014",
+            "Oracle X9-2", "Oracle X8-2",
+            "SuperMicro SuperServer 1029U-TN10RT", "SuperMicro SuperServer 2029U-E1CR4",
+            "Huawei FusionServer Pro 2288H V5", "Asus RS700-E10"
+        ],
+        DeviceTypes.CLOUD: [
+            "AWS EC2", "AWS S3", "AWS VPC", "AWS Lambda", "AWS RDS",
+            "Azure Virtual Machines", "Azure Blob Storage", "Azure SQL", "Azure Functions",
+            "Google Compute Engine", "Google Cloud Storage", "Google Cloud SQL",
+            "IBM Cloud Virtual Servers", "IBM Cloud Object Storage",
+            "Oracle Cloud Infrastructure", "Alibaba ECS",
+            "Digital Ocean Droplets", "Salesforce Cloud"
+        ],
+        DeviceTypes.WORKSTATION: [
+            "Dell OptiPlex 7090", "Dell Precision 5820", 
+            "HP EliteDesk 800 G6", "HP Z4 Workstation",
+            "Lenovo ThinkCentre M90t", "Lenovo ThinkStation P620",
+            "Apple Mac Pro", "Apple Mac Mini M1",
+            "Microsoft Surface Studio 2", 
+            "ASUS ProArt Station PD5", "ASUS ExpertCenter D7",
+            "Acer Veriton X", "Acer ConceptD 500",
+            "Intel NUC 11 Extreme", "Alienware Aurora R13"
+        ],
+        DeviceTypes.GENERIC: [
+            "IoT Gateway", "Virtual Appliance", "Embedded Device", 
+            "PLC Controller", "Edge Computing Device", "Media Converter",
+            "Load Balancer", "VPN Concentrator", "Thin Client",
+            "Print Server", "KVM Switch", "Wireless Access Point", 
+            "Storage Array", "Tape Library", "UPS System"
+        ]
+    }
     
     def _create_ui(self):
         """Create the dialog UI."""
@@ -46,6 +112,8 @@ class DeviceDialog(QDialog):
         
         # Name field
         self.name_edit = QLineEdit()
+        # Connect name changes to update the model field
+        self.name_edit.textChanged.connect(self._update_model_from_name)
         form_layout.addRow("Name:", self.name_edit)
         
         # Device type dropdown
@@ -61,6 +129,60 @@ class DeviceDialog(QDialog):
         self.type_combo.addItem("Generic", DeviceTypes.GENERIC)
         
         form_layout.addRow("Type:", self.type_combo)
+        
+        # Device model section
+        self.model_group = QGroupBox("Device Model")
+        model_layout = QVBoxLayout()
+        
+        # Label for model selection
+        self.model_label = QLabel("Select a common device model:")
+        model_layout.addWidget(self.model_label)
+        
+        # Model dropdown
+        self.model_combo = QComboBox()
+        self.model_combo.setPlaceholderText("Select Model...")
+        model_layout.addWidget(self.model_combo)
+        
+        # Connect device type dropdown to update models
+        self.type_combo.currentIndexChanged.connect(self._update_model_dropdown)
+        
+        # Custom model input
+        self.custom_model_layout = QHBoxLayout()
+        self.custom_model_label = QLabel("Custom Model:")
+        self.custom_model_edit = QLineEdit()
+        self.custom_model_layout.addWidget(self.custom_model_label)
+        self.custom_model_layout.addWidget(self.custom_model_edit)
+        model_layout.addLayout(self.custom_model_layout)
+        
+        self.model_group.setLayout(model_layout)
+        main_layout.addWidget(self.model_group)
+        
+        # RMF ATO Accreditation Section
+        self.rmf_group = QGroupBox("RMF ATO Accreditation")
+        rmf_layout = QFormLayout()
+        
+        # STIG Compliance
+        self.stig_combo = QComboBox()
+        self.stig_combo.addItems(["Not Assessed", "Non-Compliant", "Partially Compliant", "Fully Compliant"])
+        rmf_layout.addRow("STIG Compliance:", self.stig_combo)
+        
+        # Vulnerability Assessment
+        self.vuln_combo = QComboBox()
+        self.vuln_combo.addItems(["Not Scanned", "Critical Findings", "High Findings", "Medium Findings", "Low Findings Only", "No Findings"])
+        rmf_layout.addRow("Vulnerability Scan:", self.vuln_combo)
+        
+        # ATO Status
+        self.ato_combo = QComboBox()
+        self.ato_combo.addItems(["Not Started", "In Progress", "ATO Granted", "ATO with Conditions", "Denied"])
+        rmf_layout.addRow("ATO Status:", self.ato_combo)
+        
+        # Accreditation Date
+        self.accred_date = QLineEdit()
+        self.accred_date.setPlaceholderText("YYYY-MM-DD")
+        rmf_layout.addRow("Accreditation Date:", self.accred_date)
+        
+        self.rmf_group.setLayout(rmf_layout)
+        main_layout.addWidget(self.rmf_group)
         
         # IP Address field
         self.ip_edit = QLineEdit()
@@ -185,7 +307,33 @@ class DeviceDialog(QDialog):
         
         # Initial grid update
         self._update_grid_preview()
+        
+        # Initial model dropdown update
+        self._update_model_dropdown()
 
+    def _update_model_dropdown(self):
+        """Update the model dropdown based on the selected device type."""
+        self.model_combo.clear()
+        
+        # Get the current device type
+        device_type = self.type_combo.currentData()
+        
+        # Add a blank item first
+        self.model_combo.addItem("Select model...", "")
+        
+        # Add models for this device type
+        if device_type in self.DEVICE_MODELS:
+            for model in self.DEVICE_MODELS[device_type]:
+                self.model_combo.addItem(model, model)
+        
+        # Connect the model selection to the custom model field
+        self.model_combo.currentIndexChanged.connect(self._update_custom_model_field)
+    
+    def _update_custom_model_field(self):
+        """Update the custom model field based on the selected model."""
+        if self.model_combo.currentIndex() > 0:  # If a predefined model is selected
+            self.custom_model_edit.setText(self.model_combo.currentText())
+        
     def _toggle_multiple_options(self, checked):
         """Show or hide multiple device options based on checkbox state."""
         self.multiple_group.setVisible(checked)
@@ -233,6 +381,40 @@ class DeviceDialog(QDialog):
                 self.type_combo.setCurrentIndex(i)
                 break
         
+        # Set model if available
+        if self.device.properties and 'model' in self.device.properties:
+            self.custom_model_edit.setText(self.device.properties['model'])
+            
+            # Try to find the model in the dropdown
+            for i in range(self.model_combo.count()):
+                if self.model_combo.itemText(i) == self.device.properties['model']:
+                    self.model_combo.setCurrentIndex(i)
+                    break
+        
+        # Set RMF ATO properties if available
+        if self.device.properties:
+            # STIG Compliance
+            if 'stig_compliance' in self.device.properties:
+                index = self.stig_combo.findText(self.device.properties['stig_compliance'])
+                if index >= 0:
+                    self.stig_combo.setCurrentIndex(index)
+            
+            # Vulnerability Scan
+            if 'vulnerability_scan' in self.device.properties:
+                index = self.vuln_combo.findText(self.device.properties['vulnerability_scan'])
+                if index >= 0:
+                    self.vuln_combo.setCurrentIndex(index)
+            
+            # ATO Status
+            if 'ato_status' in self.device.properties:
+                index = self.ato_combo.findText(self.device.properties['ato_status'])
+                if index >= 0:
+                    self.ato_combo.setCurrentIndex(index)
+            
+            # Accreditation Date
+            if 'accreditation_date' in self.device.properties:
+                self.accred_date.setText(self.device.properties['accreditation_date'])
+        
         # Set properties
         if self.device.properties:
             if 'ip_address' in self.device.properties:
@@ -268,11 +450,17 @@ class DeviceDialog(QDialog):
         return self.type_combo.currentData()
     
     def get_properties(self):
-        """Get the entered properties."""
-        return {
-            'ip_address': self.ip_edit.text().strip(),
-            'description': self.desc_edit.text().strip()
+        """Get the device properties entered in the dialog."""
+        properties = {
+            'ip_address': self.ip_edit.text(),
+            'description': self.desc_edit.text(),
+            'model': self.custom_model_edit.text(),
+            'stig_compliance': self.stig_combo.currentText(),
+            'vulnerability_scan': self.vuln_combo.currentText(),
+            'ato_status': self.ato_combo.currentText(),
+            'accreditation_date': self.accred_date.text()
         }
+        return properties
     
     def get_device_data(self):
         """Get all device data as a dictionary."""
@@ -333,3 +521,8 @@ class DeviceDialog(QDialog):
             'vertical_spacing': self.v_spacing_spin.value(),
             'max_columns': self.columns_spin.value()
         }
+
+    def _update_model_from_name(self):
+        """Update the model field to match the device name if it's empty."""
+        if not self.custom_model_edit.text():
+            self.custom_model_edit.setText(self.name_edit.text())

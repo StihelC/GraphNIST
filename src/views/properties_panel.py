@@ -100,6 +100,33 @@ class PropertiesPanel(QWidget):
         self.device_type_label = QLabel()
         layout.addRow("Type:", self.device_type_label)
         
+        # Device model
+        self.device_model_label = QLabel()
+        layout.addRow("Model:", self.device_model_label)
+        
+        # RMF ATO Accreditation section
+        self.rmf_group = QGroupBox("RMF ATO Accreditation")
+        rmf_layout = QFormLayout()
+        
+        # STIG Compliance
+        self.stig_label = QLabel()
+        rmf_layout.addRow("STIG Compliance:", self.stig_label)
+        
+        # Vulnerability Scan
+        self.vuln_label = QLabel()
+        rmf_layout.addRow("Vulnerability Scan:", self.vuln_label)
+        
+        # ATO Status
+        self.ato_label = QLabel()
+        rmf_layout.addRow("ATO Status:", self.ato_label)
+        
+        # Accreditation Date
+        self.accred_date_label = QLabel()
+        rmf_layout.addRow("Accreditation Date:", self.accred_date_label)
+        
+        self.rmf_group.setLayout(rmf_layout)
+        layout.addRow(self.rmf_group)
+        
         # Add button to change device icon
         self.change_icon_button = QPushButton("Change Icon")
         self.change_icon_button.setStyleSheet("QPushButton { padding: 4px 8px; }")
@@ -264,42 +291,46 @@ class PropertiesPanel(QWidget):
             logger.info(f"PANEL DEBUG: Unknown item type: {type(item).__name__}")
     
     def _display_device_properties(self, device):
-        """Display device-specific properties."""
-        logger = logging.getLogger(__name__)
-        logger.info(f"PANEL DEBUG: Setting up device properties for: {device.name}")
-        
-        # Show device properties group
+        """Display properties for a device."""
+        # Ensure the device section is visible
         self.device_group.setVisible(True)
+        self.connection_group.setVisible(False)
+        self.boundary_group.setVisible(False)
         
-        # Set device type
-        self.device_type_label.setText(device.device_type)
-        logger.info(f"PANEL DEBUG: Device type set to: {device.device_type}")
+        # Set basic properties
+        self.name_edit.setText(device.name)
+        self.z_index_spin.setValue(int(device.zValue()))
+        self.device_type_label.setText(device.device_type.capitalize())
         
-        # Update property checkboxes section
-        self._update_device_display_options(device)
+        # Set model if available
+        model_text = device.properties.get('model', '')
+        self.device_model_label.setText(model_text)
         
-        # Clear and re-populate the properties table
+        # Set RMF ATO properties if available
+        self.stig_label.setText(device.properties.get('stig_compliance', 'Not Assessed'))
+        self.vuln_label.setText(device.properties.get('vulnerability_scan', 'Not Scanned'))
+        self.ato_label.setText(device.properties.get('ato_status', 'Not Started'))
+        self.accred_date_label.setText(device.properties.get('accreditation_date', ''))
+        
+        # Populate device properties table
         self.device_props_table.setRowCount(0)
         self.device_props_table.clearContents()
-        self.device_props_table.cellChanged.disconnect(self._on_device_property_changed)
+        self.device_props_table.blockSignals(True)
         
-        # Populate the properties table
-        if hasattr(device, 'properties'):
-            logger.info(f"PANEL DEBUG: Device has {len(device.properties)} properties")
-            row = 0
-            for key, value in device.properties.items():
-                # Skip properties that should not be shown in the table
-                if key in ['name', 'device_type', 'width', 'height', 'color']:  # Added 'color' to the list of excluded properties
-                    continue
-                    
+        # Add all device properties to the table except those displayed as separate fields
+        excluded_props = ['model', 'icon', 'stig_compliance', 'vulnerability_scan', 'ato_status', 'accreditation_date']
+        row = 0
+        for prop, value in device.properties.items():
+            if prop not in excluded_props:
                 self.device_props_table.insertRow(row)
-                self.device_props_table.setItem(row, 0, QTableWidgetItem(key))
+                self.device_props_table.setItem(row, 0, QTableWidgetItem(prop))
                 self.device_props_table.setItem(row, 1, QTableWidgetItem(str(value)))
                 row += 1
         
-        # Reconnect cell changed signal
-        self.device_props_table.cellChanged.connect(self._on_device_property_changed)
-        logger.info("PANEL DEBUG: Device properties display completed")
+        self.device_props_table.blockSignals(False)
+        
+        # Update display options checkboxes
+        self._update_device_display_options(device)
     
     def _get_display_options_group(self):
         """Helper method to find the Display Options group within the device group."""
@@ -682,60 +713,65 @@ class PropertiesPanel(QWidget):
         self.property_display_toggled.emit(prop_name, display_enabled)
 
     def _update_device_display_options(self, device):
-        """Update the display options checkboxes for device properties."""
-        logger = logging.getLogger(__name__)
+        """Update the display options for a device."""
+        # Clear existing checkboxes
+        for i in reversed(range(self._get_display_options_group().layout().count())):
+            widget = self._get_display_options_group().layout().itemAt(i).widget()
+            if isinstance(widget, QCheckBox) and widget != self.display_checkboxes.get('title', None):
+                self._get_display_options_group().layout().removeWidget(widget)
+                widget.deleteLater()
         
-        # Get the display options group box
-        display_group = self._get_display_options_group()
-        if not display_group:
-            logger.warning("Display options group not found")
-            return
+        # Clear display_checkboxes dict except for title checkbox
+        title_checkbox = self.display_checkboxes.get('title', None)
+        self.display_checkboxes = {}
+        if title_checkbox:
+            self.display_checkboxes['title'] = title_checkbox
         
-        # Get the layout of the group box
-        display_layout = display_group.layout()
-        if not display_layout:
-            logger.warning("Display options group has no layout")
-            # Create a layout if none exists
-            display_layout = QVBoxLayout(display_group)
+        # Common properties to show (in order)
+        common_properties = [
+            ("ip_address", "IP Address"),
+            ("model", "Model"),
+            ("hostname", "Hostname"),
+            ("description", "Description"),
+            ("location", "Location"),
+            ("stig_compliance", "STIG Compliance"),
+            ("vulnerability_scan", "Vulnerability Scan"),
+            ("ato_status", "ATO Status"),
+            ("accreditation_date", "Accreditation Date")
+        ]
         
-        # Clear existing layout content
-        self._reset_layout(display_layout)
-        self.display_checkboxes.clear()
+        # Add checkboxes for common properties first, then device-specific ones
+        used_props = set()
+        for prop_key, display_name in common_properties:
+            if prop_key in device.properties:
+                self._add_display_checkbox(device, prop_key, display_name)
+                used_props.add(prop_key)
         
-        # Add header label
-        header_label = QLabel("Show properties under icon:")
-        header_label.setStyleSheet("font-weight: bold;")
-        display_layout.addWidget(header_label)
+        # Now add any other properties from the device that weren't in common_properties
+        for prop in device.properties.keys():
+            if prop not in used_props and prop not in ['icon', 'color', 'width', 'height']:
+                display_name = prop.replace('_', ' ').title()
+                self._add_display_checkbox(device, prop, display_name)
+    
+    def _add_display_checkbox(self, device, prop_key, display_name):
+        """Add a checkbox for controlling the display of a device property."""
+        # Create the checkbox with a friendly display name
+        checkbox = QCheckBox(display_name)
         
-        # Get device properties (exclude certain built-in properties)
-        exclude_props = ['name', 'device_type', 'width', 'height', 'icon']
-        properties = [prop for prop in device.properties.keys() if prop not in exclude_props]
+        # Set the initial state from the device
+        is_displayed = device.get_property_display_state(prop_key)
+        checkbox.setChecked(is_displayed)
         
-        if not properties:
-            display_layout.addWidget(QLabel("No displayable properties available"))
-            return
+        # Store the property key as a property on the checkbox
+        checkbox.setProperty("property_name", prop_key)
         
-        # Sort properties alphabetically for consistent UI
-        properties.sort()
+        # Connect the state changed signal
+        checkbox.stateChanged.connect(self._handle_checkbox_state_changed)
         
-        # Create a checkbox for each property
-        for prop in properties:
-            checkbox = QCheckBox(prop)
-            
-            # Get current state from the device
-            is_displayed = device.get_property_display_state(prop)
-            checkbox.setChecked(is_displayed)
-            
-            # Store property name for the callback
-            checkbox.setProperty("property_name", prop)
-            
-            # Connect state change signal
-            checkbox.stateChanged.connect(self._handle_checkbox_state_changed)
-            
-            # Add to layout and store reference
-            display_layout.addWidget(checkbox)
-            self.display_checkboxes[prop] = checkbox
-
+        # Add to layout and store reference
+        self._get_display_options_group().layout().addWidget(checkbox)
+        self.display_checkboxes[prop_key] = checkbox
+    
     def _on_boundary_color_change(self):
         """Handle boundary color change request."""
         if not self.current_item:

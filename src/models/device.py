@@ -987,96 +987,94 @@ class Device(QGraphicsPixmapItem):
                 child.setFlag(QGraphicsItem.ItemIsMovable, enabled)
 
     def update_property_labels(self):
-        """Update the property labels displayed under the device icon."""
-        self.logger.debug(f"UPDATE PROPS DEBUG: Updating property labels for '{self.name}', current count: {len(self.property_labels)}")
+        """Update the property labels."""
+        # Get properties that should be displayed
+        visible_props = [prop for prop, visible in self.display_properties.items() if visible]
         
-        # If display_properties dict doesn't exist yet, initialize it
-        if not hasattr(self, 'display_properties'):
-            self.display_properties = {}
-        
-        # Get properties to display
-        display_props = []
-        
-        # Define a priority order for common properties
-        priority_props = ["ip_address", "hostname", "management_ip", "mac_address", "model", "vendor", "description"]
-        
-        # First add priority properties in order (if they exist and are enabled for display)
-        for prop in priority_props:
-            if prop in self.display_properties and self.display_properties[prop] and prop in self.properties:
-                display_props.append((prop, str(self.properties[prop])))
-        
-        # Then add any remaining properties that are enabled for display
-        for prop, show in self.display_properties.items():
-            if show and prop in self.properties and prop not in priority_props:
-                display_props.append((prop, str(self.properties[prop])))
-        
-        self.logger.debug(f"UPDATE PROPS DEBUG: Found {len(display_props)} properties to display: {[p[0] for p in display_props]}")
-        
-        # If no properties to display, remove all existing labels and return
-        if not display_props:
-            for label in self.property_labels.values():
-                scene = label.scene()
-                if scene:
-                    scene.removeItem(label)
-            self.property_labels.clear()
-            return
-        
-        # First, identify any property labels that are no longer needed
-        to_remove = [prop for prop in self.property_labels if prop not in [p[0] for p in display_props]]
-        for prop in to_remove:
-            if prop in self.property_labels:
-                label = self.property_labels.pop(prop)
-                scene = label.scene()
-                if scene:
-                    scene.removeItem(label)
-        
-        # Start positioning from the bottom of the device plus the name label height
-        # First, calculate where the name text ends
-        name_bottom = self.height
-        if hasattr(self, 'text_item') and self.text_item:
-            name_bottom += self.text_item.boundingRect().height() + 5
-        
-        # Create or update labels for selected properties
-        for i, (prop, value) in enumerate(display_props):
-            # Format the display - add property name for clarity
-            display_text = f"{prop.replace('_', ' ').title()}: {value}"
-            
-            # If label already exists, update its text
-            if prop in self.property_labels:
-                label = self.property_labels[prop]
-                # Only update text if the value has changed
-                if label.toPlainText() != display_text:
-                    label.setPlainText(display_text)
+        # Create or update labels for each visible property
+        for prop_name in visible_props:
+            # Special handling for IP address (displayed always as IP if available)
+            display_value = ""
+            if prop_name == 'ip_address':
+                # For IP address, show just the value
+                display_value = str(self.properties.get(prop_name, ""))
+            elif prop_name == 'model':
+                # For model, show just the value (not the prefix)
+                display_value = str(self.properties.get(prop_name, ""))
+            elif prop_name in ['stig_compliance', 'vulnerability_scan', 'ato_status', 'accreditation_date']:
+                # Format RMF properties with shorter display names
+                if prop_name == 'stig_compliance':
+                    display_value = f"STIG: {self.properties.get(prop_name, '')}"
+                elif prop_name == 'vulnerability_scan':
+                    display_value = f"Vuln: {self.properties.get(prop_name, '')}"
+                elif prop_name == 'ato_status':
+                    display_value = f"ATO: {self.properties.get(prop_name, '')}"
+                elif prop_name == 'accreditation_date':
+                    display_value = f"Accred: {self.properties.get(prop_name, '')}"
             else:
-                # Create new label if it doesn't exist
-                label = QGraphicsTextItem(self)  # Make the device its parent
-                label.setPlainText(display_text)
+                # For other properties, show "name: value"
+                display_value = f"{prop_name}: {self.properties.get(prop_name, '')}"
                 
-                # Use font settings from manager if available
+            # Skip if value is empty
+            if not display_value.strip():
+                continue
+                
+            # Create or update label
+            if prop_name not in self.property_labels:
+                self.property_labels[prop_name] = QGraphicsTextItem(self)
+                self.property_labels[prop_name].setPlainText(display_value)
+                
+                # Apply font settings if available
                 if self.font_settings_manager:
-                    label.setFont(self.font_settings_manager.get_device_property_font())
-                else:
-                    font = QFont("Arial", 8)
-                    font.setBold(True)  # Make property labels bold for better visibility
-                    label.setFont(font)
+                    font = self.font_settings_manager.get_device_property_font()
+                    self.property_labels[prop_name].setFont(font)
                     
-                self.property_labels[prop] = label
-            
-            # Update position (this needs to happen either way)
-            # Center the label horizontally
-            x_pos = (self.width - label.boundingRect().width()) / 2
-            
-            # Position each property below the name, with spacing between properties
-            y_pos = name_bottom + (i * (label.boundingRect().height() + 2))
-            
-            # Set the position
-            label.setPos(x_pos, y_pos)
-            
-            # Always ensure the text color is set to black for PDF export compatibility
-            label.setDefaultTextColor(QColor(0, 0, 0))
+                # Set appearance based on theme
+                is_dark = getattr(self, 'current_theme', None) == 'dark'
+                text_color = QColor(240, 240, 240) if is_dark else QColor(0, 0, 0)
+                self.property_labels[prop_name].setDefaultTextColor(text_color)
+            else:
+                # Update existing label
+                self.property_labels[prop_name].setPlainText(display_value)
+                
+        # Remove labels for properties that should not be displayed
+        for prop_name in list(self.property_labels.keys()):
+            if prop_name not in visible_props:
+                if self.property_labels[prop_name] in self.childItems():
+                    self.scene().removeItem(self.property_labels[prop_name])
+                del self.property_labels[prop_name]
+                
+        # Position labels
+        self._update_property_label_positions()
+    
+    def _show_property(self, property_name, show):
+        """Show or hide a specific property."""
+        if property_name in self.property_labels:
+            label = self.property_labels[property_name]
+            label.setVisible(show)
+    
+    def _update_property_label_positions(self):
+        """Update the positions of all property labels."""
+        # Start position below the device name
+        y_offset = self.height + 25  # Start below device name
         
-        # Log the final state
-        self.logger.debug(f"UPDATE PROPS DEBUG: Updated property labels, final count: {len(self.property_labels)}")
+        # Get all visible labels
+        visible_labels = []
+        for prop_name, label in self.property_labels.items():
+            if self.display_properties.get(prop_name, False) and label:
+                visible_labels.append(label)
+        
+        # Position each label
+        for label in visible_labels:
+            # Center horizontally
+            width = label.boundingRect().width()
+            x = (self.width - width) / 2
+            
+            # Position vertically with a small gap
+            label.setPos(x, y_offset)
+            
+            # Increment y_offset for the next label
+            y_offset += label.boundingRect().height() + 3  # Small gap between labels
 
     def update_font_settings(self, font_settings_manager):
         """Update the device's font settings."""
@@ -1107,123 +1105,44 @@ class Device(QGraphicsPixmapItem):
         self.update_property_labels()
     
     def update_theme(self, theme_name):
-        """Update text colors based on current theme."""
-        # For device name, use black text in light mode, white text in dark mode
-        if hasattr(self, 'text_item') and self.text_item:
-            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
-            # and black text in light mode. Changing this will break theme handling.
-            from utils.theme_manager import ThemeManager
-            is_dark = theme_name == ThemeManager.DARK_THEME
+        """Update the device's appearance based on the theme."""
+        if not theme_name:
+            return
             
-            # FORCE text color - white for dark mode, black for light mode
-            if is_dark:
-                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # Pure white for dark mode
-                self.logger.debug(f"Forcing WHITE text color for device {self.name} in DARK mode")
-            else:
-                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Pure black for light mode
-                self.logger.debug(f"Setting BLACK text color for device {self.name} in LIGHT mode")
+        self.current_theme = theme_name
+        is_dark = theme_name == 'dark'
             
-            # Ensure text is set
-            if not self.text_item.toPlainText() or self.text_item.toPlainText().strip() == "":
-                self.text_item.setPlainText(self.name)
+        # Update text color based on theme
+        text_color = QColor(240, 240, 240) if is_dark else QColor(0, 0, 0)
+        if self.text_item:
+            self.text_item.setDefaultTextColor(text_color)
             
-            # DON'T change font size on theme change - it causes size flicker
-            # Just ensure it's bold
-            font = self.text_item.font()
-            font.setBold(True)
-            self.text_item.setFont(font)
-            
-            # Make sure text is visible by recentering it
-            text_width = self.text_item.boundingRect().width()
-            text_x = (self.width - text_width) / 2
-            self.text_item.setPos(text_x, self.height + 3)
-            
-            # Make sure text is visible
-            self.text_item.setVisible(True)
-            self.text_item.setZValue(20)
-        else:
-            # If text_item doesn't exist, create it
-            self.update_name()  # This will create text_item with proper styling
-        
-        # For property labels, use black color for PDF export compatibility
-        # This ensures text will always be visible in PDFs regardless of application theme
-        for label in self.property_labels.values():
-            label.setDefaultTextColor(QColor(0, 0, 0))  # Always use black for property labels
-            
-        # Force a redraw
-        self.update()
-        
-        # This ensures property labels are properly positioned
-        self.update_property_labels()
-        
-        # Store theme manager reference for later use
-        from utils.theme_manager import ThemeManager
-        self.theme_manager = ThemeManager()
-    
+        # Update property label colors
+        for prop_name, label in self.property_labels.items():
+            if label and hasattr(label, 'setDefaultTextColor'):
+                label.setDefaultTextColor(text_color)
+                
+        # Update property visibility
+        for prop_name, visible in self.display_properties.items():
+            if visible:
+                self._show_property(prop_name, visible)
+                
     def toggle_property_display(self, property_name, show):
-        """Toggle display of a specific property under the device."""
-        # Initialize display_properties if it doesn't exist
-        if not hasattr(self, 'display_properties'):
-            self.display_properties = {}
-        
-        # Update the display state for the property
+        """Toggle the display of a property on the canvas."""
+        # Record the display state
         self.display_properties[property_name] = show
         
-        # Update property labels
-        self.update_property_labels()
+        # Update the display
+        self._show_property(property_name, show)
+        
+        # Update the property labels' positions
+        self._update_property_label_positions()
     
     def get_property_display_state(self, property_name):
-        """Get the display state of a specific property."""
-        # Initialize display_properties if it doesn't exist
-        if not hasattr(self, 'display_properties'):
-            self.display_properties = {}
-            
-        # Return display state (False if not set)
+        """Get whether a property is displayed."""
         return self.display_properties.get(property_name, False)
-        
+    
     def update(self):
-        """Update the device's visual appearance."""
+        """Update the device display."""
         super().update()
-        
-        # Make sure the text item exists
-        if not hasattr(self, 'text_item') or not self.text_item:
-            self.text_item = QGraphicsTextItem(self)
-            self.text_item.setPlainText(self.name)
-            
-            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
-            # and black text in light mode. Changing this will break theme handling.
-            from utils.theme_manager import ThemeManager
-            theme_mgr = ThemeManager()
-            is_dark = theme_mgr.is_dark_theme()
-            if is_dark:
-                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # White for dark mode
-            else:
-                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Black for light mode
-            
-            # Make text bold but use smaller font size to match after movement
-            font = QFont()
-            font.setPointSize(9)  # Fixed smaller font size
-            font.setBold(True)
-            self.text_item.setFont(font)
-            
-            # Center the text
-            text_width = self.text_item.boundingRect().width()
-            text_x = (self.width - text_width) / 2
-            self.text_item.setPos(text_x, self.height + 3)
-            
-            # Make sure the text is a child of this device
-            self.text_item.setParentItem(self)
-        else:
-            # Don't modify the font if text_item already exists
-            # This prevents font size changes when switching modes
-            
-            # Only reposition if text has changed
-            if self.text_item.toPlainText() != self.name:
-                # Update text and recenter
-                self.text_item.setPlainText(self.name)
-                text_width = self.text_item.boundingRect().width()
-                text_x = (self.width - text_width) / 2
-                self.text_item.setPos(text_x, self.height + 3)
-        
-        # Update property labels but don't change text properties
         self.update_property_labels()
