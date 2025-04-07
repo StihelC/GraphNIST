@@ -87,6 +87,12 @@ class PDFExportDialog(QDialog):
         self.border_check.setChecked(True)  # Default to enabled for better visibility
         content_layout.addWidget(self.border_check)
         
+        # Preserve SVG transparency option
+        self.svg_transparency_check = QCheckBox("Preserve SVG transparency")
+        self.svg_transparency_check.setChecked(True)  # Default to enabled
+        self.svg_transparency_check.setToolTip("Keep SVG backgrounds transparent in the exported PDF")
+        content_layout.addWidget(self.svg_transparency_check)
+        
         # Include metadata option
         self.metadata_check = QCheckBox("Include metadata (creation date, application name)")
         self.metadata_check.setChecked(True)
@@ -161,7 +167,8 @@ class PDFExportDialog(QDialog):
             'margin': margin,
             'fit_to_page': self.fit_check.isChecked(),
             'draw_border': self.border_check.isChecked(),
-            'include_metadata': self.metadata_check.isChecked()
+            'include_metadata': self.metadata_check.isChecked(),
+            'preserve_svg_transparency': self.svg_transparency_check.isChecked()
         }
 
     @staticmethod

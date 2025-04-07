@@ -338,6 +338,9 @@ class Device(QGraphicsPixmapItem):
             # Create a new SVG item
             svg_item = QGraphicsSvgItem(path)
             
+            # Ensure SVG transparency is preserved
+            svg_item.setCacheMode(QGraphicsItem.NoCache)  # Disable caching to ensure proper rendering
+            
             # Calculate aspect ratio to maintain proportions
             default_size = renderer.defaultSize()
             if default_size.width() == 0 or default_size.height() == 0:
@@ -370,6 +373,9 @@ class Device(QGraphicsPixmapItem):
             # Hide background rectangle when using SVG
             if hasattr(self, 'rect_item') and self.rect_item:
                 self.rect_item.setVisible(False)
+                # Completely clear the brush to avoid gray background
+                self.rect_item.setBrush(QBrush(Qt.transparent))
+                self.rect_item.setPen(QPen(Qt.transparent, 0))
             
             self.logger.info(f"ICON DEBUG: Successfully loaded SVG icon from {path}")
             return True
@@ -504,6 +510,14 @@ class Device(QGraphicsPixmapItem):
         """Paint the device with connection points if needed."""
         # First call the parent implementation for basic drawing
         super().paint(painter, option, widget)
+        
+        # For SVG icons, ensure the background is always transparent
+        if hasattr(self, 'icon_item') and isinstance(self.icon_item, QGraphicsSvgItem):
+            if hasattr(self, 'rect_item') and self.rect_item:
+                # Make sure the background is transparent
+                self.rect_item.setVisible(False)
+                self.rect_item.setBrush(QBrush(Qt.transparent))
+                self.rect_item.setPen(QPen(Qt.transparent, 0))
         
         # Ensure name is not empty
         if not self.name or self.name.strip() == "":

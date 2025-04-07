@@ -1,0 +1,83 @@
+2025-04-06 21:27:44,140 - root - INFO - Logging configured. Log file: c:\Users\catas\Desktop\GraphNIST-1\src\logs\graphnist_20250406_212744.log
+2025-04-06 21:27:44,153 - views.main_window - INFO - Application icon loaded from: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\shield_logo.svg
+2025-04-06 21:27:44,155 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 21:27:44,155 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 21:27:44,169 - utils.icon_manager - DEBUG - Trying to load icon: select_tool
+2025-04-06 21:27:44,170 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\select_tool.svg
+2025-04-06 21:27:44,170 - utils.icon_manager - DEBUG - Trying to load icon: add_device
+2025-04-06 21:27:44,170 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_device.svg
+2025-04-06 21:27:44,171 - utils.icon_manager - DEBUG - Trying to load icon: add_connection
+2025-04-06 21:27:44,171 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_connection.svg
+2025-04-06 21:27:44,171 - utils.icon_manager - DEBUG - Trying to load icon: add_boundary
+2025-04-06 21:27:44,172 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_boundary.svg
+2025-04-06 21:27:44,172 - utils.icon_manager - DEBUG - Trying to load icon: delete
+2025-04-06 21:27:44,172 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\delete.svg
+2025-04-06 21:27:44,172 - utils.icon_manager - DEBUG - Trying to load icon: copy
+2025-04-06 21:27:44,173 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\copy.svg
+2025-04-06 21:27:44,173 - utils.icon_manager - DEBUG - Trying to load icon: paste
+2025-04-06 21:27:44,173 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\paste.svg
+2025-04-06 21:27:44,174 - utils.icon_manager - DEBUG - Trying to load icon: connection_straight
+2025-04-06 21:27:44,174 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_straight.svg
+2025-04-06 21:27:44,174 - utils.icon_manager - DEBUG - Trying to load icon: connection_orthogonal
+2025-04-06 21:27:44,174 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_orthogonal.svg
+2025-04-06 21:27:44,174 - utils.icon_manager - DEBUG - Trying to load icon: connection_curved
+2025-04-06 21:27:44,175 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_curved.svg
+2025-04-06 21:27:44,175 - utils.icon_manager - DEBUG - Trying to load icon: align
+2025-04-06 21:27:44,175 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\align.svg
+2025-04-06 21:27:44,176 - utils.icon_manager - DEBUG - Trying to load icon: magnify
+2025-04-06 21:27:44,176 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\magnify.svg
+2025-04-06 21:27:44,176 - utils.icon_manager - DEBUG - Trying to load icon: zoom_in
+2025-04-06 21:27:44,176 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_in.svg
+2025-04-06 21:27:44,176 - utils.icon_manager - DEBUG - Trying to load icon: zoom_out
+2025-04-06 21:27:44,177 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_out.svg
+2025-04-06 21:27:44,177 - utils.icon_manager - DEBUG - Trying to load icon: zoom_reset
+2025-04-06 21:27:44,177 - utils.icon_manager - DEBUG - Found icon at absolute path: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_reset.svg
+2025-04-06 21:27:44,362 - views.main_window - INFO - Mode changed to: select
+2025-04-06 21:27:44,689 - views.main_window - INFO - Properties controller initialized
+2025-04-06 21:27:47,429 - views.canvas.modes.select_mode - DEBUG - SelectMode: Deactivated
+2025-04-06 21:27:47,429 - views.canvas.canvas - INFO - Canvas: Switching to mode AddDeviceMode
+2025-04-06 21:27:47,642 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at -22.0, -173.0
+2025-04-06 21:27:47,642 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 21:27:47,642 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None
+2025-04-06 21:27:48,691 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Checked is_in_command_execution, result=False
+2025-04-06 21:27:48,691 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Pushing command AddDeviceCommand: Add router Device
+2025-04-06 21:27:48,691 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Set is_executing_command to True (was False)
+2025-04-06 21:27:48,692 - controllers.commands - DEBUG - CMD: AddDeviceCommand execute for  1, in_bulk_creation=False
+2025-04-06 21:27:48,692 - models.device - DEBUG - Custom icon path set to: None
+2025-04-06 21:27:48,693 - models.device - INFO - ICON DEBUG: Current working directory: c:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 21:27:48,693 - models.device - INFO - ICON DEBUG: Application directory: c:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 21:27:48,694 - models.device - INFO - ICON DEBUG: Searching in icon folders: ['c:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons', 'c:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons\\svg', 'c:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\..\\resources\\icons']
+2025-04-06 21:27:48,694 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 21:27:48,694 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 21:27:48,694 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\ROUTER.svg
+2025-04-06 21:27:48,694 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\Router.svg
+2025-04-06 21:27:48,694 - models.device - INFO - ICON DEBUG: Checking type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 21:27:48,695 - models.device - INFO - ICON DEBUG: Found type icon at: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 21:27:48,695 - models.device - INFO - ICON DEBUG: Attempting to load icon from: c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 21:27:48,695 - models.device - INFO - ICON DEBUG: Successfully loaded SVG icon from c:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 21:27:48,696 - models.device - DEBUG - Setting BLACK text color for device  1 in LIGHT mode
+2025-04-06 21:27:48,696 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 1', current count: 0
+2025-04-06 21:27:48,696 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 21:27:48,696 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 1', current count: 0
+2025-04-06 21:27:48,696 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 21:27:48,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 1', current count: 0
+2025-04-06 21:27:48,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 21:27:48,698 - controllers.commands - DEBUG - CMD: Created device  1 through command execution
+2025-04-06 21:27:48,698 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Restored is_executing_command to False
+2025-04-06 21:27:48,698 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Command executed and pushed to stack (stack size: 1)
+2025-04-06 21:27:50,270 - views.canvas.canvas - INFO - Canvas: Switching to mode AddBoundaryMode
+2025-04-06 21:27:50,521 - views.canvas.modes.add_boundary_mode - DEBUG - AddBoundaryMode: Starting boundary at -208.0, -225.0
+2025-04-06 21:27:50,885 - views.canvas.modes.add_boundary_mode - DEBUG - AddBoundaryMode: Created boundary -208.0,-225.0 561.0x317.0
+2025-04-06 21:27:50,885 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Checked is_in_command_execution, result=False
+2025-04-06 21:27:50,885 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Pushing command AddBoundaryCommand: Add Boundary
+2025-04-06 21:27:50,885 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Set is_executing_command to True (was False)
+2025-04-06 21:27:50,887 - controllers.boundary_controller - INFO - Created boundary 'Boundary 1'
+2025-04-06 21:27:50,887 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Restored is_executing_command to False
+2025-04-06 21:27:50,887 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Command executed and pushed to stack (stack size: 2)
+2025-04-06 21:27:50,887 - views.canvas.graphics_manager - DEBUG - Removed temporary item 1
+2025-04-06 21:28:06,525 - utils.pdf_exporter - INFO - Scene rect for PDF export: PyQt5.QtCore.QRectF(-229.0, -246.0, 603.0, 387.0)
+2025-04-06 21:28:06,526 - utils.pdf_exporter - INFO - Number of items in scene: 6
+2025-04-06 21:28:06,526 - utils.pdf_exporter - INFO - Prepared 3 SVG items for PDF export
+2025-04-06 21:28:06,526 - utils.pdf_exporter - INFO - Page rect for PDF export: PyQt5.QtCore.QRectF(0.0, 0.0, 3424.0, 2395.0)
+2025-04-06 21:28:06,526 - utils.pdf_exporter - INFO - PDF scaling factor: 5.11044776119403
+2025-04-06 21:28:06,537 - utils.pdf_exporter - INFO - Canvas successfully exported to PDF: C:/Users/catas/Documents/test.pdf

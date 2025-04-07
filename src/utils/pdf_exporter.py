@@ -1,5 +1,7 @@
 from PyQt5.QtCore import QRectF, QPointF, Qt, QMarginsF
-from PyQt5.QtGui import QPainter, QPageSize, QPdfWriter, QColor, QPen, QTransform
+from PyQt5.QtGui import QPainter, QPageSize, QPdfWriter, QColor, QPen, QTransform, QBrush
+from PyQt5.QtWidgets import QGraphicsItem
+from PyQt5.QtSvg import QSvgRenderer, QGraphicsSvgItem
 from PyQt5.QtPrintSupport import QPrinter
 import logging
 import os
@@ -12,6 +14,37 @@ class PDFExporter:
     # Using integer constants because of issues with enum imports in some PyQt5 versions
     PORTRAIT = 0
     LANDSCAPE = 1
+    
+    @staticmethod
+    def _prepare_svg_items_for_export(scene):
+        """Ensure that SVG items have transparent backgrounds for PDF export.
+        
+        This method temporarily modifies SVG rendering for PDF export purposes.
+        """
+        modified_items = []
+        
+        for item in scene.items():
+            # Check if the item is a device with an SVG icon
+            if hasattr(item, 'icon_item') and item.icon_item is not None:
+                if isinstance(item.icon_item, QGraphicsSvgItem):
+                    # Force SVG renderer to use proper transparency
+                    item.icon_item.setCacheMode(QGraphicsItem.NoCache)
+                    modified_items.append(item.icon_item)
+                    
+                    # Ensure background rectangle is hidden for SVG icons
+                    if hasattr(item, 'rect_item') and item.rect_item is not None:
+                        # Store current visibility state to restore later
+                        item._rect_visibility_before_export = item.rect_item.isVisible()
+                        # Make sure it's hidden
+                        item.rect_item.setVisible(False)
+                        modified_items.append(item.rect_item)
+            
+            # Handle SVG items directly
+            if isinstance(item, QGraphicsSvgItem):
+                item.setCacheMode(QGraphicsItem.NoCache)
+                modified_items.append(item)
+        
+        return modified_items
     
     @staticmethod
     def export_to_pdf(canvas, filepath, options=None):
@@ -118,6 +151,10 @@ class PDFExporter:
             logger.info(f"Scene rect for PDF export: {scene_rect}")
             logger.info(f"Number of items in scene: {len(canvas.scene().items())}")
             
+            # Prepare SVG items for proper transparency in PDF
+            svg_items = PDFExporter._prepare_svg_items_for_export(canvas.scene())
+            logger.info(f"Prepared {len(svg_items)} SVG items for PDF export")
+            
             # Create painter for drawing
             painter = QPainter()
             if not painter.begin(pdf_writer):
@@ -134,13 +171,18 @@ class PDFExporter:
                 painter.setRenderHint(QPainter.Antialiasing)
                 painter.setRenderHint(QPainter.TextAntialiasing)
                 painter.setRenderHint(QPainter.SmoothPixmapTransform)
+                painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
                 
                 # Calculate the usable page size in scene coordinates
                 page_rect = QRectF(0, 0, pdf_writer.width(), pdf_writer.height())
                 logger.info(f"Page rect for PDF export: {page_rect}")
                 
-                # Draw background first
+                # Draw background first - use white for the page background
+                painter.setCompositionMode(QPainter.CompositionMode_Source)
                 painter.fillRect(page_rect, QColor(255, 255, 255))
+                
+                # Set composition mode for proper transparency handling
+                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
                 
                 # Set up the transform to map the scene to the PDF page
                 if fit_to_page:
@@ -160,6 +202,14 @@ class PDFExporter:
                         scene_rect.height() * scale
                     )
                     
+                    # For devices with SVG icons, ensure the background rectangle is invisible
+                    # This extra step ensures absolute transparency
+                    for item in canvas.scene().items():
+                        if hasattr(item, 'device_type') and hasattr(item, 'rect_item') and item.rect_item:
+                            if hasattr(item, 'icon_item') and isinstance(item.icon_item, QGraphicsSvgItem):
+                                item.rect_item.setBrush(QBrush(Qt.transparent))
+                                item.rect_item.setPen(QPen(Qt.transparent, 0))
+                    
                     # Render using the explicit source and target rects
                     canvas.scene().render(painter, target_rect, scene_rect)
                 else:
@@ -171,6 +221,15 @@ class PDFExporter:
                         page_rect.width() - margin * 2, 
                         page_rect.height() - margin * 2
                     )
+                    
+                    # For devices with SVG icons, ensure the background rectangle is invisible
+                    # This extra step ensures absolute transparency
+                    for item in canvas.scene().items():
+                        if hasattr(item, 'device_type') and hasattr(item, 'rect_item') and item.rect_item:
+                            if hasattr(item, 'icon_item') and isinstance(item.icon_item, QGraphicsSvgItem):
+                                item.rect_item.setBrush(QBrush(Qt.transparent))
+                                item.rect_item.setPen(QPen(Qt.transparent, 0))
+                    
                     canvas.scene().render(painter, target_rect, scene_rect, Qt.KeepAspectRatio)
                 
                 # Optional - draw a border for the content area
@@ -197,6 +256,13 @@ class PDFExporter:
                 # Restore original text colors
                 for item, color in text_color_states.items():
                     item.setDefaultTextColor(color)
+                
+                # Restore rectangle visibility for device items
+                for item in canvas.scene().items():
+                    if hasattr(item, '_rect_visibility_before_export'):
+                        if hasattr(item, 'rect_item') and item.rect_item is not None:
+                            item.rect_item.setVisible(item._rect_visibility_before_export)
+                        delattr(item, '_rect_visibility_before_export')
             
             logger.info(f"Canvas successfully exported to PDF: {filepath}")
             return True, f"Canvas successfully exported to PDF: {filepath}"

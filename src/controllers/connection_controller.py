@@ -258,17 +258,17 @@ class ConnectionController:
         self.logger.info("CONNECTION DEBUG: Set connection_operation_in_progress = True")
         
         try:
-            # Skip the dialog and use default chain connection with Ethernet
-            connection_data = {
-                'type': 'ethernet',
-                'label': 'Ethernet',
-                'bandwidth': '1G',
-                'latency': '0ms',
-                'strategy': 'chain',
-                'bidirectional': True
-            }
+            # Show the multi-connection dialog to get user input
+            dialog = MultiConnectionDialog(self.canvas.parent())
+            if dialog.exec_() != QDialog.Accepted:
+                self.logger.info("User cancelled the connection dialog")
+                self.connection_operation_in_progress = False
+                return False
+                
+            # Get the connection data from the dialog
+            connection_data = dialog.get_connection_data()
             
-            strategy = connection_data['strategy']  # chain
+            strategy = connection_data['strategy']
             bidirectional = connection_data.get('bidirectional', True)
             
             properties = {
@@ -278,7 +278,7 @@ class ConnectionController:
                 'latency': connection_data['latency']
             }
             
-            self.logger.info(f"CONNECTION DEBUG: Using default chain strategy to connect {len(devices)} devices")
+            self.logger.info(f"CONNECTION DEBUG: Using {strategy} strategy to connect {len(devices)} devices")
             
             # Use a composite command if undo/redo is available
             if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
