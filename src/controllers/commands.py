@@ -186,6 +186,11 @@ class AddConnectionCommand(Command):
     
     def execute(self):
         """Create the connection."""
+        # Check if a connection already exists before creating a new one
+        if hasattr(self.controller, '_connection_exists') and self.controller._connection_exists(self.source_device, self.target_device):
+            # Connection already exists, don't create a duplicate
+            return None
+            
         self.connection = self.controller.create_connection(
             source_device=self.source_device,
             target_device=self.target_device,
@@ -319,7 +324,9 @@ class CompositeCommand(Command):
         
         for command in self.commands:
             result = command.execute()
-            results.append(result)
+            # Only store non-None results, as None typically means operation was skipped (e.g., connection already exists)
+            if result is not None:
+                results.append(result)
             
         return results
         

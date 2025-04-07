@@ -1,6 +1,9 @@
-from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox, QAction, QDockWidget, QMenu, QApplication, QWidget, QSizePolicy, QToolButton, QToolBar, QLabel, QActionGroup
-from PyQt5.QtCore import QPointF, QTimer, Qt, QSize
-from PyQt5.QtGui import QColor, QIcon, QFont
+from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QSplitter, 
+                         QAction, QMenu, QToolBar, QStatusBar, QMessageBox, QFileDialog,
+                         QLabel, QSpinBox, QDialog, QDialogButtonBox, QGroupBox, QFormLayout, QDockWidget, QSizePolicy, QToolButton,
+                         QActionGroup, QApplication)
+from PyQt5.QtCore import Qt, QSettings, QTimer, QPoint, QByteArray, QSize, QSizeF, QPointF, QRect, QRectF
+from PyQt5.QtGui import QIcon, QKeySequence, QColor, QFont
 import logging
 import os
 
@@ -117,6 +120,11 @@ class MainWindow(QMainWindow):
         self.connection_controller = ConnectionController(self.canvas, self.event_bus)
         self.boundary_controller = BoundaryController(self.canvas, self.event_bus)
         
+        # Set the theme manager for controllers
+        self.device_controller.theme_manager = self.theme_manager
+        self.connection_controller.theme_manager = self.theme_manager
+        self.boundary_controller.theme_manager = self.theme_manager
+        
         # Initialize clipboard manager
         self.clipboard_manager = ClipboardManager(
             self.canvas, 
@@ -124,6 +132,28 @@ class MainWindow(QMainWindow):
             self.connection_controller,
             self.event_bus
         )
+        
+        # Setup font settings for device controller
+        if hasattr(self, 'font_settings_manager') and self.font_settings_manager:
+            self.device_controller.font_settings_manager = self.font_settings_manager
+        
+        # Apply theme to existing devices if any
+        is_dark = self.theme_manager.is_dark_theme()
+        text_color = QColor(240, 240, 240) if is_dark else QColor(0, 0, 0)
+        
+        for device in self.canvas.devices:
+            if hasattr(device, 'update_theme'):
+                device.update_theme(self.theme_manager.get_theme())
+                
+            # Directly set text colors
+            if hasattr(device, 'text_item') and device.text_item:
+                device.text_item.setDefaultTextColor(text_color)
+                
+                # Make text larger and bolder for visibility
+                font = device.text_item.font()
+                font.setPointSize(10)
+                font.setBold(True)
+                device.text_item.setFont(font)
         
         # Initialize bulk controllers - these will be fully set up after command_manager is initialized
         self.bulk_device_controller = None
@@ -308,6 +338,9 @@ class MainWindow(QMainWindow):
             # Bulk operation events
             self.event_bus.on('bulk_devices_added', self._on_bulk_devices_added)
             self.event_bus.on('bulk_properties_changed', self._on_bulk_properties_changed)
+            
+            # Theme events
+            self.event_bus.on('theme_changed', self._on_theme_changed)
 
     def setup_properties_controller(self):
         """Set up the properties controller after command_manager is initialized."""
@@ -640,6 +673,45 @@ class MainWindow(QMainWindow):
         """Handle bulk property change event."""
         self.statusBar().showMessage(f"Updated properties for {len(devices)} devices", 3000)
         
+    def _on_theme_changed(self, theme_name):
+        """Handle theme changed event."""
+        from utils.theme_manager import ThemeManager
+        
+        self.logger.info(f"Theme changed to: {theme_name}")
+        
+        # Directly update device text colors to ensure visibility
+        text_color = QColor(240, 240, 240) if theme_name == ThemeManager.DARK_THEME else QColor(0, 0, 0)
+        
+        # Update all devices
+        for device in self.canvas.devices:
+            # Apply theme update via the device's method
+            if hasattr(device, 'update_theme'):
+                device.update_theme(theme_name)
+                
+            # Directly set text colors in case update_theme doesn't work
+            if hasattr(device, 'text_item') and device.text_item:
+                device.text_item.setDefaultTextColor(text_color)
+                
+                # Make text larger and bolder for visibility
+                font = device.text_item.font()
+                font.setPointSize(10)
+                font.setBold(True)
+                device.text_item.setFont(font)
+                
+            # Update property labels too
+            if hasattr(device, 'property_labels'):
+                for label in device.property_labels.values():
+                    label.setDefaultTextColor(text_color)
+            
+            # Force visual update
+            device.update()
+            if device.scene():
+                update_rect = device.sceneBoundingRect().adjusted(-5, -5, 5, 5)
+                device.scene().update(update_rect)
+        
+        # Force canvas update
+        self.canvas.viewport().update()
+
     def _on_add_device_requested(self):
         """Show dialog to add a device at center of view."""
         view_center = self.canvas.mapToScene(self.canvas.viewport().rect().center())
@@ -812,16 +884,24 @@ class MainWindow(QMainWindow):
         pass
 
     def connect_signals(self):
-        """Connect canvas signals to appropriate controller handlers."""
+        """Connect signals with their handlers."""
+        # Connect device controller signals
         self.canvas.add_device_requested.connect(self.device_controller.on_add_device_requested)
         self.canvas.delete_device_requested.connect(self.device_controller.on_delete_device_requested)
-        self.canvas.add_boundary_requested.connect(self.boundary_controller.on_add_boundary_requested)
+        
+        # Connect connection controller signals
         self.canvas.add_connection_requested.connect(self.connection_controller.on_add_connection_requested)
         self.canvas.delete_connection_requested.connect(self.connection_controller.on_delete_connection_requested)
+        
+        # Connect boundary controller signals
+        self.canvas.add_boundary_requested.connect(self.boundary_controller.on_add_boundary_requested)
         self.canvas.delete_boundary_requested.connect(self.boundary_controller.on_delete_boundary_requested)
+        
+        # Connect delete item signal
         self.canvas.delete_item_requested.connect(self.on_delete_item_requested)
+        
+        # Connect delete selected signal
         self.canvas.delete_selected_requested.connect(self.on_delete_selected_requested)
-        self.canvas.connect_multiple_devices_requested.connect(self.connection_controller.on_connect_multiple_devices_requested)
     
     def set_mode(self, mode):
         """Set the current interaction mode."""
@@ -1036,14 +1116,45 @@ class MainWindow(QMainWindow):
 
     def _toggle_theme(self):
         """Toggle between light and dark themes."""
+        from utils.theme_manager import ThemeManager
         theme = self.theme_manager.toggle_theme()
         is_dark = theme == ThemeManager.DARK_THEME
         theme_name = "dark" if is_dark else "light"
         self.toggle_theme_action.setChecked(is_dark)
         self.statusBar().showMessage(f"Switched to {theme_name} theme")
         
-        # Update checkmark state
-        self.toggle_theme_action.setChecked(is_dark)
+        # Directly update device text colors to ensure visibility
+        text_color = QColor(240, 240, 240) if is_dark else QColor(0, 0, 0)
+        
+        # Update all existing devices
+        for device in self.canvas.devices:
+            # Apply theme update via the device's method
+            if hasattr(device, 'update_theme'):
+                device.update_theme(theme)
+                
+            # Directly set text colors in case update_theme doesn't work
+            if hasattr(device, 'text_item') and device.text_item:
+                device.text_item.setDefaultTextColor(text_color)
+                
+                # Make text larger and bolder for visibility
+                font = device.text_item.font()
+                font.setPointSize(10)
+                font.setBold(True)
+                device.text_item.setFont(font)
+                
+            # Update property labels too
+            if hasattr(device, 'property_labels'):
+                for label in device.property_labels.values():
+                    label.setDefaultTextColor(text_color)
+            
+            # Force visual update
+            device.update()
+            if device.scene():
+                update_rect = device.sceneBoundingRect().adjusted(-5, -5, 5, 5)
+                device.scene().update(update_rect)
+        
+        # Force canvas update
+        self.canvas.viewport().update()
 
     def _toggle_magnify_mode(self):
         """Toggle the magnify mode on and off."""

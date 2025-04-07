@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsTextItem, QFileDialog
-from PyQt5.QtGui import QPixmap, QColor, QPen, QBrush, QPainterPath, QPainter, QFont
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsTextItem, QFileDialog, QApplication
+from PyQt5.QtGui import QPixmap, QColor, QPen, QBrush, QPainterPath, QPainter, QFont, QPalette
 from PyQt5.QtCore import QRectF, Qt, QPointF, QObject, pyqtSignal
 from PyQt5.QtSvg import QSvgRenderer, QGraphicsSvgItem
 import uuid
@@ -7,6 +7,7 @@ import os
 import logging
 from constants import DeviceTypes
 import traceback
+import hashlib
 
 class DeviceSignals(QObject):
     """Signals emitted by devices."""
@@ -61,7 +62,7 @@ class Device(QGraphicsPixmapItem):
         }
     }
     
-    def __init__(self, name, device_type, properties=None, custom_icon_path=None):
+    def __init__(self, name, device_type, properties=None, custom_icon_path=None, theme_manager=None):
         """Initialize a network device."""
         super().__init__()
         
@@ -136,6 +137,10 @@ class Device(QGraphicsPixmapItem):
         
         # Font settings manager reference (will be set externally)
         self.font_settings_manager = None
+        
+        # Apply theme settings if theme manager is provided
+        if theme_manager:
+            self.update_theme(theme_manager.get_theme())
     
     def _init_properties(self, custom_properties=None):
         """Initialize the device properties based on type and custom values."""
@@ -161,14 +166,31 @@ class Device(QGraphicsPixmapItem):
         self.rect_item.setBrush(brush)
         self.rect_item.setPen(QPen(Qt.black, 1))
         
-        # Create text item for the name
-        self.text_item = QGraphicsTextItem(self)
+        # Create a completely new text item that will always be visible
+        self.text_item = QGraphicsTextItem()
         self.text_item.setPlainText(self.name)
+        self.text_item.setParentItem(self)  # Make it a child of the device
         
-        # Center the text
+        # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+        # and black text in light mode. Changing this will break theme handling.
+        theme_is_dark = False
+        if hasattr(self, 'theme_manager') and self.theme_manager:
+            theme_is_dark = self.theme_manager.is_dark_theme()
+        self.text_item.setDefaultTextColor(QColor(255, 255, 255) if theme_is_dark else QColor(0, 0, 0))
+        
+        # Make text bold but use smaller font size for better appearance
+        font = QFont()
+        font.setPointSize(9)  # Fixed smaller font size
+        font.setBold(True)
+        self.text_item.setFont(font)
+        
+        # Position text below the device
         text_width = self.text_item.boundingRect().width()
         text_x = (self.width - text_width) / 2
-        self.text_item.setPos(text_x, self.height + 5)  # Position below rectangle
+        self.text_item.setPos(text_x, self.height + 3)
+        
+        # Make sure it's visible and has high z-index
+        self.text_item.setZValue(20)  # Very high to ensure it's above everything
         
         # Try to load the icon as a separate item
         self._try_load_icon()
@@ -463,8 +485,21 @@ class Device(QGraphicsPixmapItem):
     
     def boundingRect(self):
         """Return the bounding rectangle of the device."""
-        # Include space for text below
-        return QRectF(0, 0, self.width, self.height + 20)
+        # Include space for device and text label
+        text_height = 25  # Default minimum height for text area
+        
+        # Calculate actual text height if text_item exists
+        if hasattr(self, 'text_item') and self.text_item:
+            text_rect = self.text_item.boundingRect()
+            text_height = text_rect.height() + 8  # Add padding
+            
+            # If we have a text background, use its height instead
+            if hasattr(self, 'text_background') and self.text_background:
+                bg_rect = self.text_background.boundingRect()
+                text_height = bg_rect.height() + 3  # Add small padding
+        
+        # Return rectangle that includes both device and text
+        return QRectF(0, 0, self.width, self.height + text_height)
     
     def shape(self):
         """Return a more precise shape for hit detection."""
@@ -474,6 +509,76 @@ class Device(QGraphicsPixmapItem):
     
     def paint(self, painter, option, widget=None):
         """Paint the device with connection points if needed."""
+        # First call the parent implementation for basic drawing
+        super().paint(painter, option, widget)
+        
+        # Ensure name is not empty
+        if not self.name or self.name.strip() == "":
+            # Generate a device number from a hash of the UUID
+            hash_value = hashlib.md5(str(self.id).encode()).hexdigest()
+            device_number = int(hash_value[:8], 16) % 10000  # Use modulo to keep it in a reasonable range
+            self.name = f"Device {device_number}"
+        
+        # Ensure text_item exists and is visible
+        if not hasattr(self, 'text_item') or not self.text_item:
+            # Create text item
+            self.text_item = QGraphicsTextItem()
+            self.text_item.setParentItem(self)
+            self.text_item.setPlainText(self.name)
+            
+            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+            # and black text in light mode. Changing this will break theme handling.
+            from utils.theme_manager import ThemeManager
+            theme_mgr = ThemeManager()
+            is_dark = theme_mgr.is_dark_theme()
+            
+            if is_dark:
+                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # Pure white for dark mode
+                self.logger.debug(f"Creating text item with WHITE text for device {self.name} in DARK mode")
+            else:
+                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Pure black for light mode
+                self.logger.debug(f"Creating text item with BLACK text for device {self.name} in LIGHT mode")
+            
+            # Make text bold but use smaller font size for better appearance
+            font = QFont()
+            font.setPointSize(9)  # Fixed smaller font size
+            font.setBold(True)
+            self.text_item.setFont(font)
+            
+            # Position text
+            text_width = self.text_item.boundingRect().width()
+            text_x = (self.width - text_width) / 2
+            self.text_item.setPos(text_x, self.height + 3)
+            
+            # Set to highest z-index
+            self.text_item.setZValue(20)
+        else:
+            # Ensure text is current
+            if self.text_item.toPlainText() != self.name:
+                self.text_item.setPlainText(self.name)
+                
+                # Update text position
+                text_width = self.text_item.boundingRect().width()
+                text_x = (self.width - text_width) / 2
+                self.text_item.setPos(text_x, self.height + 3)
+            
+            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+            # and black text in light mode. Changing this will break theme handling.
+            from utils.theme_manager import ThemeManager
+            theme_mgr = ThemeManager()
+            is_dark = theme_mgr.is_dark_theme()
+            
+            # Only update color, DO NOT modify font properties here
+            if is_dark and self.text_item.defaultTextColor() != QColor(255, 255, 255):
+                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # Pure white for dark mode
+                self.logger.debug(f"Updating text color to WHITE for device {self.name} in DARK mode")
+            elif not is_dark and self.text_item.defaultTextColor() != QColor(0, 0, 0):
+                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Pure black for light mode
+                self.logger.debug(f"Updating text color to BLACK for device {self.name} in LIGHT mode")
+            
+            # Ensure text is visible
+            self.text_item.setVisible(True)
+        
         # Most painting is handled by child items, but we draw connection points here
         
         # Check if we need to show connection points
@@ -679,17 +784,20 @@ class Device(QGraphicsPixmapItem):
         # Call the base implementation to handle the actual dragging
         super().mouseMoveEvent(event)
         
-        # Make sure all child items stay aligned with the device
-        # This is redundant but ensures integrity in case something goes wrong
+        # Update text label position to stay centered under the device
+        if hasattr(self, 'text_item') and self.text_item:
+            text_width = self.text_item.boundingRect().width()
+            text_x = (self.width - text_width) / 2
+            self.text_item.setPos(text_x, self.height + 3)
+        
+        # Make sure all other child items stay aligned with the device
+        # This ensures integrity in case something goes wrong
         for child in self.childItems():
-            # Special handling for text_item (label) which should remain at its position below the device
-            if child == self.text_item:
-                # Ensure label stays centered under the device
-                text_width = child.boundingRect().width()
-                text_x = (self.width - text_width) / 2
-                child.setPos(text_x, self.height + 5)
+            # Skip text_item since we already handled it above
+            if child == self.text_item or child in self.property_labels.values():
+                continue
             # All other children should be at 0,0 relative to device
-            elif child.pos() != QPointF(0, 0) and child not in self.property_labels.values():
+            elif child.pos() != QPointF(0, 0):
                 child.setPos(QPointF(0, 0))
         
         # Emit signal that device has moved
@@ -758,17 +866,67 @@ class Device(QGraphicsPixmapItem):
 
     def update_name(self):
         """Update device name display after name change."""
-        if hasattr(self, 'text_item'):
-            self.text_item.setPlainText(self.name)
+        # Ensure name is not empty
+        if not self.name or self.name.strip() == "":
+            # Generate a device number from a hash of the UUID instead of using the UUID directly
+            hash_value = hashlib.md5(str(self.id).encode()).hexdigest()
+            device_number = int(hash_value[:8], 16) % 10000  # Use modulo to keep it in a reasonable range
+            self.name = f"Device {device_number}"
             
-            # Center the text if needed
-            if hasattr(self, 'width'):
-                text_width = self.text_item.boundingRect().width()
-                text_x = (self.width - text_width) / 2
-                self.text_item.setPos(text_x, self.height + 5)
+        # Create text_item if it doesn't exist
+        if not hasattr(self, 'text_item') or not self.text_item:
+            self.text_item = QGraphicsTextItem()
+            self.text_item.setParentItem(self)
             
-            # Update property positions as name might have changed size
-            self.update_property_labels()
+            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+            # and black text in light mode. Changing this will break theme handling.
+            from utils.theme_manager import ThemeManager
+            theme_mgr = ThemeManager()
+            is_dark = theme_mgr.is_dark_theme()
+            
+            if is_dark:
+                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # Pure white for dark mode
+                self.logger.debug(f"Setting WHITE text for device {self.name} in update_name (DARK mode)")
+            else:
+                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Pure black for light mode
+                self.logger.debug(f"Setting BLACK text for device {self.name} in update_name (LIGHT mode)")
+            
+            # Make text bold but use smaller font size for better appearance
+            font = QFont()
+            font.setPointSize(9)  # Fixed smaller font size
+            font.setBold(True)
+            self.text_item.setFont(font)
+            
+            # Set high z-index
+            self.text_item.setZValue(20)
+        
+        # Update the text
+        self.text_item.setPlainText(self.name)
+        
+        # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+        # and black text in light mode. Changing this will break theme handling.
+        from utils.theme_manager import ThemeManager
+        theme_mgr = ThemeManager()
+        is_dark = theme_mgr.is_dark_theme()
+        
+        # Only update color if it needs to change - preserve all other properties
+        if is_dark and self.text_item.defaultTextColor() != QColor(255, 255, 255):
+            self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # Pure white for dark mode
+            self.logger.debug(f"Forcing WHITE text for device {self.name} in update_name (DARK mode)")
+        elif not is_dark and self.text_item.defaultTextColor() != QColor(0, 0, 0):
+            self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Pure black for light mode
+            self.logger.debug(f"Forcing BLACK text for device {self.name} in update_name (LIGHT mode)")
+        
+        # Center the text under the device
+        text_width = self.text_item.boundingRect().width()
+        text_x = (self.width - text_width) / 2
+        self.text_item.setPos(text_x, self.height + 3)
+        
+        # Force text to be visible
+        self.text_item.setVisible(True)
+        
+        # Update property positions as name might have changed size
+        self.update_property_labels()
 
     def update_color(self):
         """Update device visual appearance after color change."""
@@ -891,12 +1049,20 @@ class Device(QGraphicsPixmapItem):
         
         # Update device name font
         if hasattr(self, 'text_item') and self.text_item:
-            self.text_item.setFont(font_settings_manager.get_device_label_font())
+            # Get the font but preserve our font size
+            new_font = font_settings_manager.get_device_label_font()
+            current_font = self.text_item.font()
+            
+            # Keep our size but take other properties from the font settings
+            new_font.setPointSize(current_font.pointSize())
+            
+            # Apply the font
+            self.text_item.setFont(new_font)
             
             # Recenter the name text
             text_width = self.text_item.boundingRect().width()
             text_x = (self.width - text_width) / 2
-            self.text_item.setPos(text_x, self.height + 5)
+            self.text_item.setPos(text_x, self.height + 3)
         
         # Update property label fonts
         for label in self.property_labels.values():
@@ -904,6 +1070,67 @@ class Device(QGraphicsPixmapItem):
         
         # Reposition property labels after font change
         self.update_property_labels()
+    
+    def update_theme(self, theme_name):
+        """Update text colors based on current theme."""
+        # For device name, use black text in light mode, white text in dark mode
+        if hasattr(self, 'text_item') and self.text_item:
+            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+            # and black text in light mode. Changing this will break theme handling.
+            from utils.theme_manager import ThemeManager
+            is_dark = theme_name == ThemeManager.DARK_THEME
+            
+            # FORCE text color - white for dark mode, black for light mode
+            if is_dark:
+                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # Pure white for dark mode
+                self.logger.debug(f"Forcing WHITE text color for device {self.name} in DARK mode")
+            else:
+                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Pure black for light mode
+                self.logger.debug(f"Setting BLACK text color for device {self.name} in LIGHT mode")
+            
+            # Ensure text is set
+            if not self.text_item.toPlainText() or self.text_item.toPlainText().strip() == "":
+                self.text_item.setPlainText(self.name)
+            
+            # DON'T change font size on theme change - it causes size flicker
+            # Just ensure it's bold
+            font = self.text_item.font()
+            font.setBold(True)
+            self.text_item.setFont(font)
+            
+            # Make sure text is visible by recentering it
+            text_width = self.text_item.boundingRect().width()
+            text_x = (self.width - text_width) / 2
+            self.text_item.setPos(text_x, self.height + 3)
+            
+            # Make sure text is visible
+            self.text_item.setVisible(True)
+            self.text_item.setZValue(20)
+        else:
+            # If text_item doesn't exist, create it
+            self.update_name()  # This will create text_item with proper styling
+        
+        # For property labels, use theme-based colors
+        from utils.theme_manager import ThemeManager
+        is_dark = theme_name == ThemeManager.DARK_THEME
+        if is_dark:
+            text_color = QColor(255, 255, 255)  # Pure white for dark mode
+        else:
+            text_color = QColor(0, 0, 0)  # Pure black for light mode
+        
+        # Update all property labels
+        for label in self.property_labels.values():
+            label.setDefaultTextColor(text_color)
+            
+        # Force a redraw
+        self.update()
+        
+        # This ensures property labels are properly positioned
+        self.update_property_labels()
+        
+        # Store theme manager reference for later use
+        from utils.theme_manager import ThemeManager
+        self.theme_manager = ThemeManager()
     
     def toggle_property_display(self, property_name, show):
         """Toggle display of a specific property under the device."""
@@ -930,8 +1157,45 @@ class Device(QGraphicsPixmapItem):
         """Update the device's visual appearance."""
         super().update()
         
-        # Update the name label
-        self.update_name()
+        # Make sure the text item exists
+        if not hasattr(self, 'text_item') or not self.text_item:
+            self.text_item = QGraphicsTextItem(self)
+            self.text_item.setPlainText(self.name)
+            
+            # IMPORTANT: Do not change this text color handling - it correctly sets white text in dark mode
+            # and black text in light mode. Changing this will break theme handling.
+            from utils.theme_manager import ThemeManager
+            theme_mgr = ThemeManager()
+            is_dark = theme_mgr.is_dark_theme()
+            if is_dark:
+                self.text_item.setDefaultTextColor(QColor(255, 255, 255))  # White for dark mode
+            else:
+                self.text_item.setDefaultTextColor(QColor(0, 0, 0))  # Black for light mode
+            
+            # Make text bold but use smaller font size to match after movement
+            font = QFont()
+            font.setPointSize(9)  # Fixed smaller font size
+            font.setBold(True)
+            self.text_item.setFont(font)
+            
+            # Center the text
+            text_width = self.text_item.boundingRect().width()
+            text_x = (self.width - text_width) / 2
+            self.text_item.setPos(text_x, self.height + 3)
+            
+            # Make sure the text is a child of this device
+            self.text_item.setParentItem(self)
+        else:
+            # Don't modify the font if text_item already exists
+            # This prevents font size changes when switching modes
+            
+            # Only reposition if text has changed
+            if self.text_item.toPlainText() != self.name:
+                # Update text and recenter
+                self.text_item.setPlainText(self.name)
+                text_width = self.text_item.boundingRect().width()
+                text_x = (self.width - text_width) / 2
+                self.text_item.setPos(text_x, self.height + 3)
         
-        # Update property labels
+        # Update property labels but don't change text properties
         self.update_property_labels()

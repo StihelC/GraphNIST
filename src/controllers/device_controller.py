@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtWidgets import QDialog, QMessageBox, QGraphicsItem
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QFontMetrics
+from PyQt5.QtGui import QFontMetrics, QColor
 import logging
 import traceback
 import math
@@ -25,6 +25,9 @@ class DeviceController:
         
         # Font settings manager reference (will be set externally)
         self.font_settings_manager = None
+        
+        # Theme manager reference (will be set by main window)
+        self.theme_manager = None
     
     def create_device(self, device_type, pos=None, use_command=True, show_dialog=True,
                       device_data=None, custom_icon_path=None, properties=None):
@@ -106,6 +109,12 @@ class DeviceController:
             if self.font_settings_manager:
                 device.update_font_settings(self.font_settings_manager)
             
+            # Register device as theme observer if theme manager is available
+            if self.theme_manager:
+                self.theme_manager.register_theme_observer(device)
+                # Apply current theme immediately
+                device.update_theme(self.theme_manager.get_theme())
+            
             # Increment counter for next device
             self.device_counter += 1
             
@@ -157,11 +166,17 @@ class DeviceController:
                     # Create a single device with undo support
                     if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
                         # Create device using command for undo support
+                        # Ensure name has sequential number
+                        device_name = device_data['name']
+                        if not any(char.isdigit() for char in device_name):
+                            self.device_counter += 1
+                            device_name = f"{device_name} {self.device_counter}"
+                        
                         command = AddDeviceCommand(
                             self, 
                             device_data['type'], 
                             pos, 
-                            device_data['name'],
+                            device_name,
                             device_data['properties'],
                             device_data.get('custom_icon_path')
                         )
@@ -256,38 +271,33 @@ class DeviceController:
         created_devices = []
         device_positions = []
         
-        # Create the base name
-        base_name = device_data['name']
-        if base_name.endswith(tuple("0123456789")):
-            # If name already ends with a number, remove it for consistent numbering
-            while base_name and base_name[-1].isdigit():
-                base_name = base_name[:-1]
+        # Start numbering from next available number
+        start_number = self.device_counter + 1
         
         # Create devices in a grid layout
-        devices_created = 0
-        for row in range(rows):
-            for col in range(columns):
-                if devices_created >= count:
-                    break
-                
-                # Calculate position for this device
-                device_pos = QPointF(
-                    start_x + col * (device_width + horizontal_spacing),
-                    start_y + row * (device_height + vertical_spacing)
-                )
-                
-                # Make a copy of device data and update name for uniqueness
-                current_data = device_data.copy()
-                if count > 1:
-                    current_data['name'] = f"{base_name}{devices_created+1}"
-                
-                # Create the device
-                device = self.create_device(current_data['type'], device_pos)
-                if device:
-                    created_devices.append(device)
-                    device_positions.append((row, col, device))
-                
-                devices_created += 1
+        for i in range(count):
+            row = i // columns
+            col = i % columns
+            
+            # Calculate position for this device
+            device_pos = QPointF(
+                start_x + col * (device_width + horizontal_spacing),
+                start_y + row * (device_height + vertical_spacing)
+            )
+            
+            # Make a copy of device data and update name for uniqueness with sequential numbering
+            current_data = device_data.copy()
+            device_number = start_number + i
+            current_data['name'] = f"Device {device_number}"
+            
+            # Create the device without incrementing counter again
+            device = self.create_device(current_data['type'], device_pos)
+            if device:
+                created_devices.append(device)
+                device_positions.append((row, col, device))
+        
+        # Update device counter to the last device number used
+        self.device_counter = start_number + count - 1
         
         # Return information about created devices
         return {
@@ -353,72 +363,70 @@ class DeviceController:
             # Store references to commands and devices they create for better tracking
             device_commands = []
             
-            # Create the base name
-            base_name = device_data['name']
-            if base_name.endswith(tuple("0123456789")):
-                # If name already ends with a number, remove it for consistent numbering
-                while base_name and base_name[-1].isdigit():
-                    base_name = base_name[:-1]
+            # Start creating devices with sequential device numbers
+            start_number = self.device_counter + 1
             
-            for row in range(rows):
-                for col in range(columns):
-                    if devices_created >= count:
-                        break
-                    
-                    # Calculate position for this device
-                    device_pos = QPointF(
-                        start_x + col * (device_width + horizontal_spacing),
-                        start_y + row * (device_height + vertical_spacing)
-                    )
-                    
-                    # Make a copy of device data and update name for uniqueness
-                    current_data = device_data.copy()
-                    if count > 1:
-                        current_data['name'] = f"{base_name}{devices_created+1}"
-                    
-                    # Create device command 
-                    add_cmd = AddDeviceCommand(
-                        self, 
+            for i in range(count):
+                row = i // columns
+                col = i % columns
+                
+                # Calculate position for this device
+                device_pos = QPointF(
+                    start_x + col * (device_width + horizontal_spacing),
+                    start_y + row * (device_height + vertical_spacing)
+                )
+                
+                # Make a copy of device data with sequential name
+                current_data = device_data.copy()
+                device_number = start_number + i
+                current_data['name'] = f"Device {device_number}"
+                
+                # Create device command 
+                add_cmd = AddDeviceCommand(
+                    self, 
+                    current_data['type'],
+                    device_pos,
+                    current_data['name'],
+                    current_data['properties'],
+                    current_data.get('custom_icon_path')
+                )
+                
+                # Add command to composite command
+                composite_cmd.add_command(add_cmd)
+                self.logger.debug(f"BULK ADD: Added command for device {current_data['name']} at ({device_pos.x()}, {device_pos.y()})")
+                
+                # Only execute the command if we're not in the bulk creation process
+                # This prevents double device creation
+                device = None
+                if hasattr(self, '_in_bulk_creation') and self._in_bulk_creation:
+                    # Create the device directly without executing the command
+                    self.logger.debug(f"BULK ADD: Direct creation for {current_data['name']} (bulk mode)")
+                    device = self._create_device(
+                        current_data['name'],
                         current_data['type'],
                         device_pos,
-                        current_data['name'],
                         current_data['properties'],
                         current_data.get('custom_icon_path')
                     )
-                    
-                    # Add command to composite command
-                    composite_cmd.add_command(add_cmd)
-                    self.logger.debug(f"BULK ADD: Added command for device {current_data['name']} at ({device_pos.x()}, {device_pos.y()})")
-                    
-                    # Only execute the command if we're not in the bulk creation process
-                    # This prevents double device creation
-                    device = None
-                    if hasattr(self, '_in_bulk_creation') and self._in_bulk_creation:
-                        # Create the device directly without executing the command
-                        self.logger.debug(f"BULK ADD: Direct creation for {current_data['name']} (bulk mode)")
-                        device = self._create_device(
-                            current_data['name'],
-                            current_data['type'],
-                            device_pos,
-                            current_data['properties'],
-                            current_data.get('custom_icon_path')
-                        )
-                    else:
-                        # Normal flow - execute the command
-                        self.logger.debug(f"BULK ADD: Executing command for {current_data['name']} (not in bulk mode)")
-                        device = add_cmd.execute()
-                    
-                    if device:
-                        created_devices.append(device)
-                        device_positions.append((row, col, device))
-                        self.logger.debug(f"BULK ADD: Successfully created device {device.name}")
-                        # Store the command with its target device for better tracking
-                        add_cmd.created_device = device
-                        device_commands.append((add_cmd, device))
-                    else:
-                        self.logger.warning(f"BULK ADD: Failed to create device {current_data['name']}")
-                    
-                    devices_created += 1
+                else:
+                    # Normal flow - execute the command
+                    self.logger.debug(f"BULK ADD: Executing command for {current_data['name']} (not in bulk mode)")
+                    device = add_cmd.execute()
+                
+                if device:
+                    created_devices.append(device)
+                    device_positions.append((row, col, device))
+                    self.logger.debug(f"BULK ADD: Successfully created device {device.name}")
+                    # Store the command with its target device for better tracking
+                    add_cmd.created_device = device
+                    device_commands.append((add_cmd, device))
+                else:
+                    self.logger.warning(f"BULK ADD: Failed to create device {current_data['name']}")
+                
+                devices_created += 1
+            
+            # Update the device counter to reflect the last device number created
+            self.device_counter = start_number + count - 1
             
             # Store device commands in composite command for better undo tracking
             if hasattr(composite_cmd, '_device_commands'):
@@ -771,26 +779,73 @@ class DeviceController:
     
     # Add this method for compatibility with commands
     def _create_device(self, name, device_type, position, properties=None, custom_icon_path=None):
-        """Create a device directly (used by commands)."""
-        # Create a data dictionary for the device
-        device_data = {
-            'name': name if name else f"Device {len(self.canvas.devices) + 1}",
-            'type': device_type,
-            'properties': properties or {},
-            'custom_icon_path': custom_icon_path
-        }
-        
-        # Use the existing create_device method
-        return self.create_device(device_data, position)
+        """Create a device object and add it to the canvas."""
+        try:
+            # Generate sequential device name if not provided or keep the passed name
+            if not name:
+                # Generate Device N
+                self.device_counter += 1
+                name = f"Device {self.device_counter}"
+            elif name.lower().startswith("device "):
+                # If it's already named Device X, extract the number to track, but don't increment
+                try:
+                    parts = name.split()
+                    if len(parts) > 1 and parts[-1].isdigit():
+                        device_num = int(parts[-1])
+                        if device_num > self.device_counter:
+                            self.device_counter = device_num
+                except:
+                    pass
+            
+            # Create device with properties
+            device = Device(name, device_type, properties, custom_icon_path)
+            
+            # Set position
+            if position:
+                device.setPos(position)
+            
+            # Apply theme if available
+            if self.theme_manager:
+                # Register device with theme manager
+                self.theme_manager.register_theme_observer(device)
+                # Apply current theme immediately
+                device.update_theme(self.theme_manager.get_theme())
+            
+            # Set font settings if available
+            if self.font_settings_manager:
+                device.font_settings_manager = self.font_settings_manager
+                device.update_font_settings(self.font_settings_manager)
+            
+            # Add to scene and tracking list
+            self.canvas.scene().addItem(device)
+            self.canvas.devices.append(device)
+            
+            # Connect signals
+            if hasattr(self.canvas, 'device_drag_started'):
+                device.signals.drag_started.connect(self.canvas.device_drag_started)
+            if hasattr(self.canvas, 'device_drag_finished'):
+                device.signals.drag_finished.connect(self.canvas.device_drag_finished)
+            if hasattr(self.canvas, 'device_selected'):
+                device.signals.selected.connect(self.canvas.device_selected)
+            
+            # Emit creation signal
+            self.event_bus.emit("device_created", device)
+            
+            return device
+            
+        except Exception as e:
+            self.logger.error(f"Error creating device: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            return None
     
     def on_delete_device_requested(self, device):
-        """Handle request to delete a specific device."""
-        # Use command pattern if undo_redo_manager is available and not already in command
-        if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
-            command = DeleteDeviceCommand(self, device)
-            self.undo_redo_manager.push_command(command)
+        """Handle request to delete a device."""
+        # Use command manager if available, otherwise delete directly
+        if hasattr(self, 'command_manager') and self.command_manager:
+            from controllers.commands import DeleteDeviceCommand
+            cmd = DeleteDeviceCommand(self, device)
+            self.command_manager.execute_command(cmd)
         else:
-            # Original implementation
             self._delete_device(device)
 
     def _delete_device(self, device):

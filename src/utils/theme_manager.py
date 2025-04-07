@@ -147,7 +147,30 @@ class ThemeManager:
         # Notify all theme observers
         for observer in self.theme_observers:
             try:
-                observer.update_theme(self.current_theme)
+                # Make sure the observer has the update_theme method
+                if hasattr(observer, 'update_theme') and callable(getattr(observer, 'update_theme')):
+                    # Apply theme update
+                    observer.update_theme(self.current_theme)
+                    
+                    # Special handling for devices to ensure text visibility
+                    if hasattr(observer, 'text_item') and observer.text_item:
+                        # Set appropriate text color based on theme
+                        text_color = QColor(240, 240, 240) if self.current_theme == self.DARK_THEME else QColor(0, 0, 0)
+                        observer.text_item.setDefaultTextColor(text_color)
+                        
+                        # Update property label colors too
+                        if hasattr(observer, 'property_labels'):
+                            for label in observer.property_labels.values():
+                                label.setDefaultTextColor(text_color)
+                        
+                        # Force a visual update
+                        observer.update()
+                        
+                        # Force scene update if in a scene
+                        if observer.scene():
+                            scene = observer.scene()
+                            update_rect = observer.sceneBoundingRect().adjusted(-5, -5, 5, 5)
+                            scene.update(update_rect)
             except Exception as e:
                 self.logger.error(f"Error updating observer {observer}: {str(e)}")
     

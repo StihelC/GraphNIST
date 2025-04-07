@@ -25,6 +25,9 @@ class ConnectionController:
         # Debug flag for more verbose logging
         self.debug_mode = True
         
+        # Flag to prevent multiple connection dialogs
+        self.connection_operation_in_progress = False
+        
         # Connect to canvas signals
         self.canvas.add_connection_requested.connect(self.on_add_connection_requested)
         self.canvas.connect_multiple_devices_requested.connect(self.on_connect_multiple_devices_requested)
@@ -162,6 +165,11 @@ class ConnectionController:
     def create_connection(self, source_device, target_device, source_port=None, target_port=None, properties=None):
         """Create a connection between two devices."""
         try:
+            # Double-check if connection already exists to prevent duplicates
+            if self._connection_exists(source_device, target_device):
+                self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}, skipping creation")
+                return None
+            
             # Create the connection object with debug logging
             if self.debug_mode:
                 self.logger.info(f"Creating connection between {source_device.name} and {target_device.name}")
@@ -238,254 +246,234 @@ class ConnectionController:
         
         if len(devices) < 2:
             self.logger.warning("Need at least 2 devices to create connections")
-            return
-        
-        # Show dialog to configure connection properties
-        dialog = MultiConnectionDialog(self.canvas.parent())
-        if dialog.exec_() != QDialog.Accepted:
-            self.logger.info("User cancelled multi-device connection")
             return False
         
-        # Get connection properties from dialog
-        connection_data = dialog.get_connection_data()
-        strategy = connection_data['strategy']
-        bidirectional = connection_data.get('bidirectional', True)
+        # Check if a connection operation is already in progress
+        if self.connection_operation_in_progress:
+            self.logger.info("Connection operation already in progress, ignoring request")
+            return False
+            
+        # Set flag to indicate connection operation is in progress
+        self.connection_operation_in_progress = True
         
-        properties = {
-            'type': connection_data['type'],
-            'label': connection_data['label'],
-            'bandwidth': connection_data['bandwidth'],
-            'latency': connection_data['latency']
-        }
-        
-        # Use a composite command if undo/redo is available
-        if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
-            from controllers.commands import CompositeCommand, AddConnectionCommand
-            
-            composite_cmd = CompositeCommand(description=f"Connect {len(devices)} Devices ({strategy})")
-            
-            # Create connections based on selected strategy
-            connection_count = 0
-            
-            # MESH strategy: connect all devices to each other
-            if strategy == "mesh":
-                self.logger.info(f"Creating mesh network connections for {len(devices)} devices")
-                for i in range(len(devices)):
-                    source_device = devices[i]
-                    for j in range(len(devices)):
-                        if i == j:  # Skip self
-                            continue
-                            
-                        target_device = devices[j]
-                        
-                        # For non-bidirectional connections, only create one direction
-                        if not bidirectional and j <= i:
-                            continue
-                        
-                        # Skip if connection already exists in either direction
-                        if self._connection_exists(source_device, target_device):
-                            continue
-                        
-                        # Create the connection command
-                        conn_cmd = AddConnectionCommand(
-                            controller=self,
-                            source_device=source_device, 
-                            target_device=target_device,
-                            properties=properties
-                        )
-                        
-                        composite_cmd.add_command(conn_cmd)
-                        connection_count += 1
-            
-            # CHAIN strategy: connect devices in sequence
-            elif strategy == "chain":
-                self.logger.info(f"Creating chain connections for {len(devices)} devices")
-                # Sort devices by position (left to right, then top to bottom)
-                sorted_devices = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
-                
-                for i in range(len(sorted_devices)-1):
-                    source_device = sorted_devices[i]
-                    target_device = sorted_devices[i+1]
-                    
-                    # Create forward connection
-                    if not self._connection_exists(source_device, target_device):
-                        conn_cmd = AddConnectionCommand(
-                            controller=self,
-                            source_device=source_device, 
-                            target_device=target_device,
-                            properties=properties
-                        )
-                        composite_cmd.add_command(conn_cmd)
-                        connection_count += 1
-                    
-                    # Create backward connection if bidirectional
-                    if bidirectional and not self._connection_exists(target_device, source_device):
-                        conn_cmd = AddConnectionCommand(
-                            controller=self,
-                            source_device=target_device,
-                            target_device=source_device,
-                            properties=properties
-                        )
-                        composite_cmd.add_command(conn_cmd)
-                        connection_count += 1
-            
-            # CLOSEST strategy: connect each device to its closest neighbor
-            elif strategy == "closest":
-                self.logger.info(f"Creating closest-neighbor connections for {len(devices)} devices")
-                for source_device in devices:
-                    closest_device = None
-                    min_distance = float('inf')
-                    
-                    # Find the closest device
-                    for target_device in devices:
-                        if source_device == target_device:  # Skip self
-                            continue
-                            
-                        # Calculate distance
-                        source_pos = source_device.scenePos()
-                        target_pos = target_device.scenePos()
-                        distance = math.sqrt(
-                            (source_pos.x() - target_pos.x()) ** 2 + 
-                            (source_pos.y() - target_pos.y()) ** 2
-                        )
-                        
-                        if distance < min_distance:
-                            min_distance = distance
-                            closest_device = target_device
-                    
-                    if closest_device:
-                        # Create connection to closest device if it doesn't already exist in either direction
-                        if not self._connection_exists(source_device, closest_device):
-                            conn_cmd = AddConnectionCommand(
-                                controller=self,
-                                source_device=source_device, 
-                                target_device=closest_device,
-                                properties=properties
-                            )
-                            composite_cmd.add_command(conn_cmd)
-                            connection_count += 1
-                        
-                        # Create reverse connection if bidirectional
-                        if bidirectional and not self._connection_exists(closest_device, source_device):
-                            conn_cmd = AddConnectionCommand(
-                                controller=self,
-                                source_device=closest_device,
-                                target_device=source_device,
-                                properties=properties
-                            )
-                            composite_cmd.add_command(conn_cmd)
-                            connection_count += 1
-            
-            # CLOSEST_TYPE strategy: connect each device to its closest neighbor of specific type
-            elif strategy == "closest_type":
-                target_type = connection_data.get('target_device_type')
-                self.logger.info(f"Creating closest-type connections for {len(devices)} devices to type '{target_type}'")
-                
-                # Filter devices of target type
-                target_devices = [d for d in devices if d.device_type == target_type]
-                
-                if not target_devices:
-                    self.logger.warning(f"No devices of type '{target_type}' found in selection")
-                    return False
-                
-                for source_device in devices:
-                    # Skip if we're connecting to a specific type and this device is of that type
-                    if source_device.device_type == target_type:
-                        continue
-                        
-                    closest_device = None
-                    min_distance = float('inf')
-                    
-                    # Find the closest device of target type
-                    for target_device in target_devices:
-                        if source_device == target_device:  # Skip self
-                            continue
-                            
-                        # Calculate distance
-                        source_pos = source_device.scenePos()
-                        target_pos = target_device.scenePos()
-                        distance = math.sqrt(
-                            (source_pos.x() - target_pos.x()) ** 2 + 
-                            (source_pos.y() - target_pos.y()) ** 2
-                        )
-                        
-                        if distance < min_distance:
-                            min_distance = distance
-                            closest_device = target_device
-                    
-                    if closest_device:
-                        # Create connection to closest device of target type if it doesn't already exist in either direction
-                        if not self._connection_exists(source_device, closest_device):
-                            conn_cmd = AddConnectionCommand(
-                                controller=self,
-                                source_device=source_device, 
-                                target_device=closest_device,
-                                properties=properties
-                            )
-                            composite_cmd.add_command(conn_cmd)
-                            connection_count += 1
-                        
-                        # Create reverse connection if bidirectional
-                        if bidirectional and not self._connection_exists(closest_device, source_device):
-                            conn_cmd = AddConnectionCommand(
-                                controller=self,
-                                source_device=closest_device,
-                                target_device=source_device,
-                                properties=properties
-                            )
-                            composite_cmd.add_command(conn_cmd)
-                            connection_count += 1
-            
-            # Only push if we actually created connections
-            if connection_count > 0:
-                self.undo_redo_manager.push_command(composite_cmd)
-                self.logger.info(f"Created {connection_count} connections with undo support")
-                return True
-            else:
-                self.logger.warning("No connections were created")
+        try:
+            # Show dialog to configure connection properties
+            dialog = MultiConnectionDialog(self.canvas.parent())
+            result = dialog.exec_()
+            if result != QDialog.Accepted:
+                self.logger.info("User cancelled multi-device connection")
+                dialog.deleteLater()
                 return False
-        else:
-            # Direct creation without undo support (simplified version)
-            self.logger.warning("Creating connections without undo support")
-            connection_count = 0
             
-            # Only implementing mesh and chain modes for the direct creation path
-            # as this is less commonly used
-            if strategy == "mesh":
-                # Mesh mode: connect all devices to each other
-                for i in range(len(devices)):
-                    source_device = devices[i]
-                    for j in range(i+1, len(devices)):
-                        target_device = devices[j]
+            # Get connection properties from dialog
+            connection_data = dialog.get_connection_data()
+            strategy = connection_data['strategy']
+            bidirectional = connection_data.get('bidirectional', True)
+            
+            properties = {
+                'type': connection_data['type'],
+                'label': connection_data['label'],
+                'bandwidth': connection_data['bandwidth'],
+                'latency': connection_data['latency']
+            }
+            
+            # Clean up dialog explicitly
+            dialog.deleteLater()
+            
+            # Use a composite command if undo/redo is available
+            if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
+                try:
+                    from controllers.commands import CompositeCommand, AddConnectionCommand
+                    
+                    composite_cmd = CompositeCommand(description=f"Connect {len(devices)} Devices ({strategy})")
+                    added_connections = 0  # Track the number of actual connections added
+                    
+                    # Create connections based on selected strategy
+                    # MESH strategy: connect all devices to each other
+                    if strategy == "mesh":
+                        self.logger.info(f"Creating mesh network connections for {len(devices)} devices")
+                        for i in range(len(devices)):
+                            source_device = devices[i]
+                            for j in range(len(devices)):
+                                if i == j:  # Skip self
+                                    continue
+                                    
+                                target_device = devices[j]
+                                
+                                # For non-bidirectional connections, only create one direction
+                                if not bidirectional and j <= i:
+                                    continue
+                                
+                                # Skip if connection already exists in either direction
+                                if self._connection_exists(source_device, target_device):
+                                    self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}, skipping")
+                                    continue
+                                
+                                # Create the connection command
+                                conn_cmd = AddConnectionCommand(
+                                    controller=self,
+                                    source_device=source_device, 
+                                    target_device=target_device,
+                                    properties=properties
+                                )
+                                
+                                composite_cmd.add_command(conn_cmd)
+                                added_connections += 1
+                    
+                    # CHAIN strategy: connect devices in sequence
+                    elif strategy == "chain":
+                        self.logger.info(f"Creating chain connections for {len(devices)} devices")
+                        # Sort devices by position (left to right, then top to bottom)
+                        sorted_devices = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
                         
-                        # Skip if connection already exists in either direction
-                        if self._connection_exists(source_device, target_device):
-                            continue
+                        for i in range(len(sorted_devices)-1):
+                            source_device = sorted_devices[i]
+                            target_device = sorted_devices[i+1]
+                            
+                            # Create forward connection if it doesn't already exist
+                            if not self._connection_exists(source_device, target_device):
+                                conn_cmd = AddConnectionCommand(
+                                    controller=self,
+                                    source_device=source_device, 
+                                    target_device=target_device,
+                                    properties=properties
+                                )
+                                composite_cmd.add_command(conn_cmd)
+                                added_connections += 1
+                            else:
+                                self.logger.info(f"Forward connection already exists between {source_device.name} and {target_device.name}, skipping")
+                            
+                            # Create backward connection if bidirectional
+                            if bidirectional and not self._connection_exists(target_device, source_device):
+                                conn_cmd = AddConnectionCommand(
+                                    controller=self,
+                                    source_device=target_device,
+                                    target_device=source_device,
+                                    properties=properties
+                                )
+                                composite_cmd.add_command(conn_cmd)
+                                added_connections += 1
+                            elif bidirectional:
+                                self.logger.info(f"Backward connection already exists between {target_device.name} and {source_device.name}, skipping")
+                    
+                    # CLOSEST strategy: connect each device to its closest neighbor
+                    elif strategy == "closest":
+                        self.logger.info(f"Creating closest-neighbor connections for {len(devices)} devices")
+                        for source_device in devices:
+                            closest_device = None
+                            min_distance = float('inf')
+                            
+                            # Find the closest device
+                            for target_device in devices:
+                                if source_device == target_device:  # Skip self
+                                    continue
+                                    
+                                # Calculate distance
+                                source_pos = source_device.scenePos()
+                                target_pos = target_device.scenePos()
+                                distance = math.sqrt(
+                                    (source_pos.x() - target_pos.x()) ** 2 + 
+                                    (source_pos.y() - target_pos.y()) ** 2
+                                )
+                                
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    closest_device = target_device
+                            
+                            if closest_device:
+                                # Create connection to closest device if it doesn't already exist in either direction
+                                if not self._connection_exists(source_device, closest_device):
+                                    conn_cmd = AddConnectionCommand(
+                                        controller=self,
+                                        source_device=source_device, 
+                                        target_device=closest_device,
+                                        properties=properties
+                                    )
+                                    composite_cmd.add_command(conn_cmd)
+                                    added_connections += 1
+                                else:
+                                    self.logger.info(f"Connection already exists between {source_device.name} and {closest_device.name}, skipping")
+                                
+                                # Create reverse connection if bidirectional
+                                if bidirectional and not self._connection_exists(closest_device, source_device):
+                                    conn_cmd = AddConnectionCommand(
+                                        controller=self,
+                                        source_device=closest_device,
+                                        target_device=source_device,
+                                        properties=properties
+                                    )
+                                    composite_cmd.add_command(conn_cmd)
+                                    added_connections += 1
+                                elif bidirectional:
+                                    self.logger.info(f"Reverse connection already exists between {closest_device.name} and {source_device.name}, skipping")
+                    
+                    # Execute the composite command
+                    if composite_cmd.commands:  # Only push if there are actual commands to execute
+                        self.undo_redo_manager.push_command(composite_cmd)
+                        self.logger.info(f"Created {added_connections} connections using strategy '{strategy}'")
                         
-                        # Create the connection
-                        connection = self.create_connection(source_device, target_device, None, None, properties)
-                        if connection:
-                            connection_count += 1
+                        # Notify through event bus
+                        self.event_bus.emit("multiple_connections_added", added_connections)
+                        return True
+                    else:
+                        self.logger.info("No new connections were created")
+                        return False
+                except Exception as e:
+                    self.logger.error(f"Error in on_connect_multiple_devices_requested with undo/redo: {str(e)}")
+                    self.logger.error(traceback.format_exc())
+                    return False
             else:
-                # Chain mode for all other strategies as fallback
-                sorted_devices = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
-                for i in range(len(sorted_devices)-1):
-                    source_device = sorted_devices[i]
-                    target_device = sorted_devices[i+1]
+                # Direct implementation without undo/redo
+                try:
+                    self.logger.warning("Creating connections without undo support")
+                    connection_count = 0
                     
-                    # Skip if connection already exists in either direction
-                    if self._connection_exists(source_device, target_device):
-                        continue
+                    # Only implementing mesh and chain modes for the direct creation path
+                    # as this is less commonly used
+                    if strategy == "mesh":
+                        # Mesh mode: connect all devices to each other
+                        for i in range(len(devices)):
+                            source_device = devices[i]
+                            for j in range(i+1, len(devices)):
+                                target_device = devices[j]
+                                
+                                # Skip if connection already exists in either direction
+                                if self._connection_exists(source_device, target_device):
+                                    continue
+                                
+                                # Create the connection
+                                connection = self.create_connection(source_device, target_device, None, None, properties)
+                                if connection:
+                                    connection_count += 1
+                    else:
+                        # Chain mode for all other strategies as fallback
+                        sorted_devices = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
+                        for i in range(len(sorted_devices)-1):
+                            source_device = sorted_devices[i]
+                            target_device = sorted_devices[i+1]
+                            
+                            # Skip if connection already exists in either direction
+                            if self._connection_exists(source_device, target_device):
+                                continue
+                            
+                            # Create the connection
+                            connection = self.create_connection(source_device, target_device, None, None, properties)
+                            if connection:
+                                connection_count += 1
                     
-                    # Create the connection
-                    connection = self.create_connection(source_device, target_device, None, None, properties)
-                    if connection:
-                        connection_count += 1
-            
-            self.logger.info(f"Created {connection_count} connections")
-            return connection_count > 0
-        
-        return False
+                    self.logger.info(f"Created {connection_count} connections")
+                    return connection_count > 0
+                except Exception as e:
+                    self.logger.error(f"Error in direct connection implementation: {str(e)}")
+                    self.logger.error(traceback.format_exc())
+                    return False
+        except Exception as e:
+            self.logger.error(f"Error in on_connect_multiple_devices_requested: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            return False
+        finally:
+            # Always reset the connection operation flag when done
+            self.connection_operation_in_progress = False
 
     def _connection_exists(self, source_device, target_device):
         """Check if a connection already exists between source and target devices.
@@ -494,11 +482,12 @@ class ConnectionController:
         This prevents duplicate connections from being created when:
         1. Adding single connections between two devices
         2. Using the multiple connection strategies (mesh, chain, closest, etc.)
+        3. Adding connections involving devices in boundaries/groups
         
         Any code that calls this method should expect it to return True if ANY connection exists
         between the two devices, regardless of direction.
         """
-        # Check each connection in the canvas
+        # Check direct connections first
         for conn in self.canvas.connections:
             # Get source and target of existing connection
             conn_source = getattr(conn, 'source_device', None)
@@ -514,6 +503,13 @@ class ConnectionController:
             if ((conn_source == source_device and conn_target == target_device) or
                 (conn_source == target_device and conn_target == source_device)):
                 return True
+                
+            # Also check if these two devices are already connected via same source/target device's connections
+            if hasattr(source_device, 'connections') and hasattr(target_device, 'connections'):
+                for src_conn in source_device.connections:
+                    for tgt_conn in target_device.connections:
+                        if src_conn == tgt_conn:  # Same connection object exists in both devices' connection lists
+                            return True
         
         return False
 
