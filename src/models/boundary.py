@@ -6,6 +6,7 @@ import logging
 class BoundarySignals(QObject):
     """Signals for the Boundary class."""
     name_changed = pyqtSignal(object, str)  # boundary, new_name
+    selected = pyqtSignal(object, bool)  # boundary, is_selected
 
 class EditableTextItem(QGraphicsTextItem):
     """An editable text item that supports interactive editing."""
@@ -394,6 +395,13 @@ class Boundary(QGraphicsRectItem):
         
         # Convert coordinates properly - must use event.pos() which returns item coordinates
         pos = event.pos()
+        
+        # Ensure this boundary is selected to show properties panel
+        self.setSelected(True)
+        
+        # Emit signal to show properties panel (if available)
+        if hasattr(self, 'signals') and hasattr(self.signals, 'selected'):
+            self.signals.selected.emit(self, True)
         
         # Check if clicking on a resize handle
         handle = self._handle_at_position(pos)

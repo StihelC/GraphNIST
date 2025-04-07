@@ -83,9 +83,25 @@ class PDFExporter:
             
             # Store visibility state of all items to restore later
             visibility_states = {}
+            text_color_states = {}
+            
+            # Make everything visible and ensure text is black for export
             for item in canvas.scene().items():
                 visibility_states[item] = item.isVisible()
                 item.setVisible(True)  # Make all items visible for export
+                
+                # Force text items to be black for PDF export
+                if hasattr(item, 'defaultTextColor') and callable(getattr(item, 'defaultTextColor')):
+                    # Store original text color
+                    text_color_states[item] = item.defaultTextColor()
+                    # Set text to black for PDF export
+                    item.setDefaultTextColor(QColor(0, 0, 0))
+                # Handle QGraphicsTextItem separately (they might be children of devices)
+                elif hasattr(item, 'childItems') and callable(getattr(item, 'childItems')):
+                    for child in item.childItems():
+                        if hasattr(child, 'defaultTextColor') and callable(getattr(child, 'defaultTextColor')):
+                            text_color_states[child] = child.defaultTextColor()
+                            child.setDefaultTextColor(QColor(0, 0, 0))
                 
             # Calculate scene rect containing all items
             scene_rect = canvas.scene().itemsBoundingRect()
@@ -106,9 +122,11 @@ class PDFExporter:
             painter = QPainter()
             if not painter.begin(pdf_writer):
                 logger.error("Failed to initialize painter on PDF writer")
-                # Restore visibility states
+                # Restore visibility and text colors
                 for item, was_visible in visibility_states.items():
                     item.setVisible(was_visible)
+                for item, color in text_color_states.items():
+                    item.setDefaultTextColor(color)
                 return False, "Failed to initialize PDF document"
             
             try:
@@ -172,9 +190,13 @@ class PDFExporter:
                 # End painting
                 painter.end()
                 
-                # Restore visibility states
+                # Restore visibility states and text colors
                 for item, was_visible in visibility_states.items():
                     item.setVisible(was_visible)
+                
+                # Restore original text colors
+                for item, color in text_color_states.items():
+                    item.setDefaultTextColor(color)
             
             logger.info(f"Canvas successfully exported to PDF: {filepath}")
             return True, f"Canvas successfully exported to PDF: {filepath}"

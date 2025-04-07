@@ -498,6 +498,12 @@ class Connection(QGraphicsPathItem):
     
     def mousePressEvent(self, event):
         """Handle mouse press events."""
+        # Set selected to show properties panel
+        self.setSelected(True)
+        
+        # Emit selected signal to show properties panel
+        self.signals.selected.emit(self)
+        
         super().mousePressEvent(event)
     
     def mouseMoveEvent(self, event):
@@ -506,6 +512,8 @@ class Connection(QGraphicsPathItem):
     
     def mouseReleaseEvent(self, event):
         """Handle mouse release events."""
+        # Accept the event to ensure it's processed
+        event.accept()
         super().mouseReleaseEvent(event)
     
     def hoverEnterEvent(self, event):

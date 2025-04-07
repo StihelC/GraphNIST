@@ -23,42 +23,35 @@ class Device(QGraphicsPixmapItem):
     DEVICE_PROPERTIES = {
         DeviceTypes.ROUTER: {
             'icon': 'router.svg',
-            'color': QColor(200, 120, 60),  # Orange-brown
             'routing_protocol': 'OSPF',
             'forwarding_table': {}
         },
         DeviceTypes.SWITCH: {
             'icon': 'switch.svg',
-            'color': QColor(60, 120, 200),  # Blue
             'ports': 24,
             'managed': True,
             'vlan_support': True
         },
         DeviceTypes.FIREWALL: {
             'icon': 'firewall.svg',
-            'color': QColor(200, 60, 60),  # Red
             'rules': [],
             'inspection_type': 'stateful'
         },
         DeviceTypes.SERVER: {
             'icon': 'server.svg',
-            'color': QColor(60, 160, 60),  # Green
             'services': [],
             'os': 'Linux'
         },
         DeviceTypes.WORKSTATION: {
             'icon': 'workstation.svg',
-            'color': QColor(150, 120, 180),  # Purple
             'os': 'Windows'
         },
         DeviceTypes.CLOUD: {
             'icon': 'cloud.svg',
-            'color': QColor(100, 160, 220),  # Light blue
             'provider': 'AWS'
         },
         DeviceTypes.GENERIC: {
-            'icon': 'device.svg',
-            'color': QColor(150, 150, 150)  # Gray
+            'icon': 'device.svg'
         }
     }
     
@@ -158,8 +151,8 @@ class Device(QGraphicsPixmapItem):
         # Create background rectangle
         self.rect_item = QGraphicsRectItem(0, 0, self.width, self.height, self)
         
-        # Set the visual appearance based on device type
-        device_color = self.properties.get('color', QColor(150, 150, 150))
+        # Set the visual appearance based on device type - use a default gray if no color specified
+        device_color = self.properties.get('color', QColor(150, 150, 150))  # Default gray if no color in properties
         
         # Create a visually distinct appearance with gradient or solid color
         brush = QBrush(device_color)
@@ -751,15 +744,17 @@ class Device(QGraphicsPixmapItem):
             self.update_property_labels()
             
         elif change == QGraphicsItem.ItemSelectedChange:
-            # Selection state is about to change - only store state, don't trigger any actions
+            # Selection state is about to change - store state
             self.is_selected = bool(value)
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' selection changing to {self.is_selected}")
             
         elif change == QGraphicsItem.ItemSelectedHasChanged:
-            # Selection state has changed - only emit signal, don't trigger any other actions
+            # Selection state has changed - emit signal
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' selection state changed to {self.isSelected()}")
             if hasattr(self.signals, 'selected') and self.signals.selected:
+                # Always emit the selected signal when selection state changes
                 self.signals.selected.emit(self, self.isSelected())
+                self.logger.debug(f"EMIT DEBUG: Emitted selected signal for device '{self.name}' with state {self.isSelected()}")
             
         return super().itemChange(change, value)
     
@@ -774,10 +769,18 @@ class Device(QGraphicsPixmapItem):
         super().mouseReleaseEvent(event)
     
     def mouseDoubleClickEvent(self, event):
-        """Completely disable double click behavior to prevent dialog opening."""
-        self.logger.critical(f"DEVICE DEBUG: Double click event intercepted on device: {self.name}, id: {id(self)}")
-        event.accept()  # Accept the event without doing anything
-        # DO NOT call parent implementation to ensure no dialog opens
+        """Handle double click event to show properties panel."""
+        self.logger.debug(f"DEVICE DEBUG: Double click event on device: {self.name}, id: {id(self)}")
+        
+        # Accept the event
+        event.accept()
+        
+        # Emit the double-clicked signal to notify listeners
+        if hasattr(self.signals, 'double_clicked'):
+            self.signals.double_clicked.emit(self)
+            self.logger.debug(f"DEVICE DEBUG: Emitted double_clicked signal for device: {self.name}")
+        
+        # Don't call parent implementation to prevent unwanted behaviors
     
     def mouseMoveEvent(self, event):
         """Handle mouse move events to keep all components together."""
@@ -979,8 +982,18 @@ class Device(QGraphicsPixmapItem):
         
         # Get properties to display
         display_props = []
+        
+        # Define a priority order for common properties
+        priority_props = ["ip_address", "hostname", "management_ip", "mac_address", "model", "vendor", "description"]
+        
+        # First add priority properties in order (if they exist and are enabled for display)
+        for prop in priority_props:
+            if prop in self.display_properties and self.display_properties[prop] and prop in self.properties:
+                display_props.append((prop, str(self.properties[prop])))
+        
+        # Then add any remaining properties that are enabled for display
         for prop, show in self.display_properties.items():
-            if show and prop in self.properties:
+            if show and prop in self.properties and prop not in priority_props:
                 display_props.append((prop, str(self.properties[prop])))
         
         self.logger.debug(f"UPDATE PROPS DEBUG: Found {len(display_props)} properties to display: {[p[0] for p in display_props]}")
@@ -1011,22 +1024,27 @@ class Device(QGraphicsPixmapItem):
         
         # Create or update labels for selected properties
         for i, (prop, value) in enumerate(display_props):
+            # Format the display - add property name for clarity
+            display_text = f"{prop.replace('_', ' ').title()}: {value}"
+            
             # If label already exists, update its text
             if prop in self.property_labels:
                 label = self.property_labels[prop]
                 # Only update text if the value has changed
-                if label.toPlainText() != value:
-                    label.setPlainText(value)
+                if label.toPlainText() != display_text:
+                    label.setPlainText(display_text)
             else:
                 # Create new label if it doesn't exist
                 label = QGraphicsTextItem(self)  # Make the device its parent
-                label.setPlainText(value)
+                label.setPlainText(display_text)
                 
                 # Use font settings from manager if available
                 if self.font_settings_manager:
                     label.setFont(self.font_settings_manager.get_device_property_font())
                 else:
-                    label.setFont(QFont("Arial", 8))
+                    font = QFont("Arial", 8)
+                    font.setBold(True)  # Make property labels bold for better visibility
+                    label.setFont(font)
                     
                 self.property_labels[prop] = label
             
@@ -1039,6 +1057,9 @@ class Device(QGraphicsPixmapItem):
             
             # Set the position
             label.setPos(x_pos, y_pos)
+            
+            # Always ensure the text color is set to black for PDF export compatibility
+            label.setDefaultTextColor(QColor(0, 0, 0))
         
         # Log the final state
         self.logger.debug(f"UPDATE PROPS DEBUG: Updated property labels, final count: {len(self.property_labels)}")
@@ -1110,17 +1131,10 @@ class Device(QGraphicsPixmapItem):
             # If text_item doesn't exist, create it
             self.update_name()  # This will create text_item with proper styling
         
-        # For property labels, use theme-based colors
-        from utils.theme_manager import ThemeManager
-        is_dark = theme_name == ThemeManager.DARK_THEME
-        if is_dark:
-            text_color = QColor(255, 255, 255)  # Pure white for dark mode
-        else:
-            text_color = QColor(0, 0, 0)  # Pure black for light mode
-        
-        # Update all property labels
+        # For property labels, use black color for PDF export compatibility
+        # This ensures text will always be visible in PDFs regardless of application theme
         for label in self.property_labels.values():
-            label.setDefaultTextColor(text_color)
+            label.setDefaultTextColor(QColor(0, 0, 0))  # Always use black for property labels
             
         # Force a redraw
         self.update()

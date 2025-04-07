@@ -308,7 +308,7 @@ class Canvas(QGraphicsView):
     def mouseReleaseEvent(self, event):
         """Handle mouse release events."""
         # End canvas panning
-        if self._is_panning:
+        if hasattr(self, '_is_panning') and self._is_panning:
             if event.button() == Qt.MiddleButton or (event.button() == Qt.LeftButton and event.modifiers() & Qt.ShiftModifier):
                 self._is_panning = False
                 self.setCursor(Qt.ArrowCursor)
@@ -321,23 +321,26 @@ class Canvas(QGraphicsView):
             self._rubber_band_active = False
             self.logger.debug("Rubber band selection complete")
         
-        # Track item movements for undo/redo
-        if hasattr(self, '_drag_start_pos') and hasattr(self, '_drag_item'):
-            if self._drag_item and self._drag_start_pos:
-                current_pos = self._drag_item.scenePos()
-                if current_pos != self._drag_start_pos:
-                    # Calculate actual item position difference
-                    dx = current_pos.x() - self._drag_start_pos.x()
-                    dy = current_pos.y() - self._drag_start_pos.y()
-                    
-                    # Add movement to undo/redo history if available
-                    if hasattr(self, 'event_bus') and self.event_bus:
-                        # Publish move event for controllers to handle
-                        self.event_bus.emit('item.moved', 
-                            item=self._drag_item, 
-                            old_pos=self._drag_start_pos,
-                            new_pos=current_pos
-                        )
+        # Handle drag finish
+        if hasattr(self, '_drag_item') and self._drag_item:
+            # Get the final position
+            drag_end_pos = self._drag_item.scenePos()
+            
+            # If we have undo/redo support and the item actually moved
+            if (hasattr(self, 'undo_redo_manager') and self.undo_redo_manager and 
+                self._drag_start_pos != drag_end_pos):
+                
+                # Create a move command for the undo/redo system
+                from controllers.commands import MoveItemCommand
+                
+                # Double-check that we have valid positions
+                if self._drag_start_pos and drag_end_pos:
+                    # Create and execute the command
+                    cmd = MoveItemCommand(
+                        self._drag_item,
+                        self._drag_start_pos,
+                        drag_end_pos
+                    )
                     
                     # Reset drag tracking variables
                     self._drag_start_pos = None
@@ -346,6 +349,8 @@ class Canvas(QGraphicsView):
         # Let the active mode handle the event
         scene_pos = self.mapToScene(event.pos())
         item = self.get_item_at(event.pos())
+        
+        # Process the event with mode manager
         handled = self.mode_manager.handle_event("mouse_release_event", event, scene_pos, item)
         if not handled:
             super().mouseReleaseEvent(event)
@@ -354,10 +359,20 @@ class Canvas(QGraphicsView):
         if self.mode_manager.current_mode == Modes.SELECT:
             self.setDragMode(QGraphicsView.RubberBandDrag)
         
-        # After handling mouse release, emit selection changed signal
+        # Get final selection state after mouse release
         selected_items = self.scene().selectedItems()
-        self.selection_changed.emit(selected_items)
         
+        # Emit selection changed signal if there are selected items
+        # This ensures properties panel updates after selection operations
+        if selected_items:
+            # Use small delay to ensure UI state is stable - reduces flicker
+            QTimer.singleShot(50, lambda: self._emit_selection_changed(selected_items))
+            
+    def _emit_selection_changed(self, items):
+        """Emit selection changed signal with items. Used for delayed emission."""
+        if items:
+            self.selection_changed.emit(items)
+    
     def keyPressEvent(self, event):
         """Handle key press events."""
         # If space bar is pressed, switch to pan mode temporarily
@@ -516,9 +531,55 @@ class Canvas(QGraphicsView):
     
     def connect_all_selected_devices(self):
         """Emit signal to connect all selected devices together."""
-        selected_devices = [i for i in self.scene().selectedItems() if i in self.devices]
-        if len(selected_devices) > 1:
-            self.connect_multiple_devices_requested.emit(selected_devices)
+        # Static flag to prevent re-entry during event processing
+        if hasattr(self, '_connecting_in_progress') and self._connecting_in_progress:
+            self.logger.debug("Ignoring re-entrant call to connect_all_selected_devices")
+            return
+        
+        try:
+            # Set flag to prevent re-entry
+            self._connecting_in_progress = True
+            
+            # Get selected devices
+            selected_devices = [i for i in self.scene().selectedItems() if i in self.devices]
+            if len(selected_devices) > 1:
+                # Emit the signal only once with all needed information
+                self.logger.debug(f"Emitting connect_multiple_devices_requested for {len(selected_devices)} devices")
+                self.connect_multiple_devices_requested.emit(selected_devices)
+        finally:
+            # Always clean up the flag when done
+            self._connecting_in_progress = False
+    
+    def device_selected(self, device, is_selected):
+        """Handle device selection events."""
+        self.logger.debug(f"SELECTION DEBUG: Device selected: {device.name}, is_selected={is_selected}")
+        
+        # If device is selected, make sure selection_changed signal is emitted
+        if is_selected:
+            # This helps with the properties panel visibility issue
+            selected_items = self.scene().selectedItems()
+            if selected_items:
+                # Emit immediately to update properties panel
+                self.selection_changed.emit(selected_items)
+                
+                # Also attempt to show the properties panel directly
+                parent = self
+                while parent:
+                    if hasattr(parent, 'properties_dock'):
+                        parent.properties_dock.setVisible(True)
+                        break
+                    parent = parent.parent()
+                    
+                # If parent window not found, try to find through application
+                if not hasattr(parent, 'properties_dock'):
+                    import sys
+                    if 'PyQt5.QtWidgets' in sys.modules:
+                        app = sys.modules['PyQt5.QtWidgets'].QApplication.instance()
+                        if app:
+                            for widget in app.topLevelWidgets():
+                                if hasattr(widget, 'properties_dock'):
+                                    widget.properties_dock.setVisible(True)
+                                    break
     
     def contextMenuEvent(self, event):
         """Handle context menu event."""

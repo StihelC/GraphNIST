@@ -288,7 +288,8 @@ class PropertiesPanel(QWidget):
             logger.info(f"PANEL DEBUG: Device has {len(device.properties)} properties")
             row = 0
             for key, value in device.properties.items():
-                if key in ['name', 'device_type', 'width', 'height']:  # Skip properties handled elsewhere
+                # Skip properties that should not be shown in the table
+                if key in ['name', 'device_type', 'width', 'height', 'color']:  # Added 'color' to the list of excluded properties
                     continue
                     
                 self.device_props_table.insertRow(row)
@@ -451,52 +452,58 @@ class PropertiesPanel(QWidget):
     
     def show_multiple_devices(self, devices):
         """Show a simplified interface for editing common properties across all selected devices."""
-        # Clear current UI
+        if not devices:
+            self.clear()
+            return
+        
+        # First clear the panel
         self.clear()
-        self.content_layout.setAlignment(Qt.AlignTop)
         
-        # Title with number of devices selected
-        device_count = len(devices)
-        title_label = QLabel(f"{device_count} Devices Selected")
-        font = QFont()
-        font.setBold(True)
-        font.setPointSize(12)
-        title_label.setFont(font)
-        title_label.setAlignment(Qt.AlignCenter)
-        self.content_layout.addWidget(title_label)
+        # Store reference to these devices
+        self.current_item = None  # Clear single item reference
+        self.current_items = devices
         
-        # Create a main container for the multi-edit UI
+        # Create a scrollable container for properties
         main_container = QWidget()
         main_layout = QVBoxLayout(main_container)
-        main_layout.setSpacing(10)  # Reduced spacing between sections
         
-        # Device Types Summary (count by type)
-        type_counts = {}
+        # Header with count of selected devices
+        header = QLabel(f"<b>{len(devices)} Devices Selected</b>")
+        header.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(header)
+        
+        # Create a form for common properties
+        props_group = QGroupBox("Common Properties")
+        props_layout = QFormLayout()
+        
+        # Get the most common device type if possible
+        device_types = {}
         for device in devices:
-            device_type = device.device_type
-            if device_type in type_counts:
-                type_counts[device_type] += 1
-            else:
-                type_counts[device_type] = 1
+            if hasattr(device, 'device_type'):
+                device_type = device.device_type
+                if device_type in device_types:
+                    device_types[device_type] += 1
+                else:
+                    device_types[device_type] = 1
         
-        # Device List Label
-        types_list = ", ".join([f"{count} {dev_type}" for dev_type, count in type_counts.items()])
-        types_label = QLabel(f"Types: {types_list}")
-        types_label.setWordWrap(True)
-        main_layout.addWidget(types_label)
+        # Display the most common device type as read-only info
+        if device_types:
+            most_common_type = max(device_types.items(), key=lambda x: x[1])[0]
+            type_label = QLabel(most_common_type)
+            props_layout.addRow("Device Type:", type_label)
         
-        # Property editing section
-        props_group = QGroupBox("Edit Properties")
-        props_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-        props_layout = QFormLayout(props_group)
-        props_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        props_layout.setVerticalSpacing(5)  # Reduced vertical spacing between form rows
+        # Find common properties across all selected devices that can be edited in bulk
+        # Define "important" properties that should be shown first if present
+        important_props = ["ip_address", "hostname", "mac_address", "management_ip", 
+                        "description", "serial_number", "model", "vendor"]
         
-        # Common important properties to edit
-        important_props = ["ip_address", "location", "routing_protocol", "hostname", "description"]
+        # Exclude properties that should not be shown or cannot be meaningfully bulk-edited
+        excluded_props = ["name", "device_type", "width", "height", "color", "position", "port_positions", "selected"]
         
-        # Find which important properties exist in these devices
+        # Find all available properties across devices, prioritizing important ones
         available_props = []
+        
+        # First add important properties that are found in any device
         for prop in important_props:
             for device in devices:
                 if hasattr(device, 'properties') and prop in device.properties:
@@ -508,7 +515,7 @@ class PropertiesPanel(QWidget):
             for device in devices:
                 if hasattr(device, 'properties'):
                     for prop in device.properties:
-                        if prop != "color" and prop not in available_props:
+                        if prop not in excluded_props and prop not in available_props:
                             available_props.append(prop)
         
         # Create editable fields for each available property
@@ -539,56 +546,50 @@ class PropertiesPanel(QWidget):
             # Add to form layout
             props_layout.addRow(f"{display_name}:", field)
         
+        props_group.setLayout(props_layout)
         main_layout.addWidget(props_group)
         
         # Add a "Display Options" section
         display_group = QGroupBox("Display Settings")
-        display_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-        display_layout = QVBoxLayout(display_group)
-        display_layout.setSpacing(5)  # Reduced spacing within display section
+        display_layout = QVBoxLayout()
         
-        display_layout.addWidget(QLabel("Show properties under device icons:"))
+        # Find all displayable properties across devices
+        display_props = set()
+        for device in devices:
+            if hasattr(device, 'properties'):
+                for prop in device.properties:
+                    if prop not in excluded_props:
+                        display_props.add(prop)
         
-        # Create checkboxes for display options in a grid
+        # Create checkboxes for common display options
         checkbox_grid = QGridLayout()
-        checkbox_grid.setHorizontalSpacing(10)
-        checkbox_grid.setVerticalSpacing(4)  # Reduced vertical spacing between checkbox rows
+        checkbox_grid.setColumnStretch(0, 1)
+        checkbox_grid.setColumnStretch(1, 1)
         
-        # Add checkboxes for all available properties
-        row, col = 0, 0
-        for i, prop in enumerate(available_props):
+        # Add checkboxes in two columns
+        self.display_checkboxes = {}
+        
+        for i, prop in enumerate(sorted(display_props)):
             # Format name for display
             display_name = prop.replace('_', ' ').title()
             
-            # Create checkbox
             checkbox = QCheckBox(display_name)
-            checkbox.setTristate(True)  # Allow partial state
-            
-            # Determine initial state (checked if all devices show it, partial if some do)
-            display_count = 0
-            for device in devices:
-                if (hasattr(device, 'display_properties') and 
-                    prop in device.display_properties and 
-                    device.display_properties[prop]):
-                    display_count += 1
-            
-            if display_count == len(devices):
-                checkbox.setCheckState(Qt.Checked)
-            elif display_count > 0:
-                checkbox.setCheckState(Qt.PartiallyChecked)
-            else:
-                checkbox.setCheckState(Qt.Unchecked)
-            
-            # Store property name for signal handler
             checkbox.setProperty("property_name", prop)
+            
+            # Get initial state based on majority of devices
+            display_count = sum(1 for device in devices if hasattr(device, 'get_property_display_state') and device.get_property_display_state(prop))
+            checkbox.setChecked(display_count > len(devices) / 2)
+            
+            # Connect state change handler
             checkbox.stateChanged.connect(self._handle_display_state_changed)
             
-            # Add to grid layout (3 columns)
+            # Add to grid in two columns
+            row = i // 2
+            col = i % 2
             checkbox_grid.addWidget(checkbox, row, col)
-            col += 1
-            if col >= 3:
-                col = 0
-                row += 1
+            
+            # Store reference
+            self.display_checkboxes[prop] = checkbox
         
         display_layout.addLayout(checkbox_grid)
         main_layout.addWidget(display_group)

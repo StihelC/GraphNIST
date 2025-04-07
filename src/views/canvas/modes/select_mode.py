@@ -78,50 +78,32 @@ class SelectMode(CanvasMode):
                 item.label.start_editing()
                 return True
         
-        # Handle left button press for potential drag or selection
+        # Handle left button clicks
         if event.button() == Qt.LeftButton:
-            # Log for debugging
-            self.logger.debug(f"Mouse press in select mode at {scene_pos.x():.1f}, {scene_pos.y():.1f}")
+            # Check if we're clicking on an item
+            self.click_item = None
             
-            # Check if we clicked on a selectable item
+            # Find the actual item that can be selected (device, connection, boundary)
+            original_item = item  # Keep track of the originally clicked item
             selectable_item = None
-            original_item = item
             
-            # Check for device or child of device - Improve this logic
-            if isinstance(item, Device):
-                selectable_item = item
-                self.logger.debug(f"Clicked directly on device: {selectable_item.name}")
-            elif item and item.parentItem() and isinstance(item.parentItem(), Device):
-                # When clicking any part of the device, always select/drag the parent
-                selectable_item = item.parentItem()
-                self.logger.debug(f"Clicked on device part, selecting parent: {selectable_item.name}")
-                # Special case - force the event to be handled by the parent
-                item = selectable_item
-            # Check for connection
-            elif isinstance(item, Connection):
-                selectable_item = item
-                self.logger.debug(f"Clicked on connection with ID: {selectable_item.id}")
-            # Check for boundary
-            elif isinstance(item, Boundary):
-                selectable_item = item
-                self.logger.debug(f"Clicked on boundary: {selectable_item.name}")
+            # Logic for handling clicks on items or their children
+            if item:
+                # Check if it's a device, connection, or boundary
+                from models.device import Device
+                from models.connection import Connection
+                from models.boundary import Boundary
                 
-                # Special check for boundary resize handles
-                # Let the boundary handle mouse press directly for resize operations
-                if selectable_item.isSelected():
-                    # Check if position is on a resize handle
-                    scene_item_pos = selectable_item.mapFromScene(scene_pos)
-                    if hasattr(selectable_item, '_handle_at_position'):
-                        handle = selectable_item._handle_at_position(scene_item_pos)
-                        if handle:
-                            self.logger.debug(f"Clicked on boundary resize handle: {handle}, letting default handlers process it")
-                            
-                            # Make sure the boundary stays selected
-                            selectable_item.setSelected(True)
-                            
-                            # Do not handle the event here - let Qt's default event system
-                            # pass the event to the boundary item
-                            return False
+                if isinstance(item, (Device, Connection, Boundary)):
+                    # Directly clicked on a selectable item
+                    selectable_item = item
+                    self.logger.debug(f"Direct click on {type(item).__name__}")
+                elif item.parentItem():
+                    # Clicked on a child item, check if parent is selectable
+                    parent = item.parentItem()
+                    if isinstance(parent, (Device, Connection, Boundary)):
+                        selectable_item = parent
+                        self.logger.debug(f"Click on child of {type(parent).__name__}")
             
             # If we found a selectable item
             if selectable_item:
@@ -133,6 +115,13 @@ class SelectMode(CanvasMode):
                 
                 # Select the item
                 selectable_item.setSelected(True)
+                
+                # Emit the selection changed signal to ensure properties panel is updated ONCE
+                # (removing intermediate signals that cause flicker)
+                if hasattr(self.canvas, 'selection_changed'):
+                    # This is a critical change - emit with slight delay to ensure UI is updated
+                    from PyQt5.QtCore import QTimer
+                    QTimer.singleShot(10, lambda: self.canvas.selection_changed.emit([selectable_item]))
                 
                 # Only devices and boundaries can be dragged
                 if isinstance(selectable_item, Device) or isinstance(selectable_item, Boundary):
@@ -147,24 +136,23 @@ class SelectMode(CanvasMode):
                         selectable_item.mousePressEvent(event)
                     
                     # Return False to allow Qt's native drag behavior to kick in
-                    self.canvas.selection_changed.emit(self.canvas.scene().selectedItems())
+                    # Do NOT emit another selection changed signal here - it causes flicker
                     return False
                 else:
-                    # For connections, just emit the selection signal and don't allow dragging
-                    self.canvas.selection_changed.emit(self.canvas.scene().selectedItems())
+                    # For connections, just return without emitting another signal
                     return True
-            else:
-                # Clicked on empty space - prepare for rubber band selection
-                self.logger.debug("Clicked on empty space, preparing for rubber band selection")
-                
-                # Clear selection if Control isn't pressed
-                if not (event.modifiers() & Qt.ControlModifier):
-                    self.canvas.scene().clearSelection()
-                    self.canvas.selection_changed.emit([])
-                
-                # Let Qt handle rubber band selection
-                return False
+            
+            # If clicked in empty space, clear selection unless Ctrl is pressed
+            elif not (event.modifiers() & Qt.ControlModifier):
+                self.canvas.scene().clearSelection()
+                # Return True to indicate we handled the event
+                return True
+            
+        # If right button, do nothing and let the context menu handle it
+        elif event.button() == Qt.RightButton:
+            return False
         
+        # By default, return False to let Qt handle the event
         return False
     
     def mouse_move_event(self, event):

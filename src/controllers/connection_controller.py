@@ -242,7 +242,7 @@ class ConnectionController:
         Args:
             devices: List of selected devices to connect
         """
-        self.logger.info(f"Connecting {len(devices)} devices together")
+        self.logger.info(f"CONNECTION DEBUG: Started on_connect_multiple_devices_requested with {len(devices)} devices")
         
         if len(devices) < 2:
             self.logger.warning("Need at least 2 devices to create connections")
@@ -250,24 +250,25 @@ class ConnectionController:
         
         # Check if a connection operation is already in progress
         if self.connection_operation_in_progress:
-            self.logger.info("Connection operation already in progress, ignoring request")
+            self.logger.info("CONNECTION DEBUG: Connection operation already in progress, ignoring duplicate request")
             return False
             
         # Set flag to indicate connection operation is in progress
         self.connection_operation_in_progress = True
+        self.logger.info("CONNECTION DEBUG: Set connection_operation_in_progress = True")
         
         try:
-            # Show dialog to configure connection properties
-            dialog = MultiConnectionDialog(self.canvas.parent())
-            result = dialog.exec_()
-            if result != QDialog.Accepted:
-                self.logger.info("User cancelled multi-device connection")
-                dialog.deleteLater()
-                return False
+            # Skip the dialog and use default chain connection with Ethernet
+            connection_data = {
+                'type': 'ethernet',
+                'label': 'Ethernet',
+                'bandwidth': '1G',
+                'latency': '0ms',
+                'strategy': 'chain',
+                'bidirectional': True
+            }
             
-            # Get connection properties from dialog
-            connection_data = dialog.get_connection_data()
-            strategy = connection_data['strategy']
+            strategy = connection_data['strategy']  # chain
             bidirectional = connection_data.get('bidirectional', True)
             
             properties = {
@@ -277,8 +278,7 @@ class ConnectionController:
                 'latency': connection_data['latency']
             }
             
-            # Clean up dialog explicitly
-            dialog.deleteLater()
+            self.logger.info(f"CONNECTION DEBUG: Using default chain strategy to connect {len(devices)} devices")
             
             # Use a composite command if undo/redo is available
             if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
@@ -421,6 +421,8 @@ class ConnectionController:
                 except Exception as e:
                     self.logger.error(f"Error in on_connect_multiple_devices_requested with undo/redo: {str(e)}")
                     self.logger.error(traceback.format_exc())
+                    # Reset the operation flag even if there's an error
+                    self.connection_operation_in_progress = False
                     return False
             else:
                 # Direct implementation without undo/redo
@@ -462,17 +464,23 @@ class ConnectionController:
                                 connection_count += 1
                     
                     self.logger.info(f"Created {connection_count} connections")
+                    # Reset the operation flag after processing is complete
+                    self.connection_operation_in_progress = False
                     return connection_count > 0
                 except Exception as e:
-                    self.logger.error(f"Error in direct connection implementation: {str(e)}")
+                    self.logger.error(f"Error in on_connect_multiple_devices_requested without undo/redo: {str(e)}")
                     self.logger.error(traceback.format_exc())
+                    # Reset the operation flag even if there's an error
+                    self.connection_operation_in_progress = False
                     return False
         except Exception as e:
             self.logger.error(f"Error in on_connect_multiple_devices_requested: {str(e)}")
             self.logger.error(traceback.format_exc())
+            # Reset the operation flag even if there's an error in the outer try block
+            self.connection_operation_in_progress = False
             return False
         finally:
-            # Always reset the connection operation flag when done
+            # Make absolutely sure the flag is always reset
             self.connection_operation_in_progress = False
 
     def _connection_exists(self, source_device, target_device):

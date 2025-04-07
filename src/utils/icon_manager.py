@@ -12,7 +12,7 @@ class IconManager:
     # Basic UI controls
     SELECT = "select_tool"
     ADD_DEVICE = "add_device"
-    ADD_CONNECTION = "add_connection"
+    ADD_CONNECTION = "connection_straight"
     ADD_BOUNDARY = "add_boundary"
     DELETE = "delete"
     MAGNIFY = "magnify"
@@ -59,9 +59,53 @@ class IconManager:
         """Initialize the icon manager."""
         self.logger = logging.getLogger(__name__)
         
-        # Default paths
+        # Fix paths to correct locations
         self.svg_path = "src/resources/icons/svg"
-        self.png_path = "resources/icons"
+        self.png_path = "src/resources/icons"
+        
+        # Add application-root-relative paths for when running from different directories
+        # Get the path to the current file (icon_manager.py)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up one level to get to the src directory
+        src_dir = os.path.dirname(current_dir)
+        
+        # Define absolute paths based on src directory
+        self.abs_svg_path = os.path.join(src_dir, "resources", "icons", "svg")
+        self.abs_png_path = os.path.join(src_dir, "resources", "icons")
+        
+        # Map requested icon names to existing icon files
+        # This allows us to use existing icons for toolbar buttons
+        # All of these files were confirmed to exist in the svg directory
+        self.DEFAULT_ICON_NAMES = {
+            # These match exactly with the SVG filenames
+            "select_tool": "select_tool",         # select_tool.svg
+            "add_device": "add_device",           # add_device.svg
+            "add_connection": "add_connection",   # add_connection.svg  
+            "add_boundary": "add_boundary",       # add_boundary.svg
+            "delete": "delete",                   # delete.svg
+            "magnify": "magnify",                 # magnify.svg
+            "zoom_in": "zoom_in",                 # zoom_in.svg
+            "zoom_out": "zoom_out",               # zoom_out.svg
+            "zoom_reset": "zoom_reset",           # zoom_reset.svg
+            "undo": "undo",                       # undo.svg
+            "redo": "redo",                       # redo.svg
+            "align": "align",                     # align.svg
+            "cut": "cut",                         # cut.svg
+            "copy": "copy",                       # copy.svg
+            "paste": "paste",                     # paste.svg
+            "connection_straight": "connection_straight",    # connection_straight.svg
+            "connection_orthogonal": "connection_orthogonal",# connection_orthogonal.svg
+            "connection_curved": "connection_curved",        # connection_curved.svg
+
+            # Device type icons - not directly used in toolbar but used elsewhere
+            "device": "device",                   # device.svg
+            "router": "router",                   # router.svg
+            "switch": "switch",                   # switch.svg
+            "server": "server",                   # server.svg
+            "workstation": "workstation",         # workstation.svg
+            "firewall": "firewall",               # firewall.svg
+            "cloud": "cloud",                     # cloud.svg
+        }
         
         # Cache for loaded icons to avoid repeated disk access
         self.icon_cache = {}
@@ -79,24 +123,59 @@ class IconManager:
         # Check cache first
         if name in self.icon_cache:
             return self.icon_cache[name]
+        
+        # Log what we're trying to load for debugging
+        self.logger.debug(f"Trying to load icon: {name}")
+        
+        # Map the icon name to an existing icon if available
+        icon_name = self.DEFAULT_ICON_NAMES.get(name, name)
+        if icon_name != name:
+            self.logger.debug(f"Mapped icon name from '{name}' to '{icon_name}'")
             
-        # Try to load SVG version first
-        svg_path = os.path.join(self.svg_path, f"{name}.svg")
+        # Try to load SVG version first using relative path
+        svg_path = os.path.join(self.svg_path, f"{icon_name}.svg")
         if os.path.exists(svg_path):
+            self.logger.debug(f"Found icon at relative path: {svg_path}")
             icon = QIcon(svg_path)
+            self.icon_cache[name] = icon
+            return icon
+            
+        # Try absolute SVG path if relative didn't work
+        abs_svg_path = os.path.join(self.abs_svg_path, f"{icon_name}.svg")
+        if os.path.exists(abs_svg_path):
+            self.logger.debug(f"Found icon at absolute path: {abs_svg_path}")
+            icon = QIcon(abs_svg_path)
             self.icon_cache[name] = icon
             return icon
         
         # Try fallback if provided
         if fallback and os.path.exists(fallback):
+            self.logger.debug(f"Using provided fallback: {fallback}")
             icon = QIcon(fallback)
             self.icon_cache[name] = icon
             return icon
             
-        # Default fallback to PNG
-        png_path = os.path.join(self.png_path, f"{name}.png")
+        # Try PNG with relative path
+        png_path = os.path.join(self.png_path, f"{icon_name}.png")
         if os.path.exists(png_path):
+            self.logger.debug(f"Found PNG at relative path: {png_path}")
             icon = QIcon(png_path)
+            self.icon_cache[name] = icon
+            return icon
+            
+        # Try absolute PNG path if relative didn't work
+        abs_png_path = os.path.join(self.abs_png_path, f"{icon_name}.png")
+        if os.path.exists(abs_png_path):
+            self.logger.debug(f"Found PNG at absolute path: {abs_png_path}")
+            icon = QIcon(abs_png_path)
+            self.icon_cache[name] = icon
+            return icon
+            
+        # Fallback to a known existing icon like device.svg if available
+        default_icon_path = os.path.join(self.abs_svg_path, "device.svg")
+        if os.path.exists(default_icon_path):
+            self.logger.info(f"Icon '{name}' not found, using default device.svg")
+            icon = QIcon(default_icon_path)
             self.icon_cache[name] = icon
             return icon
             

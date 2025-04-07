@@ -82,7 +82,51 @@ class PropertiesController:
         self.logger.info(f"SELECTION DEBUG: Selection changed with {len(selected_items)} items")
         for item in selected_items:
             self.logger.info(f"SELECTION DEBUG: Selected item type: {type(item).__name__}, id: {id(item)}")
-        self.update_properties_panel(selected_items)
+        
+        # Update properties panel with selected items - don't clear if empty selection
+        if selected_items and len(selected_items) > 0:
+            # Only update if there are actual items selected
+            self.update_properties_panel(selected_items)
+            
+            # Ensure the properties panel is visible by finding the main window
+            self._show_properties_panel()
+    
+    def _show_properties_panel(self):
+        """Ensure the properties panel is visible."""
+        # Try to find the main window containing properties_dock
+        try:
+            # Method 1: Find through parent hierarchy of the panel widget
+            main_window = None
+            parent = self.panel
+            while parent and not hasattr(parent, 'properties_dock'):
+                parent = parent.parent()
+            
+            if parent and hasattr(parent, 'properties_dock'):
+                main_window = parent
+                main_window.properties_dock.setVisible(True)
+                main_window.properties_dock.raise_()
+                return
+                
+            # Method 2: Find through application instance
+            import sys
+            if 'PyQt5.QtWidgets' in sys.modules:
+                app = sys.modules['PyQt5.QtWidgets'].QApplication.instance()
+                if app:
+                    for widget in app.topLevelWidgets():
+                        if hasattr(widget, 'properties_dock'):
+                            widget.properties_dock.setVisible(True)
+                            widget.properties_dock.raise_()
+                            
+                            # Set a timer to ensure the dock stays visible (avoid race conditions)
+                            if hasattr(widget, '_ensure_properties_visible'):
+                                from PyQt5.QtCore import QTimer
+                                QTimer.singleShot(50, widget._ensure_properties_visible)
+                            return
+        except Exception as e:
+            # Log error but don't crash
+            self.logger.error(f"Error showing properties panel: {str(e)}")
+            import traceback
+            self.logger.error(traceback.format_exc())
     
     def update_properties_panel(self, selected_items=None):
         """Update properties panel based on selection."""

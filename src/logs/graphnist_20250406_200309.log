@@ -1,0 +1,21 @@
+2025-04-06 20:03:09,761 - root - INFO - Logging configured. Log file: c:\Users\catas\Desktop\GraphNIST-1\src\logs\graphnist_20250406_200309.log
+2025-04-06 20:03:09,774 - views.main_window - WARNING - Application icon not found at: src\resources\icons\svg\shield_logo.svg
+2025-04-06 20:03:09,775 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 20:03:09,776 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 20:03:09,792 - utils.icon_manager - WARNING - Icon not found: select_tool
+2025-04-06 20:03:09,792 - utils.icon_manager - WARNING - Icon not found: add_device
+2025-04-06 20:03:09,792 - utils.icon_manager - WARNING - Icon not found: add_connection
+2025-04-06 20:03:09,793 - utils.icon_manager - WARNING - Icon not found: add_boundary
+2025-04-06 20:03:09,793 - utils.icon_manager - WARNING - Icon not found: delete
+2025-04-06 20:03:09,793 - utils.icon_manager - WARNING - Icon not found: copy
+2025-04-06 20:03:09,794 - utils.icon_manager - WARNING - Icon not found: paste
+2025-04-06 20:03:09,794 - utils.icon_manager - WARNING - Icon not found: connection_straight
+2025-04-06 20:03:09,794 - utils.icon_manager - WARNING - Icon not found: connection_orthogonal
+2025-04-06 20:03:09,794 - utils.icon_manager - WARNING - Icon not found: connection_curved
+2025-04-06 20:03:09,795 - utils.icon_manager - WARNING - Icon not found: align
+2025-04-06 20:03:09,795 - utils.icon_manager - WARNING - Icon not found: magnify
+2025-04-06 20:03:09,795 - utils.icon_manager - WARNING - Icon not found: zoom_in
+2025-04-06 20:03:09,795 - utils.icon_manager - WARNING - Icon not found: zoom_out
+2025-04-06 20:03:09,796 - utils.icon_manager - WARNING - Icon not found: zoom_reset
+2025-04-06 20:03:09,986 - views.main_window - INFO - Mode changed to: select
+2025-04-06 20:03:10,142 - views.main_window - INFO - Properties controller initialized

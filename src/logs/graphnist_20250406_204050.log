@@ -1,0 +1,1285 @@
+2025-04-06 20:40:50,081 - root - INFO - Logging configured. Log file: C:\Users\catas\Desktop\GraphNIST-1\src\logs\graphnist_20250406_204050.log
+2025-04-06 20:40:50,117 - views.main_window - INFO - Application icon loaded from: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\shield_logo.svg
+2025-04-06 20:40:50,119 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 20:40:50,119 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 20:40:50,148 - utils.icon_manager - DEBUG - Trying to load icon: select_tool
+2025-04-06 20:40:50,149 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\select_tool.svg
+2025-04-06 20:40:50,264 - utils.icon_manager - DEBUG - Trying to load icon: add_device
+2025-04-06 20:40:50,265 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_device.svg
+2025-04-06 20:40:50,265 - utils.icon_manager - DEBUG - Trying to load icon: add_connection
+2025-04-06 20:40:50,265 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_connection.svg
+2025-04-06 20:40:50,265 - utils.icon_manager - DEBUG - Trying to load icon: add_boundary
+2025-04-06 20:40:50,265 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\add_boundary.svg
+2025-04-06 20:40:50,265 - utils.icon_manager - DEBUG - Trying to load icon: delete
+2025-04-06 20:40:50,266 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\delete.svg
+2025-04-06 20:40:50,266 - utils.icon_manager - DEBUG - Trying to load icon: copy
+2025-04-06 20:40:50,267 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\copy.svg
+2025-04-06 20:40:50,267 - utils.icon_manager - DEBUG - Trying to load icon: paste
+2025-04-06 20:40:50,267 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\paste.svg
+2025-04-06 20:40:50,268 - utils.icon_manager - DEBUG - Trying to load icon: connection_straight
+2025-04-06 20:40:50,268 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_straight.svg
+2025-04-06 20:40:50,268 - utils.icon_manager - DEBUG - Trying to load icon: connection_orthogonal
+2025-04-06 20:40:50,268 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_orthogonal.svg
+2025-04-06 20:40:50,269 - utils.icon_manager - DEBUG - Trying to load icon: connection_curved
+2025-04-06 20:40:50,269 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\connection_curved.svg
+2025-04-06 20:40:50,269 - utils.icon_manager - DEBUG - Trying to load icon: align
+2025-04-06 20:40:50,269 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\align.svg
+2025-04-06 20:40:50,270 - utils.icon_manager - DEBUG - Trying to load icon: magnify
+2025-04-06 20:40:50,270 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\magnify.svg
+2025-04-06 20:40:50,270 - utils.icon_manager - DEBUG - Trying to load icon: zoom_in
+2025-04-06 20:40:50,270 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_in.svg
+2025-04-06 20:40:50,270 - utils.icon_manager - DEBUG - Trying to load icon: zoom_out
+2025-04-06 20:40:50,271 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_out.svg
+2025-04-06 20:40:50,271 - utils.icon_manager - DEBUG - Trying to load icon: zoom_reset
+2025-04-06 20:40:50,271 - utils.icon_manager - DEBUG - Found icon at absolute path: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\zoom_reset.svg
+2025-04-06 20:40:50,464 - views.main_window - INFO - Mode changed to: select
+2025-04-06 20:40:50,800 - views.main_window - INFO - Properties controller initialized
+2025-04-06 20:41:01,444 - views.canvas.modes.select_mode - DEBUG - SelectMode: Deactivated
+2025-04-06 20:41:01,444 - views.canvas.canvas - INFO - Canvas: Switching to mode AddDeviceMode
+2025-04-06 20:41:01,785 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at -81.0, -216.0
+2025-04-06 20:41:01,786 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 20:41:01,786 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None
+2025-04-06 20:41:02,997 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Checked is_in_command_execution, result=False
+2025-04-06 20:41:02,997 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Pushing command AddDeviceCommand: Add router Device
+2025-04-06 20:41:02,997 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Set is_executing_command to True (was False)
+2025-04-06 20:41:02,997 - controllers.commands - DEBUG - CMD: AddDeviceCommand execute for  1, in_bulk_creation=False
+2025-04-06 20:41:02,997 - models.device - DEBUG - Custom icon path set to: None
+2025-04-06 20:41:03,000 - models.device - INFO - ICON DEBUG: Current working directory: C:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 20:41:03,000 - models.device - INFO - ICON DEBUG: Application directory: C:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 20:41:03,001 - models.device - INFO - ICON DEBUG: Searching in icon folders: ['C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons', 'C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons\\svg', 'C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\..\\resources\\icons']
+2025-04-06 20:41:03,001 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 20:41:03,001 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 20:41:03,001 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\ROUTER.svg
+2025-04-06 20:41:03,002 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\Router.svg
+2025-04-06 20:41:03,002 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:03,002 - models.device - INFO - ICON DEBUG: Found type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:03,002 - models.device - INFO - ICON DEBUG: Attempting to load icon from: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:03,003 - models.device - INFO - ICON DEBUG: Successfully loaded SVG icon from C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:03,003 - models.device - DEBUG - Forcing WHITE text color for device  1 in DARK mode
+2025-04-06 20:41:03,003 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 1', current count: 0
+2025-04-06 20:41:03,003 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:03,003 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 1', current count: 0
+2025-04-06 20:41:03,003 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:03,005 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 1', current count: 0
+2025-04-06 20:41:03,005 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:03,005 - controllers.commands - DEBUG - CMD: Created device  1 through command execution
+2025-04-06 20:41:03,005 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Restored is_executing_command to False
+2025-04-06 20:41:03,005 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Command executed and pushed to stack (stack size: 1)
+2025-04-06 20:41:03,702 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at 161.0, -81.0
+2025-04-06 20:41:03,702 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 20:41:03,702 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None
+2025-04-06 20:41:04,760 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Checked is_in_command_execution, result=False
+2025-04-06 20:41:04,760 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Pushing command AddDeviceCommand: Add router Device
+2025-04-06 20:41:04,760 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Set is_executing_command to True (was False)
+2025-04-06 20:41:04,761 - controllers.commands - DEBUG - CMD: AddDeviceCommand execute for  2, in_bulk_creation=False
+2025-04-06 20:41:04,761 - models.device - DEBUG - Custom icon path set to: None
+2025-04-06 20:41:04,761 - models.device - INFO - ICON DEBUG: Current working directory: C:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 20:41:04,761 - models.device - INFO - ICON DEBUG: Application directory: C:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Searching in icon folders: ['C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons', 'C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons\\svg', 'C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\..\\resources\\icons']
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\ROUTER.svg
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\Router.svg
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:04,762 - models.device - INFO - ICON DEBUG: Found type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:04,763 - models.device - INFO - ICON DEBUG: Attempting to load icon from: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:04,763 - models.device - INFO - ICON DEBUG: Successfully loaded SVG icon from C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:04,763 - models.device - DEBUG - Forcing WHITE text color for device  2 in DARK mode
+2025-04-06 20:41:04,763 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 2', current count: 0
+2025-04-06 20:41:04,764 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:04,764 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 2', current count: 0
+2025-04-06 20:41:04,764 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:04,764 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 2', current count: 0
+2025-04-06 20:41:04,764 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:04,764 - controllers.commands - DEBUG - CMD: Created device  2 through command execution
+2025-04-06 20:41:04,764 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Restored is_executing_command to False
+2025-04-06 20:41:04,764 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Command executed and pushed to stack (stack size: 2)
+2025-04-06 20:41:05,100 - views.canvas.modes.add_device_mode - DEBUG - AddDeviceMode: Adding device at -205.0, 23.0
+2025-04-06 20:41:05,100 - controllers.device_controller - INFO - Explicitly opening device dialog for adding a new device
+2025-04-06 20:41:05,100 - views.device_dialog - CRITICAL - DIALOG DEBUG: DeviceDialog constructor called with device: None
+2025-04-06 20:41:08,505 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Checked is_in_command_execution, result=False
+2025-04-06 20:41:08,505 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Pushing command AddDeviceCommand: Add router Device
+2025-04-06 20:41:08,505 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Set is_executing_command to True (was False)
+2025-04-06 20:41:08,505 - controllers.commands - DEBUG - CMD: AddDeviceCommand execute for  3, in_bulk_creation=False
+2025-04-06 20:41:08,505 - models.device - DEBUG - Custom icon path set to: None
+2025-04-06 20:41:08,506 - models.device - INFO - ICON DEBUG: Current working directory: C:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 20:41:08,506 - models.device - INFO - ICON DEBUG: Application directory: C:\Users\catas\Desktop\GraphNIST-1\src
+2025-04-06 20:41:08,507 - models.device - INFO - ICON DEBUG: Searching in icon folders: ['C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons', 'C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\resources\\icons\\svg', 'C:\\Users\\catas\\Desktop\\GraphNIST-1\\src\\..\\resources\\icons']
+2025-04-06 20:41:08,507 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 20:41:08,507 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\router.svg
+2025-04-06 20:41:08,507 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\ROUTER.svg
+2025-04-06 20:41:08,507 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\Router.svg
+2025-04-06 20:41:08,507 - models.device - INFO - ICON DEBUG: Checking type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:08,508 - models.device - INFO - ICON DEBUG: Found type icon at: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:08,508 - models.device - INFO - ICON DEBUG: Attempting to load icon from: C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:08,508 - models.device - INFO - ICON DEBUG: Successfully loaded SVG icon from C:\Users\catas\Desktop\GraphNIST-1\src\resources\icons\svg\router.svg
+2025-04-06 20:41:08,509 - models.device - DEBUG - Forcing WHITE text color for device  3 in DARK mode
+2025-04-06 20:41:08,509 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 0
+2025-04-06 20:41:08,509 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:08,509 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 0
+2025-04-06 20:41:08,509 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:08,509 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 0
+2025-04-06 20:41:08,509 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 0 properties to display: []
+2025-04-06 20:41:08,509 - controllers.commands - DEBUG - CMD: Created device  3 through command execution
+2025-04-06 20:41:08,509 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Restored is_executing_command to False
+2025-04-06 20:41:08,509 - controllers.undo_redo_manager - DEBUG - UNDO_REDO: Command executed and pushed to stack (stack size: 3)
+2025-04-06 20:41:11,009 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 20:41:11,010 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 20:41:11,838 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to True
+2025-04-06 20:41:11,838 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to True
+2025-04-06 20:41:11,838 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=True
+2025-04-06 20:41:11,838 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:11,838 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:11,839 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:11,839 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:11,839 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:11,839 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:11,839 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:11,840 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:11,840 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:11,840 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:11,840 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:11,842 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:11,843 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:11,844 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:11,844 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:11,844 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state True
+2025-04-06 20:41:11,987 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:11,987 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:11,987 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:11,987 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:11,987 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:11,988 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:11,988 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:11,988 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 20:41:12,004 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:12,004 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:12,005 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:12,005 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:12,006 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:12,007 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:12,007 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:12,007 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:21,848 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 0
+2025-04-06 20:41:21,848 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:21,851 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:21,851 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:21,851 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:21,851 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:23,048 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to False
+2025-04-06 20:41:23,048 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to False
+2025-04-06 20:41:23,048 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=False
+2025-04-06 20:41:23,048 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state False
+2025-04-06 20:41:24,242 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to True
+2025-04-06 20:41:24,242 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to True
+2025-04-06 20:41:24,242 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=True
+2025-04-06 20:41:24,243 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:24,243 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:24,243 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:24,243 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:24,243 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:24,243 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:24,244 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:24,244 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:24,244 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:24,244 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:24,244 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:24,244 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:24,245 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:24,245 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:24,245 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:24,245 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state True
+2025-04-06 20:41:24,405 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:24,405 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:24,405 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:24,405 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:24,405 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:24,405 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:24,405 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:24,405 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 20:41:24,422 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:24,422 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:24,423 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:24,423 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:24,424 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:24,425 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:24,425 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:24,425 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:24,674 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,674 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,674 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,674 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,674 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,674 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,674 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,674 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,674 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,674 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,681 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,681 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,681 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,681 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,681 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,682 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,682 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,682 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,682 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,682 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,689 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,689 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,689 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,689 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,689 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,689 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,689 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,689 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,689 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,689 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,698 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,698 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,698 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,698 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,698 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,704 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,705 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,705 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,705 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,705 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,705 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,705 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,705 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,705 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,705 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,712 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,712 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,713 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,713 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,713 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,713 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,713 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,713 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,713 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,713 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,720 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,720 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,720 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,720 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,720 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,720 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,720 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,720 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,720 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,720 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,727 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,727 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,727 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,727 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,727 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,727 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,727 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,727 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,727 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,727 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,735 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,736 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,736 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,736 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,736 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,736 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,736 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,736 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,736 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,736 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,743 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,743 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,743 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,743 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,743 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,743 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,743 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,743 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,743 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,743 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,750 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,751 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,751 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,751 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,751 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,751 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,751 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,751 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,751 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,751 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,757 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,757 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,757 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,757 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,757 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,757 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,758 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,758 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,758 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,758 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,765 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,765 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,765 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,765 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,765 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,765 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,766 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,766 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,766 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,766 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,774 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,774 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,774 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,774 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,774 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,774 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,774 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,774 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,774 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,774 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,780 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,780 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,780 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,780 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,780 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,781 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,781 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,781 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,781 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,781 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,789 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,789 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,789 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,789 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,789 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,789 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,789 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,789 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,789 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,789 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,795 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,795 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,795 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,795 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,795 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,795 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,795 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,795 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,795 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,795 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,803 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,803 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,804 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,804 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,804 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,804 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,804 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,804 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,804 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,804 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,812 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,812 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,812 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,812 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,812 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,812 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,812 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,812 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,812 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,812 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,819 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,819 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,819 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,819 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,819 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,819 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,819 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,819 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,819 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,819 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,827 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,827 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,827 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,827 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,827 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,827 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,827 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,827 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,827 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,827 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,833 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,833 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,833 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,833 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,833 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,833 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,833 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,833 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,833 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,833 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,842 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,842 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,842 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,842 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,842 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,842 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,842 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,842 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,842 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,842 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,850 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,850 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,850 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,850 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,850 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,850 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,850 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,850 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,850 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,850 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,856 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,856 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,856 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,856 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,856 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,856 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,856 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,856 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,856 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,856 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,910 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,910 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,910 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,910 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,910 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,910 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,910 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,910 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,910 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,910 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,970 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,971 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,971 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,971 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,971 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,971 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,971 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,971 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,971 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,971 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,978 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,979 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,979 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,979 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,979 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,979 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,979 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,979 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,979 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,979 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,985 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,985 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,985 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,985 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,985 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,985 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,985 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,986 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,986 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,986 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:24,994 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:24,994 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:24,994 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,994 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,994 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,994 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:24,994 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:24,994 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:24,994 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:24,994 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,000 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,001 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,001 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,001 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,001 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,001 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,001 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,001 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,001 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,001 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,009 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,009 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,009 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,009 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,009 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,009 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,009 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,009 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,009 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,009 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,016 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,016 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,016 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,016 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,017 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,017 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,017 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,017 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,017 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,017 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,024 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,024 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,024 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,024 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,024 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,024 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,024 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,024 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,024 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,024 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,031 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,031 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,031 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,031 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,031 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,031 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,031 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,031 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,031 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,031 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,038 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,038 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,038 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,038 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,038 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,039 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,039 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,039 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,039 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,039 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,046 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,046 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,046 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,046 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,046 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,047 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,047 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,047 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,047 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,047 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,055 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,055 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,055 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,055 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,055 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,055 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,055 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,055 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,055 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,055 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,061 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,061 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,061 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,061 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,061 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,061 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,061 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,061 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,061 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,061 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,070 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,070 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,070 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,070 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,070 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,070 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,070 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,070 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,070 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,070 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,077 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,077 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,077 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,077 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,077 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,077 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,077 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,077 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,077 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,077 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,085 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,085 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,085 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,085 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,085 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,085 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,085 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,085 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,085 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,085 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,093 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,093 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,093 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,093 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,093 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,093 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,093 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,093 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,093 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,093 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,100 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,100 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,100 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,100 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,100 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,100 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,100 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,100 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,100 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,100 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,108 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,108 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,108 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,108 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,108 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,108 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,108 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,108 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,108 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,108 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,114 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,115 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,115 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,115 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,115 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,115 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,115 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,115 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,115 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,115 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,123 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,123 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,123 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,123 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,123 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,123 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,123 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,123 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,123 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,123 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,131 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,131 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,131 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,131 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,131 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,131 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,131 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,131 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,131 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,131 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,138 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,138 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,138 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,138 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,138 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,138 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,138 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,138 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,138 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,138 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,146 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,146 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,146 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,146 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,146 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,146 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,146 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,146 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,146 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,146 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,161 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,161 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,161 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,161 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,161 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,161 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,161 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,161 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,161 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,161 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,169 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,169 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,169 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,169 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,169 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,169 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,169 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,169 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,169 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,169 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,176 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,176 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,176 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,176 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,176 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,176 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,176 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,176 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,176 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,176 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,183 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,183 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,183 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,183 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,184 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,184 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,184 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,184 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,184 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,184 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,191 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,191 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,191 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,191 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,191 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,191 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,191 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,191 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,191 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,191 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,198 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,198 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,198 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,198 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,198 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,198 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,198 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,198 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,198 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,198 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,207 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,207 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,207 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,207 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,207 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,207 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,207 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,207 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,207 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,207 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,213 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,214 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,214 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,214 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,214 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,214 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,214 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,214 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,214 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,214 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,221 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,221 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,221 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,221 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,221 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,221 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,221 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,221 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,221 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,221 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,228 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,228 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,228 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,228 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,228 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,229 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,229 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,229 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,229 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,229 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,237 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,237 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,237 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,237 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,237 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,237 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,237 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,237 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,237 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,237 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,245 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,245 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,245 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,245 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,245 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,245 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,245 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,245 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,245 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,245 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,259 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,259 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,259 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,259 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,259 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,259 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,259 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,259 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,259 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,261 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,274 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,275 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,275 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,275 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,275 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,275 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,275 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,275 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,275 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,275 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,290 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,290 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,290 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,290 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,290 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,290 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,290 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,290 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,290 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,290 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,313 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,313 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,313 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,313 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,313 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,313 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,313 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,313 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,313 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,313 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,321 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,321 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,321 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,321 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,321 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,321 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,321 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,321 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,321 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,321 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,335 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,335 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,336 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,336 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,336 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,336 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,336 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,336 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,336 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,336 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,343 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,343 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,343 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,343 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,343 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,343 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,343 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,343 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,343 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,343 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,358 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,358 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,358 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,358 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,358 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,358 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,358 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,358 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,358 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,358 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,365 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,366 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,366 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,366 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,366 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,366 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,366 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,366 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,366 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,366 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,374 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,374 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,374 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,374 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,374 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,374 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,374 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,374 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,374 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,374 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,381 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,381 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,381 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,381 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,381 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,381 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,381 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,381 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,381 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,381 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,389 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,389 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,389 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,389 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,389 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,389 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,389 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,389 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,389 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,389 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,396 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,396 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,396 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,396 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,396 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,396 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,396 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,396 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,396 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,396 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,404 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,404 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,404 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,404 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,404 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,404 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,404 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,404 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,404 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,404 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,411 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,411 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,411 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,411 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,412 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,412 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,419 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,419 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,419 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,419 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,419 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,419 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,419 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,419 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,419 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,419 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,426 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,426 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,426 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,426 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,426 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,426 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,426 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,426 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,426 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,426 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,433 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,433 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,434 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,434 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,442 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,442 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,442 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,442 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,442 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,442 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,442 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,442 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,442 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,442 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,450 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,450 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,450 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,450 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,450 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,450 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,450 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,450 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,450 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,450 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,456 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,456 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,456 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,456 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,456 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,456 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,456 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,456 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,456 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,456 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,464 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,465 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,465 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,465 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,465 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,465 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,465 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,465 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,465 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,465 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,471 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,472 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,472 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,472 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,472 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,472 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,472 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,472 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,472 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,472 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,480 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,480 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,480 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,480 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,480 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,480 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,480 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,480 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,480 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,480 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,488 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,488 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,488 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,488 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,488 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,488 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,488 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,488 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,488 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,488 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,495 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,495 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,495 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,495 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,495 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,495 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,495 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,495 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,495 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,495 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,502 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,503 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,503 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,503 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,503 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,503 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,503 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,503 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,503 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,503 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,510 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,510 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,510 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,510 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,510 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,510 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,510 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,510 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,510 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,510 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,518 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,518 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,518 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,518 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,518 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,518 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,518 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,518 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,518 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,518 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,526 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,526 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,526 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,526 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,526 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,526 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,526 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,526 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,526 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,526 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,532 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,532 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,533 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,533 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,533 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,533 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,533 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,533 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,533 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,533 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,761 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,761 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,761 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,761 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,761 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,761 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,761 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,762 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,762 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,762 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,769 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,769 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,769 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,769 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,769 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,769 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,769 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,769 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,769 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,769 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,775 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,775 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,775 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,775 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,775 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,775 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,775 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,776 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,776 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,776 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,783 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:25,783 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:25,783 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,783 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,783 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,785 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:25,785 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:25,785 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:25,785 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:25,785 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:25,835 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:25,835 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:25,835 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:25,835 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:25,835 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:25,836 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:25,836 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:25,836 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:25,836 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:25,836 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:25,836 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:25,837 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:25,837 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:25,838 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:25,838 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:26,308 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to False
+2025-04-06 20:41:26,308 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to False
+2025-04-06 20:41:26,308 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=False
+2025-04-06 20:41:26,309 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state False
+2025-04-06 20:41:27,037 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to True
+2025-04-06 20:41:27,037 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to True
+2025-04-06 20:41:27,037 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=True
+2025-04-06 20:41:27,038 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:27,038 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:27,038 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:27,038 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:27,038 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:27,038 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:27,038 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:27,038 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 20:41:27,055 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:27,055 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:27,055 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:27,055 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:27,056 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:27,056 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:27,056 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:27,056 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:27,058 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state True
+2025-04-06 20:41:27,058 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to False
+2025-04-06 20:41:27,058 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to False
+2025-04-06 20:41:27,058 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=False
+2025-04-06 20:41:27,058 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state False
+2025-04-06 20:41:28,275 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection changing to True
+2025-04-06 20:41:28,275 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' selection state changed to True
+2025-04-06 20:41:28,275 - views.canvas.canvas - DEBUG - SELECTION DEBUG: Device selected:  3, is_selected=True
+2025-04-06 20:41:28,275 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:28,275 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:28,275 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:28,275 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:28,275 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:28,276 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:28,276 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:28,276 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:28,276 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:28,276 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:28,276 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:28,277 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:28,277 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:28,278 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:28,278 - controllers.properties_controller - INFO - Selected item: Device
+2025-04-06 20:41:28,278 - models.device - DEBUG - EMIT DEBUG: Emitted selected signal for device ' 3' with state True
+2025-04-06 20:41:28,412 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:28,412 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:28,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:28,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:28,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:28,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:28,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:28,412 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:28,412 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:28,412 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:28,427 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:28,427 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:28,427 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:28,427 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:28,427 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:28,427 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:28,427 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:28,427 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:28,427 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:28,427 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:28,434 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changing
+2025-04-06 20:41:28,434 - models.device - DEBUG - CHANGE DEBUG: Device ' 3' position changed
+2025-04-06 20:41:28,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:28,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:28,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:28,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updating property labels for ' 3', current count: 1
+2025-04-06 20:41:28,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Found 1 properties to display: ['ip_address']
+2025-04-06 20:41:28,434 - models.device - DEBUG - UPDATE PROPS DEBUG: Updated property labels, final count: 1
+2025-04-06 20:41:28,434 - models.device - DEBUG - MOVE DEBUG: Device ' 3' moved. Property labels count: 1
+2025-04-06 20:41:28,434 - models.device - DEBUG - MOVE DEBUG: Displayed properties: ['ip_address']
+2025-04-06 20:41:28,492 - controllers.properties_controller - INFO - SELECTION DEBUG: Selection changed with 1 items
+2025-04-06 20:41:28,492 - controllers.properties_controller - INFO - SELECTION DEBUG: Selected item type: Device, id: 2095371893296
+2025-04-06 20:41:28,492 - controllers.properties_controller - INFO - SELECTION DEBUG: Updating properties panel
+2025-04-06 20:41:28,492 - controllers.properties_controller - INFO - SELECTION DEBUG: Single item selected, type: Device, id: 2095371893296
+2025-04-06 20:41:28,492 - controllers.properties_controller - INFO - SELECTION DEBUG: Displaying properties for item: Device
+2025-04-06 20:41:28,493 - views.properties_panel - INFO - PANEL DEBUG: Displaying properties for item type: Device, id: 2095371893296
+2025-04-06 20:41:28,493 - views.properties_panel - INFO - PANEL DEBUG: Set current_item reference to: Device
+2025-04-06 20:41:28,493 - views.properties_panel - INFO - PANEL DEBUG: Recreating panel sections
+2025-04-06 20:41:28,509 - views.properties_panel - INFO - PANEL DEBUG: Setting name field to:  3
+2025-04-06 20:41:28,509 - views.properties_panel - INFO - PANEL DEBUG: Setting z-index to: 10.0
+2025-04-06 20:41:28,509 - views.properties_panel - INFO - PANEL DEBUG: Item is a Device, showing device properties
+2025-04-06 20:41:28,510 - views.properties_panel - INFO - PANEL DEBUG: Setting up device properties for:  3
+2025-04-06 20:41:28,511 - views.properties_panel - INFO - PANEL DEBUG: Device type set to: router
+2025-04-06 20:41:28,511 - views.properties_panel - INFO - PANEL DEBUG: Device has 5 properties
+2025-04-06 20:41:28,511 - views.properties_panel - INFO - PANEL DEBUG: Device properties display completed
+2025-04-06 20:41:28,511 - controllers.properties_controller - INFO - Selected item: Device

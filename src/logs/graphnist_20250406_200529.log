@@ -1,0 +1,6 @@
+2025-04-06 20:05:29,262 - root - INFO - Logging configured. Log file: C:\Users\catas\Desktop\GraphNIST-1\src\logs\graphnist_20250406_200529.log
+2025-04-06 20:05:29,273 - views.main_window - WARNING - Application icon not found at: src\resources\icons\svg\shield_logo.svg
+2025-04-06 20:05:29,275 - views.canvas.modes.select_mode - DEBUG - SelectMode: Activated
+2025-04-06 20:05:29,275 - views.canvas.canvas - INFO - Canvas: Switching to mode Select Mode
+2025-04-06 20:05:29,527 - views.main_window - INFO - Mode changed to: select
+2025-04-06 20:05:29,687 - views.main_window - INFO - Properties controller initialized

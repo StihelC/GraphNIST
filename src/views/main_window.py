@@ -1,11 +1,13 @@
 from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QSplitter, 
                          QAction, QMenu, QToolBar, QStatusBar, QMessageBox, QFileDialog,
                          QLabel, QSpinBox, QDialog, QDialogButtonBox, QGroupBox, QFormLayout, QDockWidget, QSizePolicy, QToolButton,
-                         QActionGroup, QApplication)
+                         QActionGroup, QApplication, QInputDialog, QColorDialog, QTreeView, QTreeWidget, QTreeWidgetItem, QFrame,
+                         QFontDialog)
 from PyQt5.QtCore import Qt, QSettings, QTimer, QPoint, QByteArray, QSize, QSizeF, QPointF, QRect, QRectF
-from PyQt5.QtGui import QIcon, QKeySequence, QColor, QFont
+from PyQt5.QtGui import QIcon, QKeySequence, QColor, QFont, QPalette, QPainter, QImage, QPdfWriter
 import logging
 import os
+from PyQt5.QtPrintSupport import QPrinter
 
 from views.canvas.canvas import Canvas
 from constants import Modes
@@ -30,6 +32,8 @@ from views.alignment_toolbar import AlignmentToolbar
 from controllers.commands import AlignDevicesCommand
 from controllers.device_alignment_controller import DeviceAlignmentController
 from dialogs.font_settings_dialog import FontSettingsDialog
+from dialogs.connection_type_dialog import ConnectionTypeDialog
+from views.multi_connection_dialog import MultiConnectionDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -38,17 +42,20 @@ class MainWindow(QMainWindow):
         # Set a reasonable default size instead of maximizing
         self.setGeometry(100, 100, 1280, 800)
         
-        # Set application icon
-        app_icon_path = os.path.join("src", "resources", "icons", "svg", "shield_logo.svg")
-        if os.path.exists(app_icon_path):
-            self.setWindowIcon(QIcon(app_icon_path))
-        else:
-            self.logger.warning(f"Application icon not found at: {app_icon_path}")
-
-        # Setup logging
+        # Setup logging first to avoid AttributeError
         logging.basicConfig(level=logging.INFO, 
                           format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
+        
+        # Set application icon - use absolute path to ensure it's found
+        app_icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                     "resources", "icons", "svg", "shield_logo.svg")
+        
+        if os.path.exists(app_icon_path):
+            self.setWindowIcon(QIcon(app_icon_path))
+            self.logger.info(f"Application icon loaded from: {app_icon_path}")
+        else:
+            self.logger.warning(f"Application icon not found at: {app_icon_path}")
 
         # Initialize theme manager before creating UI elements
         self.theme_manager = ThemeManager()
@@ -206,10 +213,13 @@ class MainWindow(QMainWindow):
         
         # Create properties panel
         self.properties_panel = PropertiesPanel(self)
-        self.right_panel = QDockWidget("Properties", self)
-        self.right_panel.setWidget(self.properties_panel)
-        self.right_panel.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.right_panel)
+        self.properties_dock = QDockWidget("Properties", self)
+        self.properties_dock.setWidget(self.properties_panel)
+        self.properties_dock.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.properties_dock)
+        
+        # Start with properties panel visible
+        self.properties_dock.setVisible(True)
 
         # Initialize properties controller - defer its creation until command_manager is properly set in main.py
         self.properties_controller = None
@@ -345,12 +355,26 @@ class MainWindow(QMainWindow):
     def setup_properties_controller(self):
         """Set up the properties controller after command_manager is initialized."""
         if self.properties_controller is None:
-            self.properties_controller = PropertiesController(
-                self.canvas,
-                self.properties_panel,
-                self.event_bus,
-                self.command_manager.undo_redo_manager if self.command_manager else None
-            )
+            try:
+                self.properties_controller = PropertiesController(
+                    self.canvas,
+                    self.properties_panel,
+                    self.event_bus,
+                    self.command_manager.undo_redo_manager if self.command_manager else None
+                )
+                
+                # Register the properties controller with the event bus
+                self.event_bus.register_controller('properties', self.properties_controller)
+                
+                # Set properties dock to be initially visible
+                if hasattr(self, 'properties_dock'):
+                    self.properties_dock.setVisible(True)
+                    
+                self.logger.info("Properties controller initialized")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize properties controller: {str(e)}")
+                import traceback
+                traceback.print_exc()
         
         # Set up bulk controllers now that command_manager is available
         if self.bulk_device_controller is None:
@@ -902,6 +926,63 @@ class MainWindow(QMainWindow):
         
         # Connect delete selected signal
         self.canvas.delete_selected_requested.connect(self.on_delete_selected_requested)
+        
+        # Connect alignment signal
+        self.canvas.align_devices_requested.connect(self.alignment_controller.align_devices)
+        
+        # Connect the multiple devices connection signal to the connection controller
+        self.canvas.connect_multiple_devices_requested.connect(self.connection_controller.on_connect_multiple_devices_requested)
+        
+        # Connect devices' double click signals to show properties panel
+        self.event_bus.on("device_created", self._connect_device_double_click)
+        
+        # Connect selection changed signal to show properties panel
+        self.canvas.selection_changed.connect(self._on_selection_changed)
+    
+    def _on_selection_changed(self, selected_items):
+        """Handle selection changes in the canvas by showing the properties panel."""
+        if selected_items and len(selected_items) > 0:
+            # Show properties panel when objects are selected
+            if hasattr(self, 'properties_dock'):
+                # Make properties dock visible
+                self.properties_dock.setVisible(True)
+                self.properties_dock.raise_()
+                
+                # Set a timer to make sure the panel stays visible
+                # This prevents race conditions with other UI events
+                QTimer.singleShot(50, self._ensure_properties_visible)
+    
+    def _ensure_properties_visible(self):
+        """Ensure properties panel stays visible (called after a short delay)."""
+        if hasattr(self, 'properties_dock') and not self.properties_dock.isVisible():
+            self.properties_dock.setVisible(True)
+            self.properties_dock.raise_()
+
+    def _connect_device_double_click(self, device):
+        """Connect a device's double-clicked signal to show properties panel."""
+        if hasattr(device, 'signals') and hasattr(device.signals, 'double_clicked'):
+            device.signals.double_clicked.connect(self._on_device_double_clicked)
+    
+    def _on_device_double_clicked(self, device):
+        """Handle device double-click by showing properties panel and selecting the device."""
+        # Ensure the device is selected
+        if not device.isSelected():
+            # Clear existing selection first
+            self.canvas.scene().clearSelection()
+            device.setSelected(True)
+            
+        # Get all selected items (should include our device)
+        selected_items = [device]
+        
+        # Show properties panel and update it with the device
+        if hasattr(self, 'properties_panel') and self.properties_panel:
+            # Make sure properties panel is visible
+            if hasattr(self, 'properties_dock'):
+                self.properties_dock.setVisible(True)
+            
+            # Make sure the properties controller is updated
+            if hasattr(self, 'properties_controller'):
+                self.properties_controller.update_properties_panel(selected_items)
     
     def set_mode(self, mode):
         """Set the current interaction mode."""
