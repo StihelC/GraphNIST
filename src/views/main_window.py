@@ -694,7 +694,13 @@ class MainWindow(QMainWindow):
 
     def _on_bulk_devices_added(self, count):
         """Handle bulk device addition event."""
+        from PyQt5.QtCore import QTimer
+        from constants import Modes
+        
         self.statusBar().showMessage(f"Added {count} devices in bulk", 3000)
+        
+        # Reset to SELECT mode after bulk device addition (with a short delay to ensure UI is updated)
+        QTimer.singleShot(100, lambda: self._set_canvas_mode(Modes.SELECT))
     
     def _on_bulk_properties_changed(self, devices):
         """Handle bulk property change event."""

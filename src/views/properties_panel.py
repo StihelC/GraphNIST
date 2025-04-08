@@ -632,22 +632,13 @@ class PropertiesPanel(QWidget):
                 self.device_property_changed.emit(prop_name, value)
     
     def _handle_display_state_changed(self, state):
-        """Handle display checkbox state changes in multi-device mode."""
+        """Handle display checkbox state changes for both multiple and single device modes."""
         sender = self.sender()
         if sender:
             prop_name = sender.property("property_name")
             if prop_name:
                 # Convert from Qt.CheckState to boolean (partial is considered True)
                 display_enabled = state != Qt.Unchecked
-                self.property_display_toggled.emit(prop_name, display_enabled)
-    
-    def _handle_checkbox_state_changed(self, state):
-        """Handle checkbox state changes for device properties display."""
-        sender = self.sender()
-        if sender:
-            prop_name = sender.property("property_name")
-            if prop_name:
-                display_enabled = state == Qt.Checked
                 self.property_display_toggled.emit(prop_name, display_enabled)
     
     def _widget_exists(self, widget):
@@ -751,7 +742,7 @@ class PropertiesPanel(QWidget):
         checkbox.setProperty("property_name", prop_key)
         
         # Connect the state changed signal
-        checkbox.stateChanged.connect(self._handle_checkbox_state_changed)
+        checkbox.stateChanged.connect(self._handle_display_state_changed)
         
         # Add to layout and store reference
         self._get_display_options_group().layout().addWidget(checkbox)

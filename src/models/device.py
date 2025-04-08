@@ -755,6 +755,32 @@ class Device(QGraphicsPixmapItem):
             # Item is about to move
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' position changing")
             
+            # IMPROVED: Block individual dragging when part of multi-selection
+            selected_items = self.scene().selectedItems()
+            if len(selected_items) > 1 and self.isSelected():
+                # Get the canvas
+                if self.scene() and self.scene().views():
+                    canvas = self.scene().views()[0]
+                    
+                    # Check if we have a group selection manager and it's active
+                    if (hasattr(canvas, 'group_selection_manager') and 
+                        canvas.group_selection_manager and 
+                        canvas.group_selection_manager.is_drag_active()):
+                        
+                        # If this item is being dragged as part of a group, let the manager handle it
+                        drag_items = canvas.group_selection_manager.get_drag_items()
+                        if self in drag_items:
+                            self.logger.debug(f"HANDLED: Device '{self.name}' movement handled by GroupSelectionManager")
+                            return value  # Allow the movement as it's managed by the GroupSelectionManager
+                    
+                    # If not being handled by the manager, check if we should block movement
+                    # This happens when select mode is active but we're not doing a group drag
+                    if hasattr(canvas, 'mode_manager'):
+                        from constants import Modes
+                        if canvas.mode_manager.current_mode == Modes.SELECT:
+                            self.logger.debug(f"BLOCKED: Device '{self.name}' movement blocked as part of multi-selection")
+                            return self.pos()  # Block the movement to ensure group selection integrity
+            
         elif change == QGraphicsItem.ItemPositionHasChanged and self.scene():
             # Item has moved
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' position changed")
@@ -824,8 +850,33 @@ class Device(QGraphicsPixmapItem):
         # Don't call parent implementation to prevent unwanted behaviors
     
     def mouseMoveEvent(self, event):
-        """Handle mouse move events to keep all components together."""
-        # Call the base implementation to handle the actual dragging
+        """Handle mouse move events, ensuring both single and multi-selection dragging work correctly."""
+        # Check if we're part of a multi-selection
+        if not self.scene():
+            return
+        
+        selected_items = self.scene().selectedItems()
+        multi_selection = len(selected_items) > 1
+        
+        # When in multi-selection, check if group manager is handling it
+        if multi_selection and self.isSelected():
+            # Get the canvas
+            if self.scene() and self.scene().views():
+                canvas = self.scene().views()[0]
+                if (hasattr(canvas, 'group_selection_manager') and 
+                    canvas.group_selection_manager and 
+                    canvas.group_selection_manager.is_drag_active()):
+                    # Group selection manager is active, ignore this event
+                    self.logger.debug(f"MOVE-HANDLER: Ignoring move for '{self.name}', handled by GroupSelectionManager")
+                    event.ignore()
+                    return
+            
+            # Multi-selection but not handled by group manager, ignore to prevent individual dragging
+            self.logger.debug(f"MOVE-HANDLER: Ignoring move for '{self.name}' in multi-selection")
+            event.ignore()
+            return
+        
+        # For single selection, handle dragging normally
         super().mouseMoveEvent(event)
         
         # Update text label position to stay centered under the device
@@ -835,9 +886,8 @@ class Device(QGraphicsPixmapItem):
             self.text_item.setPos(text_x, self.height + 3)
         
         # Make sure all other child items stay aligned with the device
-        # This ensures integrity in case something goes wrong
         for child in self.childItems():
-            # Skip text_item since we already handled it above
+            # Skip text_item and property labels
             if child == self.text_item or child in self.property_labels.values():
                 continue
             # All other children should be at 0,0 relative to device
@@ -853,24 +903,41 @@ class Device(QGraphicsPixmapItem):
         
         # Make sure property labels are correctly positioned after movement
         self.update_property_labels()
-        
-        # Debug log
-        self.logger.debug(f"MOVE DEBUG: Device '{self.name}' moved. Property labels count: {len(self.property_labels)}")
-        if self.property_labels:
-            self.logger.debug(f"MOVE DEBUG: Displayed properties: {list(self.property_labels.keys())}")
 
     def update_connections(self):
-        """Update all connections attached to this device."""
-        for connection in self.connections:
+        """Update all connections attached to this device with better error handling."""
+        if not hasattr(self, 'connections') or not self.connections:
+            return
+        
+        for connection in list(self.connections):  # Use a copy to avoid modification issues during iteration
             try:
+                # Skip invalid connections
+                if connection is None:
+                    continue
+                
                 # Use hasattr to safely check for the update_path method
                 if hasattr(connection, 'update_path'):
                     connection.update_path()
                 # For compatibility with older code that might use different method names
                 elif hasattr(connection, '_update_path'):
                     connection._update_path()
+                elif hasattr(connection, 'update'):
+                    connection.update()
+                
+                # Force the connection to repaint
+                if hasattr(connection, 'update'):
+                    connection.update()
+                
             except Exception as e:
                 self.logger.error(f"Error updating connection: {str(e)}")
+                import traceback
+                self.logger.error(traceback.format_exc())
+        
+        # Force update in scene to ensure connections are properly drawn
+        if self.scene():
+            # Update area slightly larger than the device to include connections
+            update_rect = self.sceneBoundingRect().adjusted(-50, -50, 50, 50)
+            self.scene().update(update_rect)
 
     def delete(self):
         """Clean up resources before deletion."""

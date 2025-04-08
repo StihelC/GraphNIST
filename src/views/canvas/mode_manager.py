@@ -1,4 +1,5 @@
 import logging
+from PyQt5.QtCore import QObject
 
 class CanvasModeManager:
     """Manages available interaction modes for the canvas."""
@@ -76,3 +77,12 @@ class CanvasModeManager:
                 self.logger.error(traceback.format_exc())
                 return False
         return False
+
+# This is a simple stub of ModeManager to prevent import errors
+# The real implementation is in controllers.mode_manager
+class ModeManager(QObject):
+    """Stub for ModeManager to prevent import errors."""
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.warning("Using stub ModeManager - you should import from controllers.mode_manager instead")

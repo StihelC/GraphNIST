@@ -1,10 +1,11 @@
 import logging
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsPixmapItem, QDialog
 from PyQt5.QtGui import QPen, QColor
 
 from views.canvas.modes.base_mode import DeviceInteractionMode
 from models.device import Device
+from constants import Modes
 
 class AddConnectionMode(DeviceInteractionMode):
     """Mode for adding connections between devices."""
@@ -143,11 +144,26 @@ class AddConnectionMode(DeviceInteractionMode):
                             pass
                         self.temp_line = None
                     
-                    self.canvas.statusMessage.emit("Connection created. Click on a device to start a new connection.")
+                    self.canvas.statusMessage.emit("Connection created. Switching to select mode.")
+                    
+                    # Switch back to SELECT mode after creating connection
+                    QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                    
                     return True
                 else:
                     # User cancelled dialog
-                    self.canvas.statusMessage.emit("Connection cancelled. Click on a device to start again.")
+                    self.canvas.statusMessage.emit("Connection cancelled. Switching to select mode.")
+                    self.source_device = None
+                    if self.temp_line is not None:
+                        try:
+                            self.canvas.temp_graphics.remove_item(self.temp_line)
+                        except:
+                            pass
+                        self.temp_line = None
+                    
+                    # Switch back to SELECT mode after cancelling
+                    QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                    
                     return True
                 
             # Reset if clicking on empty space
@@ -160,7 +176,11 @@ class AddConnectionMode(DeviceInteractionMode):
                         pass
                     self.temp_line = None
                 
-                self.canvas.statusMessage.emit("Connection cancelled. Click on a device to start again.")
+                self.canvas.statusMessage.emit("Connection cancelled. Switching to select mode.")
+                
+                # Switch back to SELECT mode after cancelling
+                QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                
                 return True
                 
         return False

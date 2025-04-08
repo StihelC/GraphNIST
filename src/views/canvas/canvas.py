@@ -12,7 +12,10 @@ from constants import Modes
 from .graphics_manager import TemporaryGraphicsManager
 from .selection_box import SelectionBox
 from .mode_manager import CanvasModeManager
+# Import ModeManager from controllers, not from local module
 from controllers.mode_manager import ModeManager
+# Import the new GroupSelectionManager
+from controllers.selection import GroupSelectionManager
 
 # Import modes
 from .modes.select_mode import SelectMode
@@ -67,6 +70,9 @@ class Canvas(QGraphicsView):
         # Drag tracking variables
         self._drag_start_pos = None
         self._drag_item = None
+        
+        # Initialize group selection manager
+        self.group_selection_manager = GroupSelectionManager(self)
         
         # Variables for canvas dragging (panning)
         self._is_panning = False
@@ -161,7 +167,26 @@ class Canvas(QGraphicsView):
     
     def set_mode(self, mode):
         """Set the current interaction mode."""
+        # Before switching modes, ensure proper cleanup
+        self._cleanup_selection_state()
         return self.mode_manager.set_mode(mode)
+    
+    def _cleanup_selection_state(self):
+        """Clean up any lingering selection state."""
+        # Reset rubber band tracking
+        self._rubber_band_active = False
+        self._rubber_band_origin = None
+        self._rubber_band_rect = None
+        
+        # Reset drag tracking
+        self._drag_start_pos = None
+        self._drag_item = None
+        
+        # Reset panning state
+        self._is_panning = False
+        
+        # Clear any connecting in progress flag
+        self._connecting_in_progress = False
     
     def get_item_at(self, pos):
         """Get item at the given view position."""
@@ -175,17 +200,22 @@ class Canvas(QGraphicsView):
             scene_pos = self.mapToScene(event.pos())
             item = self.get_item_at(event.pos())
             
+            # Handle multi-selection drag using the group selection manager
+            if (event.button() == Qt.LeftButton and 
+                self.mode_manager.current_mode == Modes.SELECT and
+                len(self.scene().selectedItems()) > 1):
+                
+                # Try to start a group drag
+                if self.group_selection_manager.start_drag(scene_pos, item):
+                    # If successful, accept the event and return
+                    event.accept()
+                    return
+            
             # Check if we're in the middle of a rubber band selection
             if self._rubber_band_active:
                 # Let Qt handle the rubber band selection
                 super().mousePressEvent(event)
                 return
-            
-            # Log the click with more details for debugging
-            self.logger.debug(f"Canvas: mousePressEvent at ({scene_pos.x():.1f}, {scene_pos.y():.1f}), "
-                             f"button={event.button()}, "
-                             f"modifiers={event.modifiers()}, "
-                             f"item_type={type(item).__name__ if item else 'None'}")
             
             # Handle middle button or shift+left click for panning
             if event.button() == Qt.MiddleButton or (event.button() == Qt.LeftButton and event.modifiers() & Qt.ShiftModifier):
@@ -333,6 +363,15 @@ class Canvas(QGraphicsView):
     def mouseMoveEvent(self, event):
         """Handle mouse move events with improved selection box tracking."""
         try:
+            # Use the group selection manager for multi-selection drag
+            if event.buttons() & Qt.LeftButton and self.group_selection_manager.is_drag_active():
+                # Process the drag through the manager
+                current_pos = self.mapToScene(event.pos())
+                if self.group_selection_manager.process_drag(current_pos):
+                    # If successfully processed, accept the event
+                    event.accept()
+                    return
+            
             # Handle canvas panning
             if self._is_panning:
                 self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - (event.x() - self._pan_start_x))
@@ -366,6 +405,20 @@ class Canvas(QGraphicsView):
     def mouseReleaseEvent(self, event):
         """Handle mouse release events and update selection state."""
         try:
+            # Handle completion of multi-selection dragging using the group selection manager
+            if event.button() == Qt.LeftButton and self.group_selection_manager.is_drag_active():
+                # End the drag through the manager
+                self.group_selection_manager.end_drag()
+                
+                # Accept the event
+                event.accept()
+                
+                # Emit selection changed signal
+                selected_items = self.scene().selectedItems()
+                self.selection_changed.emit(selected_items)
+                
+                return
+                
             # End canvas panning
             if hasattr(self, '_is_panning') and self._is_panning:
                 if event.button() == Qt.MiddleButton or (event.button() == Qt.LeftButton and event.modifiers() & Qt.ShiftModifier):
@@ -384,6 +437,10 @@ class Canvas(QGraphicsView):
                 # Rubber band selection is active and being completed
                 self.logger.debug(f"Rubber band selection completing: {len(self.scene().selectedItems())} items selected")
                 # We'll let the rubberBandChanged event handle the actual selection
+                
+                # Reset rubber band state
+                self._rubber_band_active = False
+                self._rubber_band_origin = None
             
             # Handle device drag finish
             if hasattr(self, '_drag_item') and self._drag_item:
@@ -422,6 +479,17 @@ class Canvas(QGraphicsView):
             # After mouse release, ensure we're in rubber band drag mode if in select mode
             if self.mode_manager.current_mode == Modes.SELECT:
                 self.setDragMode(QGraphicsView.RubberBandDrag)
+                
+                # Ensure all devices have proper flags set (fix for bug after multi-selection)
+                for device in self.devices:
+                    device.setFlag(QGraphicsItem.ItemIsMovable, True)
+                    device.setFlag(QGraphicsItem.ItemIsSelectable, True)
+                    
+                    # Force all child items to be non-draggable and not independently selectable
+                    for child in device.childItems():
+                        child.setFlag(QGraphicsItem.ItemIsMovable, False)
+                        child.setFlag(QGraphicsItem.ItemIsSelectable, False)
+                        child.setAcceptedMouseButtons(Qt.NoButton)
             
             # Get the current selection state after all processing
             selected_items = self.scene().selectedItems()
@@ -443,13 +511,21 @@ class Canvas(QGraphicsView):
     
     def keyPressEvent(self, event):
         """Handle key press events."""
+        # If Escape key is pressed, switch back to SELECT mode
+        if event.key() == Qt.Key_Escape:
+            from constants import Modes
+            self.logger.info("Escape key pressed, switching to SELECT mode")
+            self.set_mode(Modes.SELECT)
+            event.accept()
+            return
+        
         # If space bar is pressed, switch to pan mode temporarily
         if event.key() == Qt.Key_Space:
             self.setCursor(Qt.OpenHandCursor)
             self._temp_pan_mode = True
             event.accept()
             return
-            
+        
         # Handle delete key for selected items
         if event.key() == Qt.Key_Delete:
             selected_items = self.scene().selectedItems()
@@ -465,6 +541,12 @@ class Canvas(QGraphicsView):
             if len(selected_devices) > 1:
                 self.connect_all_selected_devices()
                 self.statusMessage.emit(f"Connected {len(selected_devices)} devices")
+                
+                # Ensure we return to SELECT mode
+                from PyQt5.QtCore import QTimer
+                from constants import Modes
+                QTimer.singleShot(200, lambda: self.set_mode(Modes.SELECT))
+                
                 event.accept()
                 return
 
@@ -614,6 +696,11 @@ class Canvas(QGraphicsView):
                 # Emit the signal only once with all needed information
                 self.logger.debug(f"Emitting connect_multiple_devices_requested for {len(selected_devices)} devices")
                 self.connect_multiple_devices_requested.emit(selected_devices)
+                
+                # Schedule a return to SELECT mode after connection is created
+                from PyQt5.QtCore import QTimer
+                from constants import Modes
+                QTimer.singleShot(200, lambda: self.set_mode(Modes.SELECT))
         finally:
             # Always clean up the flag when done
             self._connecting_in_progress = False
@@ -921,14 +1008,38 @@ class Canvas(QGraphicsView):
         else:
             # Rubber band has been released or is inactive
             if self._rubber_band_active:
-                self.logger.debug(f"Rubber band selection completed, resulted in {len(self.scene().selectedItems())} selected items")
+                # Get the current selection
+                selected_items = self.scene().selectedItems()
+                count = len(selected_items)
+                self.logger.debug(f"Rubber band selection completed with {count} selected items")
+                
+                # Optimize for multi-selection dragging
+                if count > 0:
+                    # Disable child selection on all selected devices
+                    for item in selected_items:
+                        if isinstance(item, Device):
+                            # Ensure the device is properly configured for group dragging
+                            item.setFlag(QGraphicsItem.ItemIsMovable, True)
+                            item.setFlag(QGraphicsItem.ItemIsSelectable, True)
+                            
+                            # Force all child items to be non-draggable and not independently selectable
+                            for child in item.childItems():
+                                child.setFlag(QGraphicsItem.ItemIsMovable, False)
+                                child.setFlag(QGraphicsItem.ItemIsSelectable, False)
+                                child.setAcceptedMouseButtons(Qt.NoButton)
+                            
+                        elif isinstance(item, Boundary):
+                            # Configure boundaries for group dragging
+                            item.setFlag(QGraphicsItem.ItemIsMovable, True)
+                            item.setFlag(QGraphicsItem.ItemIsSelectable, True)
+                
+                # Reset rubber band state
                 self._rubber_band_active = False
                 
-                # Emit selection changed signal with the current selection
-                selected_items = self.scene().selectedItems()
+                # Emit selection changed signal
                 self.selection_changed.emit(selected_items)
             
-            # Clear rubber band tracking variables
+            # Clear tracking variables
             self._rubber_band_origin = None
             self._rubber_band_rect = None
 

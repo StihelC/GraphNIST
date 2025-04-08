@@ -1,13 +1,13 @@
 import random
 from PyQt5.QtWidgets import QMessageBox, QGraphicsItem, QDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 import logging
 import traceback
 import math
 
 from models.connection import Connection
 from controllers.commands import AddConnectionCommand, DeleteConnectionCommand
-from constants import ConnectionTypes, RoutingStyle
+from constants import ConnectionTypes, RoutingStyle, Modes
 from dialogs.multi_connection_dialog import MultiConnectionDialog
 
 class ConnectionController:
@@ -57,7 +57,12 @@ class ConnectionController:
             target_port = target_device.get_nearest_port(source_center)
             
             # Delegate to shared method
-            return self.on_connection_requested(source_device, target_device, source_port, target_port, properties)
+            result = self.on_connection_requested(source_device, target_device, source_port, target_port, properties)
+            
+            # Reset to SELECT mode after connection is created (with a small delay to ensure UI is updated)
+            QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+            
+            return result
         except Exception as e:
             self.logger.error(f"Error handling add connection request: {e}")
             self.logger.error(traceback.format_exc())
@@ -372,6 +377,10 @@ class ConnectionController:
                         
                         # Notify through event bus
                         self.event_bus.emit("multiple_connections_added", added_connections)
+                        
+                        # Reset to SELECT mode after connection is created (with a small delay to ensure UI is updated)
+                        QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                        
                         return True
                     else:
                         self.logger.info("No new connections were created")
@@ -420,6 +429,10 @@ class ConnectionController:
                                 connection_count += 1
                     
                     self.logger.info(f"Created {connection_count} connections")
+                    
+                    # Reset to SELECT mode after connection is created (with a small delay to ensure UI is updated)
+                    QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                    
                     return connection_count > 0
                 except Exception as e:
                     self.logger.error(f"Error in on_connect_multiple_devices_requested without undo/redo: {str(e)}")
@@ -433,6 +446,9 @@ class ConnectionController:
             # Make absolutely sure the flag is always reset
             self.connection_operation_in_progress = False
             self.logger.info("CONNECTION DEBUG: Reset connection_operation_in_progress = False in finally block")
+            
+            # Reset to SELECT mode after connection operation (regardless of success or failure)
+            QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
             
             # Clean up dialog if it exists
             if dialog:
