@@ -33,7 +33,7 @@ from controllers.commands import AlignDevicesCommand
 from controllers.device_alignment_controller import DeviceAlignmentController
 from dialogs.font_settings_dialog import FontSettingsDialog
 from dialogs.connection_type_dialog import ConnectionTypeDialog
-from views.multi_connection_dialog import MultiConnectionDialog
+from dialogs.multi_connection_dialog import MultiConnectionDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):

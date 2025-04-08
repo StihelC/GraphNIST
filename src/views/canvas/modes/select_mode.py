@@ -16,7 +16,7 @@ class SelectMode(CanvasMode):
         self.mouse_press_pos = None
         self.drag_started = False
         self.click_item = None
-        self.drag_threshold = 5  # Minimum drag distance to consider it a drag
+        self.drag_threshold = 3  # Lower threshold for better response
         self.name = "Select Mode"  # Add explicit name for this mode
         self.drag_start_positions = {}  # Track start positions of items being dragged
     
@@ -72,6 +72,10 @@ class SelectMode(CanvasMode):
         self.drag_started = False
         self.drag_start_positions = {}  # Reset drag positions
         
+        # Get modifiers state early to be available throughout the method
+        modifiers = event.modifiers()
+        is_ctrl_pressed = bool(modifiers & Qt.ControlModifier)
+        
         # For double clicks on boundaries, start editing the label
         if event.type() == QEvent.MouseButtonDblClick and isinstance(item, Boundary):
             if hasattr(item, 'label') and item.label:
@@ -107,48 +111,54 @@ class SelectMode(CanvasMode):
             
             # If we found a selectable item
             if selectable_item:
+                # Always store the clicked item to properly handle dragging
                 self.click_item = selectable_item
                 
-                # If clicked on an item that's not selected and not adding to selection
-                if not selectable_item.isSelected() and not (event.modifiers() & Qt.ControlModifier):
+                # Log the state for debugging
+                self.logger.debug(f"SelectMode: Clicked item={type(selectable_item).__name__}, "
+                                 f"ctrl_pressed={is_ctrl_pressed}, "
+                                 f"currently_selected={selectable_item.isSelected()}")
+                
+                # Simplified selection logic to reduce issues
+                if is_ctrl_pressed:
+                    # Ctrl+click: toggle selection state without affecting others
+                    new_state = not selectable_item.isSelected()
+                    selectable_item.setSelected(new_state)
+                    self.logger.debug(f"Ctrl+click: {'Selected' if new_state else 'Deselected'} {type(selectable_item).__name__}")
+                else:
+                    # Regular click: clear others and select this item
                     self.canvas.scene().clearSelection()
+                    selectable_item.setSelected(True)
+                    self.logger.debug(f"Regular click: Selected {type(selectable_item).__name__}")
                 
-                # Select the item
-                selectable_item.setSelected(True)
-                
-                # Emit the selection changed signal to ensure properties panel is updated ONCE
-                # (removing intermediate signals that cause flicker)
+                # Emit selection changed signal immediately with no delay
+                selected_items = self.canvas.scene().selectedItems()
+                self.logger.debug(f"Emitting selection_changed with {len(selected_items)} items")
                 if hasattr(self.canvas, 'selection_changed'):
-                    # This is a critical change - emit with slight delay to ensure UI is updated
-                    from PyQt5.QtCore import QTimer
-                    QTimer.singleShot(10, lambda: self.canvas.selection_changed.emit([selectable_item]))
+                    self.canvas.selection_changed.emit(selected_items)
                 
-                # Only devices and boundaries can be dragged
-                if isinstance(selectable_item, Device) or isinstance(selectable_item, Boundary):
-                    # Make sure it's set as movable
+                # Make sure draggable items are set up correctly
+                if isinstance(selectable_item, (Device, Boundary)):
+                    # Ensure it's set as movable
                     selectable_item.setFlag(QGraphicsItem.ItemIsMovable, True)
                     
-                    # Important: If we clicked on a child item but are dragging the parent,
-                    # we need to let the event system know we're handling this item
-                    if original_item != selectable_item:
-                        # Forward this event to the parent device to start dragging it
-                        event.accept()
-                        selectable_item.mousePressEvent(event)
+                    # Critical fix: always accept the event to ensure proper handling
+                    event.accept()
                     
-                    # Return False to allow Qt's native drag behavior to kick in
-                    # Do NOT emit another selection changed signal here - it causes flicker
-                    return False
-                else:
-                    # For connections, just return without emitting another signal
-                    return True
-            
-            # If clicked in empty space, clear selection unless Ctrl is pressed
-            elif not (event.modifiers() & Qt.ControlModifier):
-                self.canvas.scene().clearSelection()
-                # Return True to indicate we handled the event
+                    # If we clicked on a child but are handling the parent,
+                    # make sure the event gets to the parent device
+                    if original_item != selectable_item:
+                        selectable_item.mousePressEvent(event)
+                
+                # Important: return True to indicate we fully handled this event
+                # This prevents conflicts with other handlers
                 return True
             
-        # If right button, do nothing and let the context menu handle it
+            # If clicked in empty space, let the Canvas handle it
+            # Canvas will handle rubber band selection and Ctrl+click in empty space
+            return False
+        
+        # If right button, let context menu handle it
         elif event.button() == Qt.RightButton:
             return False
         
@@ -169,17 +179,20 @@ class SelectMode(CanvasMode):
             # If we've moved far enough to consider it a drag
             if dist > self.drag_threshold and not self.drag_started:
                 self.drag_started = True
+                self.logger.debug(f"Drag detected, distance moved: {dist:.1f} px")
                 
                 # Set drag mode based on whether we're dragging a device or creating selection box
                 if self.click_item:
-                    # Ensure proper drag mode for device dragging
+                    # For device dragging, ensure proper mode
                     self.canvas.setDragMode(self.canvas.NoDrag)
                     
-                    # Track the starting position of all selected items for multi-selection drag
+                    # Track starting position of all selected items for multi-selection drag
                     self.drag_start_positions = {}
                     for selected_item in self.canvas.scene().selectedItems():
                         if isinstance(selected_item, (Device, Boundary)):
                             self.drag_start_positions[selected_item] = selected_item.scenePos()
+                            # Make sure it's movable
+                            selected_item.setFlag(QGraphicsItem.ItemIsMovable, True)
                 else:
                     # Use rubber band mode for selection box
                     self.canvas.setDragMode(self.canvas.RubberBandDrag)
@@ -189,18 +202,21 @@ class SelectMode(CanvasMode):
             if self.drag_started and self.click_item and self.drag_start_positions:
                 # Calculate the drag offset from the click item's position
                 clicked_item_pos = self.click_item.scenePos()
-                total_dx = clicked_item_pos.x() - self.drag_start_positions[self.click_item].x()
-                total_dy = clicked_item_pos.y() - self.drag_start_positions[self.click_item].y()
                 
-                # Apply the same offset to all other selected items
-                for item, start_pos in self.drag_start_positions.items():
-                    if item != self.click_item:  # Skip the clicked item (already moved by Qt)
-                        new_pos = QPointF(start_pos.x() + total_dx, start_pos.y() + total_dy)
-                        item.setPos(new_pos)
-                        
-                        # Update connections if it's a device
-                        if isinstance(item, Device) and hasattr(item, 'update_connections'):
-                            item.update_connections()
+                # Only proceed if we have the starting position
+                if self.click_item in self.drag_start_positions:
+                    total_dx = clicked_item_pos.x() - self.drag_start_positions[self.click_item].x()
+                    total_dy = clicked_item_pos.y() - self.drag_start_positions[self.click_item].y()
+                    
+                    # Apply the same offset to all other selected items
+                    for item, start_pos in self.drag_start_positions.items():
+                        if item != self.click_item:  # Skip the clicked item (already moved by Qt)
+                            new_pos = QPointF(start_pos.x() + total_dx, start_pos.y() + total_dy)
+                            item.setPos(new_pos)
+                            
+                            # Update connections if it's a device
+                            if isinstance(item, Device) and hasattr(item, 'update_connections'):
+                                item.update_connections()
             
             return True
         
@@ -224,16 +240,15 @@ class SelectMode(CanvasMode):
             self.drag_started = False
             self.drag_start_positions = {}
             
-            # Always switch back to rubber band selection mode for next operation
-            self.canvas.setDragMode(self.canvas.RubberBandDrag)
-            
             # Clear reference to clicked item
             self.click_item = None
             
-            # Notify about selection changes
-            selected_items = self.canvas.scene().selectedItems()
-            self.logger.debug(f"Selection complete: {len(selected_items)} items selected")
-            self.canvas.selection_changed.emit(selected_items)
+            # In most cases, we will let the canvas handle the selection changes
+            # Only if we've been tracking a drag operation, emit selection changed
+            if hasattr(self.canvas, 'selection_changed') and self.drag_started:
+                selected_items = self.canvas.scene().selectedItems()
+                self.logger.debug(f"Selection mode: drag complete, {len(selected_items)} items selected")
+                self.canvas.selection_changed.emit(selected_items)
             
             return True
         

@@ -8,7 +8,7 @@ import math
 from models.connection import Connection
 from controllers.commands import AddConnectionCommand, DeleteConnectionCommand
 from constants import ConnectionTypes, RoutingStyle
-from views.multi_connection_dialog import MultiConnectionDialog
+from dialogs.multi_connection_dialog import MultiConnectionDialog
 
 class ConnectionController:
     """Controller for managing connection-related operations."""
@@ -30,7 +30,9 @@ class ConnectionController:
         
         # Connect to canvas signals
         self.canvas.add_connection_requested.connect(self.on_add_connection_requested)
-        self.canvas.connect_multiple_devices_requested.connect(self.on_connect_multiple_devices_requested)
+        # IMPORTANT: Do not connect connect_multiple_devices_requested signal here.
+        # It's already connected in MainWindow.connect_signals() which would cause duplicate calls.
+        # This was fixed on April 7, 2025 - previously caused dialogs to be shown twice.
     
     def on_add_connection_requested(self, source_device, target_device, properties=None):
         """Handle request to add a new connection."""
@@ -243,6 +245,7 @@ class ConnectionController:
             devices: List of selected devices to connect
         """
         self.logger.info(f"CONNECTION DEBUG: Started on_connect_multiple_devices_requested with {len(devices)} devices")
+        self.logger.info(f"CONNECTION DEBUG: Current operation flag state: {self.connection_operation_in_progress}")
         
         if len(devices) < 2:
             self.logger.warning("Need at least 2 devices to create connections")
@@ -257,12 +260,18 @@ class ConnectionController:
         self.connection_operation_in_progress = True
         self.logger.info("CONNECTION DEBUG: Set connection_operation_in_progress = True")
         
+        dialog = None
         try:
             # Show the multi-connection dialog to get user input
+            self.logger.info("CONNECTION DEBUG: Creating and showing MultiConnectionDialog")
             dialog = MultiConnectionDialog(self.canvas.parent())
-            if dialog.exec_() != QDialog.Accepted:
+            result = dialog.exec_()
+            self.logger.info(f"CONNECTION DEBUG: Dialog closed with result: {result}")
+            
+            if result != QDialog.Accepted:
                 self.logger.info("User cancelled the connection dialog")
-                self.connection_operation_in_progress = False
+                self.connection_operation_in_progress = False  # Ensure flag is reset on cancel
+                self.logger.info("CONNECTION DEBUG: Reset connection_operation_in_progress = False on cancel")
                 return False
                 
             # Get the connection data from the dialog
@@ -356,57 +365,6 @@ class ConnectionController:
                             elif bidirectional:
                                 self.logger.info(f"Backward connection already exists between {target_device.name} and {source_device.name}, skipping")
                     
-                    # CLOSEST strategy: connect each device to its closest neighbor
-                    elif strategy == "closest":
-                        self.logger.info(f"Creating closest-neighbor connections for {len(devices)} devices")
-                        for source_device in devices:
-                            closest_device = None
-                            min_distance = float('inf')
-                            
-                            # Find the closest device
-                            for target_device in devices:
-                                if source_device == target_device:  # Skip self
-                                    continue
-                                    
-                                # Calculate distance
-                                source_pos = source_device.scenePos()
-                                target_pos = target_device.scenePos()
-                                distance = math.sqrt(
-                                    (source_pos.x() - target_pos.x()) ** 2 + 
-                                    (source_pos.y() - target_pos.y()) ** 2
-                                )
-                                
-                                if distance < min_distance:
-                                    min_distance = distance
-                                    closest_device = target_device
-                            
-                            if closest_device:
-                                # Create connection to closest device if it doesn't already exist in either direction
-                                if not self._connection_exists(source_device, closest_device):
-                                    conn_cmd = AddConnectionCommand(
-                                        controller=self,
-                                        source_device=source_device, 
-                                        target_device=closest_device,
-                                        properties=properties
-                                    )
-                                    composite_cmd.add_command(conn_cmd)
-                                    added_connections += 1
-                                else:
-                                    self.logger.info(f"Connection already exists between {source_device.name} and {closest_device.name}, skipping")
-                                
-                                # Create reverse connection if bidirectional
-                                if bidirectional and not self._connection_exists(closest_device, source_device):
-                                    conn_cmd = AddConnectionCommand(
-                                        controller=self,
-                                        source_device=closest_device,
-                                        target_device=source_device,
-                                        properties=properties
-                                    )
-                                    composite_cmd.add_command(conn_cmd)
-                                    added_connections += 1
-                                elif bidirectional:
-                                    self.logger.info(f"Reverse connection already exists between {closest_device.name} and {source_device.name}, skipping")
-                    
                     # Execute the composite command
                     if composite_cmd.commands:  # Only push if there are actual commands to execute
                         self.undo_redo_manager.push_command(composite_cmd)
@@ -421,8 +379,6 @@ class ConnectionController:
                 except Exception as e:
                     self.logger.error(f"Error in on_connect_multiple_devices_requested with undo/redo: {str(e)}")
                     self.logger.error(traceback.format_exc())
-                    # Reset the operation flag even if there's an error
-                    self.connection_operation_in_progress = False
                     return False
             else:
                 # Direct implementation without undo/redo
@@ -464,24 +420,27 @@ class ConnectionController:
                                 connection_count += 1
                     
                     self.logger.info(f"Created {connection_count} connections")
-                    # Reset the operation flag after processing is complete
-                    self.connection_operation_in_progress = False
                     return connection_count > 0
                 except Exception as e:
                     self.logger.error(f"Error in on_connect_multiple_devices_requested without undo/redo: {str(e)}")
                     self.logger.error(traceback.format_exc())
-                    # Reset the operation flag even if there's an error
-                    self.connection_operation_in_progress = False
                     return False
         except Exception as e:
             self.logger.error(f"Error in on_connect_multiple_devices_requested: {str(e)}")
             self.logger.error(traceback.format_exc())
-            # Reset the operation flag even if there's an error in the outer try block
-            self.connection_operation_in_progress = False
             return False
         finally:
             # Make absolutely sure the flag is always reset
             self.connection_operation_in_progress = False
+            self.logger.info("CONNECTION DEBUG: Reset connection_operation_in_progress = False in finally block")
+            
+            # Clean up dialog if it exists
+            if dialog:
+                try:
+                    dialog.close()
+                    dialog.deleteLater()
+                except:
+                    pass
 
     def _connection_exists(self, source_device, target_device):
         """Check if a connection already exists between source and target devices.

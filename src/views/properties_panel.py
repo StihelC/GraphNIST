@@ -307,9 +307,9 @@ class PropertiesPanel(QWidget):
         self.device_model_label.setText(model_text)
         
         # Set RMF ATO properties if available
-        self.stig_label.setText(device.properties.get('stig_compliance', 'Not Assessed'))
-        self.vuln_label.setText(device.properties.get('vulnerability_scan', 'Not Scanned'))
-        self.ato_label.setText(device.properties.get('ato_status', 'Not Started'))
+        self.stig_label.setText(device.properties.get('stig_compliance', ''))
+        self.vuln_label.setText(device.properties.get('vulnerability_scan', ''))
+        self.ato_label.setText(device.properties.get('ato_status', ''))
         self.accred_date_label.setText(device.properties.get('accreditation_date', ''))
         
         # Populate device properties table
@@ -317,13 +317,20 @@ class PropertiesPanel(QWidget):
         self.device_props_table.clearContents()
         self.device_props_table.blockSignals(True)
         
-        # Add all device properties to the table except those displayed as separate fields
-        excluded_props = ['model', 'icon', 'stig_compliance', 'vulnerability_scan', 'ato_status', 'accreditation_date']
+        # Add ALL device properties to the table, including those displayed as separate fields
+        # This ensures all properties are editable
         row = 0
         for prop, value in device.properties.items():
-            if prop not in excluded_props:
+            # Skip only the icon property
+            if prop not in ['icon', 'color', 'width', 'height']:
                 self.device_props_table.insertRow(row)
-                self.device_props_table.setItem(row, 0, QTableWidgetItem(prop))
+                
+                # Create property name item (not editable)
+                propItem = QTableWidgetItem(prop)
+                propItem.setFlags(propItem.flags() & ~Qt.ItemIsEditable)
+                self.device_props_table.setItem(row, 0, propItem)
+                
+                # Create value item (editable)
                 self.device_props_table.setItem(row, 1, QTableWidgetItem(str(value)))
                 row += 1
         
@@ -503,7 +510,7 @@ class PropertiesPanel(QWidget):
         header.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(header)
         
-        # Create a form for common properties
+        # Create a form for all properties
         props_group = QGroupBox("Common Properties")
         props_layout = QFormLayout()
         
@@ -523,34 +530,23 @@ class PropertiesPanel(QWidget):
             type_label = QLabel(most_common_type)
             props_layout.addRow("Device Type:", type_label)
         
-        # Find common properties across all selected devices that can be edited in bulk
-        # Define "important" properties that should be shown first if present
-        important_props = ["ip_address", "hostname", "mac_address", "management_ip", 
-                        "description", "serial_number", "model", "vendor"]
-        
+        # Collect all properties from all devices
         # Exclude properties that should not be shown or cannot be meaningfully bulk-edited
-        excluded_props = ["name", "device_type", "width", "height", "color", "position", "port_positions", "selected"]
+        excluded_props = ["name", "device_type", "width", "height", "color", "icon", "position", "port_positions", "selected"]
         
-        # Find all available properties across devices, prioritizing important ones
-        available_props = []
+        # Collect all properties from all devices
+        all_properties = set()
+        for device in devices:
+            if hasattr(device, 'properties'):
+                for prop in device.properties:
+                    if prop not in excluded_props:
+                        all_properties.add(prop)
         
-        # First add important properties that are found in any device
-        for prop in important_props:
-            for device in devices:
-                if hasattr(device, 'properties') and prop in device.properties:
-                    available_props.append(prop)
-                    break
+        # Sort properties alphabetically
+        sorted_props = sorted(all_properties)
         
-        # If no specific important properties are found, get all common properties
-        if not available_props:
-            for device in devices:
-                if hasattr(device, 'properties'):
-                    for prop in device.properties:
-                        if prop not in excluded_props and prop not in available_props:
-                            available_props.append(prop)
-        
-        # Create editable fields for each available property
-        for prop in available_props:
+        # Create editable fields for each property
+        for prop in sorted_props:
             # Format name for display
             display_name = prop.replace('_', ' ').title()
             
@@ -584,15 +580,7 @@ class PropertiesPanel(QWidget):
         display_group = QGroupBox("Display Settings")
         display_layout = QVBoxLayout()
         
-        # Find all displayable properties across devices
-        display_props = set()
-        for device in devices:
-            if hasattr(device, 'properties'):
-                for prop in device.properties:
-                    if prop not in excluded_props:
-                        display_props.add(prop)
-        
-        # Create checkboxes for common display options
+        # Create checkboxes for all displayable properties
         checkbox_grid = QGridLayout()
         checkbox_grid.setColumnStretch(0, 1)
         checkbox_grid.setColumnStretch(1, 1)
@@ -600,7 +588,7 @@ class PropertiesPanel(QWidget):
         # Add checkboxes in two columns
         self.display_checkboxes = {}
         
-        for i, prop in enumerate(sorted(display_props)):
+        for i, prop in enumerate(sorted(all_properties)):
             # Format name for display
             display_name = prop.replace('_', ' ').title()
             
@@ -623,6 +611,7 @@ class PropertiesPanel(QWidget):
             self.display_checkboxes[prop] = checkbox
         
         display_layout.addLayout(checkbox_grid)
+        display_group.setLayout(display_layout)
         main_layout.addWidget(display_group)
         
         # Add the main container to the content layout

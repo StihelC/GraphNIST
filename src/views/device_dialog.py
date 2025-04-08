@@ -163,22 +163,22 @@ class DeviceDialog(QDialog):
         
         # STIG Compliance
         self.stig_combo = QComboBox()
-        self.stig_combo.addItems(["Not Assessed", "Non-Compliant", "Partially Compliant", "Fully Compliant"])
+        self.stig_combo.addItems(["N/A", "Not Assessed", "Non-Compliant", "Partially Compliant", "Fully Compliant"])
         rmf_layout.addRow("STIG Compliance:", self.stig_combo)
         
         # Vulnerability Assessment
         self.vuln_combo = QComboBox()
-        self.vuln_combo.addItems(["Not Scanned", "Critical Findings", "High Findings", "Medium Findings", "Low Findings Only", "No Findings"])
+        self.vuln_combo.addItems(["N/A", "Not Scanned", "Critical Findings", "High Findings", "Medium Findings", "Low Findings Only", "No Findings"])
         rmf_layout.addRow("Vulnerability Scan:", self.vuln_combo)
         
         # ATO Status
         self.ato_combo = QComboBox()
-        self.ato_combo.addItems(["Not Started", "In Progress", "ATO Granted", "ATO with Conditions", "Denied"])
+        self.ato_combo.addItems(["N/A", "Not Started", "In Progress", "ATO Granted", "ATO with Conditions", "Denied"])
         rmf_layout.addRow("ATO Status:", self.ato_combo)
         
         # Accreditation Date
         self.accred_date = QLineEdit()
-        self.accred_date.setPlaceholderText("YYYY-MM-DD")
+        self.accred_date.setPlaceholderText("YYYY-MM-DD or N/A")
         rmf_layout.addRow("Accreditation Date:", self.accred_date)
         
         self.rmf_group.setLayout(rmf_layout)
@@ -455,9 +455,9 @@ class DeviceDialog(QDialog):
             'ip_address': self.ip_edit.text(),
             'description': self.desc_edit.text(),
             'model': self.custom_model_edit.text(),
-            'stig_compliance': self.stig_combo.currentText(),
-            'vulnerability_scan': self.vuln_combo.currentText(),
-            'ato_status': self.ato_combo.currentText(),
+            'stig_compliance': "" if self.stig_combo.currentText() == "N/A" else self.stig_combo.currentText(),
+            'vulnerability_scan': "" if self.vuln_combo.currentText() == "N/A" else self.vuln_combo.currentText(),
+            'ato_status': "" if self.ato_combo.currentText() == "N/A" else self.ato_combo.currentText(),
             'accreditation_date': self.accred_date.text()
         }
         return properties

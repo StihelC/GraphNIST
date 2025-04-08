@@ -153,12 +153,27 @@ class PropertiesController:
             # Filter to handle only devices for multi-selection
             devices = [item for item in selected_items if item in self.canvas.devices]
             self.logger.info(f"SELECTION DEBUG: Multiple items ({len(selected_items)}), filtered to {len(devices)} devices")
-            if devices:
+            
+            # Check if we're in a connection operation - if so, don't show the multi-device panel
+            # This prevents showing the common properties when clicking Connect Multiple Devices
+            in_connection_operation = False
+            
+            # Find the connection controller
+            controller_container = self.canvas.parent()
+            if controller_container:
+                if hasattr(controller_container, 'connection_controller'):
+                    connection_controller = controller_container.connection_controller
+                    if hasattr(connection_controller, 'connection_operation_in_progress'):
+                        in_connection_operation = connection_controller.connection_operation_in_progress
+                        self.logger.info(f"SELECTION DEBUG: Connection operation in progress: {in_connection_operation}")
+            
+            # Only show multi-device panel if not in a connection operation
+            if devices and not in_connection_operation:
                 self.selected_items = devices
                 self.panel.show_multiple_devices(devices)
                 return
         
-        # If we reach here, only one item is selected
+        # If we reach here, only one item is selected or we're in a connection operation
         # Get the first selected item
         item = selected_items[0]
         self.logger.info(f"SELECTION DEBUG: Single item selected, type: {type(item).__name__}, id: {id(item)}")

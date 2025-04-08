@@ -81,8 +81,9 @@ class BulkPropertyController:
             self.logger.warning("No devices selected for bulk editing")
             return
         
-        # Open property editing dialog
+        # Open property editing dialog - use modal dialog to prevent interaction with properties panel
         dialog = BulkPropertyEditDialog(selected_devices)
+        dialog.setModal(True)  # Make sure the dialog is modal to prevent conflicts
         result = dialog.exec_()
         
         if result == QDialog.Accepted:
@@ -148,8 +149,8 @@ class BulkPropertyEditDialog(QDialog):
         layout = QVBoxLayout(self)
         
         # Header
-        layout.addWidget(QLabel("<b>Edit Common Properties</b>"))
-        layout.addWidget(QLabel(f"Selected devices: {len(self.devices)}"))
+        layout.addWidget(QLabel("<b>Edit Device Properties</b>"))
+        layout.addWidget(QLabel(f"Selected devices: {len(self.devices)} - Changes will apply to all checked devices"))
         
         # Table for common properties
         self.property_table = QTableWidget(0, 3)
@@ -201,49 +202,48 @@ class BulkPropertyEditDialog(QDialog):
         
         # Add rows for each property
         row = 0
-        for prop, data in all_properties.items():
-            # Only include properties that exist in all devices
-            if data['count'] == len(self.devices):
-                self.property_table.insertRow(row)
-                
-                # Property name (not editable)
-                name_item = QTableWidgetItem(prop)
-                name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
-                self.property_table.setItem(row, 0, name_item)
-                
-                # Value editor - type depends on property type
-                prop_type = data['type']
-                
-                # Get most common value for this property
-                most_common_value = max(data['values'].items(), key=lambda x: x[1])[0]
-                
-                # For boolean properties, use a checkbox
-                if prop_type == bool:
-                    cell_widget = QCheckBox()
-                    cell_widget.setChecked(most_common_value.lower() in ('true', 'yes', '1'))
-                    self.property_table.setCellWidget(row, 1, cell_widget)
-                
-                # For enum types that have specific values, use combo box
-                elif prop in ['routing_protocol', 'inspection_type', 'os', 'provider']:
-                    cell_widget = QComboBox()
-                    # Add all unique values found across devices
-                    for val in data['values'].keys():
-                        cell_widget.addItem(val)
-                    # Select most common value
-                    cell_widget.setCurrentText(most_common_value)
-                    self.property_table.setCellWidget(row, 1, cell_widget)
-                
-                # For other types, use text edit
-                else:
-                    value_item = QTableWidgetItem(most_common_value)
-                    self.property_table.setItem(row, 1, value_item)
-                
-                # Apply checkbox
-                apply_checkbox = QCheckBox()
-                apply_checkbox.setChecked(True)  # Default to applying changes
-                self.property_table.setCellWidget(row, 2, apply_checkbox)
-                
-                row += 1
+        for prop, data in sorted(all_properties.items()):
+            # Include all properties, not just those common to all devices
+            self.property_table.insertRow(row)
+            
+            # Property name (not editable)
+            name_item = QTableWidgetItem(prop)
+            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+            self.property_table.setItem(row, 0, name_item)
+            
+            # Value editor - type depends on property type
+            prop_type = data['type']
+            
+            # Get most common value for this property
+            most_common_value = max(data['values'].items(), key=lambda x: x[1])[0]
+            
+            # For boolean properties, use a checkbox
+            if prop_type == bool:
+                cell_widget = QCheckBox()
+                cell_widget.setChecked(most_common_value.lower() in ('true', 'yes', '1'))
+                self.property_table.setCellWidget(row, 1, cell_widget)
+            
+            # For enum types that have specific values, use combo box
+            elif prop in ['routing_protocol', 'inspection_type', 'os', 'provider']:
+                cell_widget = QComboBox()
+                # Add all unique values found across devices
+                for val in data['values'].keys():
+                    cell_widget.addItem(val)
+                # Select most common value
+                cell_widget.setCurrentText(most_common_value)
+                self.property_table.setCellWidget(row, 1, cell_widget)
+            
+            # For other types, use text edit
+            else:
+                value_item = QTableWidgetItem(most_common_value)
+                self.property_table.setItem(row, 1, value_item)
+            
+            # Apply checkbox
+            apply_checkbox = QCheckBox()
+            apply_checkbox.setChecked(True)  # Default to applying changes
+            self.property_table.setCellWidget(row, 2, apply_checkbox)
+            
+            row += 1
         
         # Add display property checkboxes
         common_display_props = {}
@@ -262,7 +262,7 @@ class BulkPropertyEditDialog(QDialog):
         row, col = 0, 0
         self.display_checkboxes = {}
         
-        for prop in all_properties.keys():
+        for prop in sorted(all_properties.keys()):
             if prop in ['color', 'icon']:
                 continue
                 

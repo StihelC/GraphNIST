@@ -75,10 +75,17 @@ class Device(QGraphicsPixmapItem):
         # Create signals object
         self.signals = DeviceSignals()
         
-        # Set flags for interactivity
-        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        # Set flags for interactivity - improved to ensure better clicking
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)  # Always selectable
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)     # Always movable initially
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)  # Track position changes
+        self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges, True)  # Better position tracking
+        
+        # Accept hover events to improve interactivity
+        self.setAcceptHoverEvents(True)
+        
+        # Accept mouse buttons explicitly to ensure click is recognized
+        self.setAcceptedMouseButtons(Qt.LeftButton | Qt.RightButton)
         
         # Set z-value to be above connections and boundaries (layer 10)
         self.setZValue(10)
@@ -773,13 +780,33 @@ class Device(QGraphicsPixmapItem):
         return super().itemChange(change, value)
     
     def mousePressEvent(self, event):
-        """Handle mouse press events, make sure no dialog appears."""
-        # Just call parent implementation, ensure no dialog triggers
+        """Handle mouse press events, ensuring single-click selection."""
+        # Accept the event immediately to ensure it's processed
+        event.accept()
+        
+        # Update selection state explicitly to ensure it's reflected
+        if self.isSelected() != self.is_selected:
+            self.is_selected = self.isSelected()
+            self.logger.debug(f"Device {self.name}: Updated selection state to {self.is_selected}")
+        
+        # Call parent implementation to ensure default handling
         super().mousePressEvent(event)
         
     def mouseReleaseEvent(self, event):
-        """Handle mouse release events, make sure no dialog appears."""
-        # Just call parent implementation, ensure no dialog triggers
+        """Handle mouse release events, ensuring selection state is updated."""
+        # Accept the event immediately
+        event.accept()
+        
+        # Ensure selection state is updated and emit signal if changed
+        if self.isSelected() != self.is_selected:
+            self.is_selected = self.isSelected()
+            self.logger.debug(f"Device {self.name}: Selection state changed on release to {self.is_selected}")
+            
+            # Emit selected signal to update properties panel
+            if hasattr(self.signals, 'selected'):
+                self.signals.selected.emit(self, self.is_selected)
+        
+        # Call parent implementation
         super().mouseReleaseEvent(event)
     
     def mouseDoubleClickEvent(self, event):
@@ -993,27 +1020,39 @@ class Device(QGraphicsPixmapItem):
         
         # Create or update labels for each visible property
         for prop_name in visible_props:
+            # Get the property value
+            prop_value = self.properties.get(prop_name, "")
+            
+            # Skip empty values
+            if not prop_value or prop_value.strip() == "" or prop_value == "N/A":
+                # If the property exists but is blank or N/A, remove the label if it exists
+                if prop_name in self.property_labels:
+                    if self.property_labels[prop_name] in self.childItems():
+                        self.scene().removeItem(self.property_labels[prop_name])
+                    del self.property_labels[prop_name]
+                continue
+                
             # Special handling for IP address (displayed always as IP if available)
             display_value = ""
             if prop_name == 'ip_address':
                 # For IP address, show just the value
-                display_value = str(self.properties.get(prop_name, ""))
+                display_value = str(prop_value)
             elif prop_name == 'model':
                 # For model, show just the value (not the prefix)
-                display_value = str(self.properties.get(prop_name, ""))
+                display_value = str(prop_value)
             elif prop_name in ['stig_compliance', 'vulnerability_scan', 'ato_status', 'accreditation_date']:
                 # Format RMF properties with shorter display names
                 if prop_name == 'stig_compliance':
-                    display_value = f"STIG: {self.properties.get(prop_name, '')}"
+                    display_value = f"STIG: {prop_value}"
                 elif prop_name == 'vulnerability_scan':
-                    display_value = f"Vuln: {self.properties.get(prop_name, '')}"
+                    display_value = f"Vuln: {prop_value}"
                 elif prop_name == 'ato_status':
-                    display_value = f"ATO: {self.properties.get(prop_name, '')}"
+                    display_value = f"ATO: {prop_value}"
                 elif prop_name == 'accreditation_date':
-                    display_value = f"Accred: {self.properties.get(prop_name, '')}"
+                    display_value = f"Accred: {prop_value}"
             else:
                 # For other properties, show "name: value"
-                display_value = f"{prop_name}: {self.properties.get(prop_name, '')}"
+                display_value = f"{prop_name}: {prop_value}"
                 
             # Skip if value is empty
             if not display_value.strip():
@@ -1039,7 +1078,7 @@ class Device(QGraphicsPixmapItem):
                 
         # Remove labels for properties that should not be displayed
         for prop_name in list(self.property_labels.keys()):
-            if prop_name not in visible_props:
+            if prop_name not in visible_props or not self.properties.get(prop_name, ""):
                 if self.property_labels[prop_name] in self.childItems():
                     self.scene().removeItem(self.property_labels[prop_name])
                 del self.property_labels[prop_name]
