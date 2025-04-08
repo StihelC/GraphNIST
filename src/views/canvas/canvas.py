@@ -11,7 +11,8 @@ from constants import Modes
 # Import our modularized components
 from .graphics_manager import TemporaryGraphicsManager
 from .selection_box import SelectionBox
-from .mode_manager import CanvasModeManager, ModeManager
+from .mode_manager import CanvasModeManager
+from controllers.mode_manager import ModeManager
 
 # Import modes
 from .modes.select_mode import SelectMode
@@ -98,7 +99,7 @@ class Canvas(QGraphicsView):
         self.temp_graphics = TemporaryGraphicsManager(self._scene)
         
         # Setup mode manager
-        self.mode_manager = ModeManager(self)
+        self.mode_manager = CanvasModeManager(self)
         
         # Set up modes
         self._setup_modes()
@@ -145,17 +146,15 @@ class Canvas(QGraphicsView):
     
     def _setup_modes(self):
         """Set up the different interaction modes."""
-        self.mode_manager = ModeManager(self)
+        self.mode_manager = CanvasModeManager(self)
         
-        # Add all available modes
-        self.mode_manager.add_modes({
-            Modes.SELECT: SelectMode,
-            Modes.ADD_DEVICE: AddDeviceMode,
-            Modes.DELETE: DeleteMode,
-            Modes.DELETE_SELECTED: DeleteSelectedMode,
-            Modes.ADD_BOUNDARY: AddBoundaryMode,
-            Modes.ADD_CONNECTION: AddConnectionMode
-        })
+        # Register all available modes
+        self.mode_manager.register_mode(Modes.SELECT, SelectMode(self))
+        self.mode_manager.register_mode(Modes.ADD_DEVICE, AddDeviceMode(self))
+        self.mode_manager.register_mode(Modes.DELETE, DeleteMode(self))
+        self.mode_manager.register_mode(Modes.DELETE_SELECTED, DeleteSelectedMode(self))
+        self.mode_manager.register_mode(Modes.ADD_BOUNDARY, AddBoundaryMode(self))
+        self.mode_manager.register_mode(Modes.ADD_CONNECTION, AddConnectionMode(self))
         
         # Set initial mode to select
         self.mode_manager.set_mode(Modes.SELECT)

@@ -489,13 +489,9 @@ class PropertiesPanel(QWidget):
             self.change_icon_requested.emit(self.current_item)
     
     def show_multiple_devices(self, devices):
-        """Show a simplified interface for editing common properties across all selected devices."""
-        if not devices:
-            self.clear()
-            return
-        
-        # First clear the panel
-        self.clear()
+        """Display interface for editing multiple devices at once."""
+        # Clear content first
+        self._reset_layout(self.content_layout)
         
         # Store reference to these devices
         self.current_item = None  # Clear single item reference
@@ -511,7 +507,7 @@ class PropertiesPanel(QWidget):
         main_layout.addWidget(header)
         
         # Create a form for all properties
-        props_group = QGroupBox("Common Properties")
+        props_group = QGroupBox("All Properties")  # Changed from "Common Properties"
         props_layout = QFormLayout()
         
         # Get the most common device type if possible
