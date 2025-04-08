@@ -6,11 +6,10 @@ from .add_device_mode import AddDeviceMode
 from .delete_mode import DeleteMode, DeleteSelectedMode
 from .add_boundary_mode import AddBoundaryMode
 from .add_connection_mode import AddConnectionMode
-from .magnify_mode import MagnifyMode
 
 # Export all the modes
 __all__ = [
     'CanvasMode', 'DeviceInteractionMode',
     'SelectMode', 'AddDeviceMode', 'DeleteMode', 'DeleteSelectedMode',
-    'AddBoundaryMode', 'AddConnectionMode', 'MagnifyMode'
+    'AddBoundaryMode', 'AddConnectionMode'
 ]

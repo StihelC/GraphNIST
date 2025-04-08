@@ -565,14 +565,6 @@ class MainWindow(QMainWindow):
         toolbar.addSeparator()
         toolbar.addWidget(self._create_toolbar_label("View"))
         
-        # Magnify mode
-        magnify_action = QAction(icon_manager.get_icon("magnify"), "Magnify", self)
-        magnify_action.setStatusTip("Use magnifying glass to view details")
-        magnify_action.setCheckable(True)
-        magnify_action.triggered.connect(lambda: self._set_canvas_mode(Modes.MAGNIFY))
-        toolbar.addAction(magnify_action)
-        self.canvas_actions[Modes.MAGNIFY] = magnify_action
-        
         # Add zoom actions
         zoom_in_action = QAction(icon_manager.get_icon("zoom_in"), "Zoom In", self)
         zoom_in_action.setStatusTip("Zoom in the canvas view")
@@ -588,6 +580,17 @@ class MainWindow(QMainWindow):
         reset_zoom_action.setStatusTip("Reset zoom to 100%")
         reset_zoom_action.triggered.connect(self.canvas.reset_zoom)
         toolbar.addAction(reset_zoom_action)
+        
+        # Reset view action
+        reset_view_action = QAction("Reset View", self)
+        reset_view_action.setShortcut("Home")
+        reset_view_action.triggered.connect(self.canvas.reset_view)
+        toolbar.addAction(reset_view_action)
+        
+        # Set Home Position action
+        set_home_action = QAction("Set Current View as Home", self)
+        set_home_action.triggered.connect(self._set_current_as_home)
+        toolbar.addAction(set_home_action)
 
     def _show_alignment_menu(self, position=None):
         """Show the alignment menu when the align button is clicked."""
@@ -826,14 +829,6 @@ class MainWindow(QMainWindow):
         reset_zoom_action.setShortcut("Ctrl+0")
         reset_zoom_action.triggered.connect(self.canvas.reset_zoom)
         zoom_menu.addAction(reset_zoom_action)
-        
-        # Magnify glass action
-        magnify_action = QAction("Magnifying Glass", self)
-        magnify_action.setShortcut("M")
-        magnify_action.setCheckable(True)
-        magnify_action.triggered.connect(self._toggle_magnify_mode)
-        view_menu.addAction(magnify_action)
-        self.magnify_action = magnify_action  # Store for later use
         
         # Reset view action
         reset_view_action = QAction("Reset View", self)
@@ -1236,27 +1231,14 @@ class MainWindow(QMainWindow):
         
         # Force canvas update
         self.canvas.viewport().update()
-
-    def _toggle_magnify_mode(self):
-        """Toggle the magnify mode on and off."""
-        if self.canvas.mode_manager.current_mode == Modes.MAGNIFY:
-            self._set_canvas_mode(Modes.SELECT)  # Return to select mode
-            self.magnify_action.setChecked(False)
-        else:
-            self._set_canvas_mode(Modes.MAGNIFY)
-            self.magnify_action.setChecked(True)
-
+        
     def _set_canvas_mode(self, mode):
         """Set the canvas interaction mode and update toolbar buttons."""
         if self.canvas.set_mode(mode):
             # Update checked state of all mode actions
             for mode_id, action in self.canvas_actions.items():
                 action.setChecked(mode_id == mode)
-            
-            # If it's magnify mode, update the menu action as well
-            if hasattr(self, 'magnify_action'):
-                self.magnify_action.setChecked(mode == Modes.MAGNIFY)
-
+    
     def _create_toolbar_label(self, text):
         """Create a bold label for toolbar sections."""
         label = QLabel(text)

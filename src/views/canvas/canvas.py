@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
     QGraphicsView, QGraphicsScene, QMenu, 
-    QGraphicsItem, QApplication, QAction, QInputDialog
+    QGraphicsItem, QApplication, QAction, QInputDialog, QGraphicsPixmapItem, QGraphicsTextItem
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QEvent, QTimer, QRectF, QSettings
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QCursor, QTransform
+from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QCursor, QTransform, QPixmap, QIcon
 
 import logging
 from constants import Modes
@@ -11,7 +11,7 @@ from constants import Modes
 # Import our modularized components
 from .graphics_manager import TemporaryGraphicsManager
 from .selection_box import SelectionBox
-from .mode_manager import CanvasModeManager
+from .mode_manager import CanvasModeManager, ModeManager
 
 # Import modes
 from .modes.select_mode import SelectMode
@@ -19,7 +19,6 @@ from .modes.add_device_mode import AddDeviceMode
 from .modes.delete_mode import DeleteMode, DeleteSelectedMode
 from .modes.add_boundary_mode import AddBoundaryMode
 from .modes.add_connection_mode import AddConnectionMode
-from .modes.magnify_mode import MagnifyMode
 
 from models.device import Device
 from models.connection import Connection
@@ -99,7 +98,7 @@ class Canvas(QGraphicsView):
         self.temp_graphics = TemporaryGraphicsManager(self._scene)
         
         # Setup mode manager
-        self.mode_manager = CanvasModeManager(self)
+        self.mode_manager = ModeManager(self)
         
         # Set up modes
         self._setup_modes()
@@ -145,25 +144,21 @@ class Canvas(QGraphicsView):
         self._rubber_band_rect = None    # Track current rubber band rectangle
     
     def _setup_modes(self):
-        """Initialize all available interaction modes."""
-        # Use a dictionary to create modes
-        mode_classes = {
+        """Set up the different interaction modes."""
+        self.mode_manager = ModeManager(self)
+        
+        # Add all available modes
+        self.mode_manager.add_modes({
             Modes.SELECT: SelectMode,
             Modes.ADD_DEVICE: AddDeviceMode,
             Modes.DELETE: DeleteMode,
             Modes.DELETE_SELECTED: DeleteSelectedMode,
             Modes.ADD_BOUNDARY: AddBoundaryMode,
-            Modes.ADD_CONNECTION: AddConnectionMode,
-            Modes.MAGNIFY: MagnifyMode
-        }
+            Modes.ADD_CONNECTION: AddConnectionMode
+        })
         
-        # Create and register each mode with the manager
-        for mode_id, mode_class in mode_classes.items():
-            try:
-                mode = mode_class(self)
-                self.mode_manager.register_mode(mode_id, mode)
-            except Exception as e:
-                self.logger.error(f"Failed to initialize mode {mode_class.__name__}: {e}")
+        # Set initial mode to select
+        self.mode_manager.set_mode(Modes.SELECT)
     
     def set_mode(self, mode):
         """Set the current interaction mode."""
@@ -892,26 +887,11 @@ class Canvas(QGraphicsView):
             self.event_bus.emit('canvas_cleared')
 
     def paintEvent(self, event):
-        """Override paintEvent to handle magnify lens drawing.
-        
-        This allows us to draw the magnified content on top of the normal scene.
-        """
-        # First, let Qt handle normal rendering
+        """Override paintEvent for standard scene rendering."""
+        # Use standard QGraphicsView rendering
         super().paintEvent(event)
         
-        # Then, if we're in magnify mode, add the magnified content
-        if self.mode_manager.current_mode == Modes.MAGNIFY:
-            try:
-                magnify_mode = self.mode_manager.get_mode(Modes.MAGNIFY)
-                if magnify_mode and magnify_mode.active:
-                    # Create a painter for the viewport
-                    painter = QPainter(self.viewport())
-                    magnify_mode.draw_magnified_content(painter)
-                    painter.end()
-            except Exception as e:
-                self.logger.error(f"Error in magnify drawing: {str(e)}")
-                import traceback
-                traceback.print_exc()
+        # Magnify mode removed for stability
 
     def rubberBandChanged(self, viewportRect, fromScenePoint, toScenePoint):
         """Handle rubber band selection changes - called by Qt when rubber band is drawn.
