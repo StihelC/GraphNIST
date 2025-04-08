@@ -510,49 +510,69 @@ class Canvas(QGraphicsView):
         self.selection_changed.emit(items)
     
     def keyPressEvent(self, event):
-        """Handle key press events."""
-        # If Escape key is pressed, switch back to SELECT mode
-        if event.key() == Qt.Key_Escape:
-            from constants import Modes
-            self.logger.info("Escape key pressed, switching to SELECT mode")
-            self.set_mode(Modes.SELECT)
-            event.accept()
-            return
-        
-        # If space bar is pressed, switch to pan mode temporarily
-        if event.key() == Qt.Key_Space:
-            self.setCursor(Qt.OpenHandCursor)
-            self._temp_pan_mode = True
-            event.accept()
-            return
-        
-        # Handle delete key for selected items
-        if event.key() == Qt.Key_Delete:
-            selected_items = self.scene().selectedItems()
-            if selected_items:
-                # Emit signal to delete all selected items
-                self.delete_selected_requested.emit()
+        """Handle key press events with keyboard shortcuts for common operations."""
+        try:
+            # Check if Shift is being held for temporary pan mode
+            if event.key() == Qt.Key_Space:
+                # Create a flag indicating we're in temporary pan mode from spacebar
+                self._temp_pan_mode = True
+                self.setDragMode(QGraphicsView.NoDrag)
+                self.setCursor(Qt.OpenHandCursor)
                 event.accept()
                 return
-        
-        # Connect selected devices with Ctrl+L
-        if event.key() == Qt.Key_L and event.modifiers() & Qt.ControlModifier:
-            selected_devices = [i for i in self.scene().selectedItems() if i in self.devices]
-            if len(selected_devices) > 1:
-                self.connect_all_selected_devices()
-                self.statusMessage.emit(f"Connected {len(selected_devices)} devices")
                 
-                # Ensure we return to SELECT mode
-                from PyQt5.QtCore import QTimer
-                from constants import Modes
-                QTimer.singleShot(200, lambda: self.set_mode(Modes.SELECT))
-                
+            # First, let the mode manager try to handle the event
+            if self.mode_manager.handle_event("key_press_event", event):
                 event.accept()
                 return
-
-        # If not handled above, pass to mode manager or parent
-        if not self.mode_manager.handle_event("key_press_event", event):
+                
+            # Global keyboard shortcuts
+            
+            # Delete key to delete selected items
+            if event.key() == Qt.Key_Delete:
+                if self.scene().selectedItems():
+                    self.delete_selected_requested.emit()
+                    event.accept()
+                    return
+            
+            # Escape key to deselect all items
+            if event.key() == Qt.Key_Escape:
+                self.deselect_all()
+                event.accept()
+                return
+            
+            # Check for selection shortcuts (Ctrl+D for devices, Ctrl+C for connections)
+            if event.modifiers() & Qt.ControlModifier:
+                if event.key() == Qt.Key_D:
+                    self.select_all_devices()
+                    event.accept()
+                    return
+                elif event.key() == Qt.Key_C:
+                    self.select_all_connections()
+                    event.accept()
+                    return
+                elif event.key() == Qt.Key_A:
+                    # Traditional Ctrl+A for select all of everything
+                    self.scene().clearSelection()
+                    for item in self.scene().items():
+                        if item.isVisible() and (item in self.devices or 
+                                               isinstance(item, Connection) or
+                                               isinstance(item, Boundary)):
+                            item.setSelected(True)
+                    
+                    self.selection_changed.emit(self.scene().selectedItems())
+                    self.statusMessage.emit("Selected all items")
+                    event.accept()
+                    return
+                
+            # If no shortcuts were triggered, pass to parent
             super().keyPressEvent(event)
+            
+        except Exception as e:
+            # Log errors during event handling
+            self.logger.error(f"Error in keyPressEvent: {str(e)}")
+            import traceback
+            traceback.print_exc()
             
     def keyReleaseEvent(self, event):
         """Handle key release events."""
@@ -736,157 +756,249 @@ class Canvas(QGraphicsView):
                                     widget.properties_dock.setVisible(True)
                                     break
     
+    def select_all_devices(self):
+        """Select all devices on the canvas."""
+        # First deselect everything
+        self.scene().clearSelection()
+        
+        # Select all devices
+        for device in self.devices:
+            device.setSelected(True)
+        
+        # Emit selection changed signal
+        selected_items = self.scene().selectedItems()
+        self.selection_changed.emit(selected_items)
+        
+        self.statusMessage.emit(f"Selected all devices ({len(self.devices)})")
+    
+    def select_all_connections(self):
+        """Select all connections on the canvas."""
+        # First deselect everything
+        self.scene().clearSelection()
+        
+        # Select all connections
+        for connection in self.connections:
+            connection.setSelected(True)
+        
+        # Emit selection changed signal
+        selected_items = self.scene().selectedItems()
+        self.selection_changed.emit(selected_items)
+        
+        self.statusMessage.emit(f"Selected all connections ({len(self.connections)})")
+    
+    def deselect_all(self):
+        """Deselect all items on the canvas."""
+        self.scene().clearSelection()
+        
+        # Emit selection changed signal with empty list
+        self.selection_changed.emit([])
+        
+        self.statusMessage.emit("Deselected all items")
+
     def contextMenuEvent(self, event):
-        """Handle context menu event."""
-        menu = QMenu(self)
-        
-        # Get scene position for potential device/connection creation
-        scene_pos = self.mapToScene(event.pos())
-        item = self.scene().itemAt(scene_pos, self.transform())
-        
-        # Check if any devices are selected
-        selected_devices = [item for item in self.scene().selectedItems() if item in self.devices]
-        
-        # Different context menu based on what's under the cursor
-        if not item:
-            # Empty canvas area menu
-            add_device_action = menu.addAction("Add Device...")
+        """Show context menu with available actions."""
+        try:
+            # Get the item under cursor for context-specific menus
+            item = self.itemAt(event.pos())
+            scene_pos = self.mapToScene(event.pos())
+            
+            # Create context menu
+            context_menu = QMenu(self)
+            
+            # Always show canvas-level options at the top
+            # Zoom submenu
+            zoom_menu = context_menu.addMenu("Zoom")
+            
+            zoom_in_action = zoom_menu.addAction("Zoom In")
+            zoom_in_action.triggered.connect(self.zoom_in)
+            
+            zoom_out_action = zoom_menu.addAction("Zoom Out")
+            zoom_out_action.triggered.connect(self.zoom_out)
+            
+            zoom_reset_action = zoom_menu.addAction("Reset Zoom")
+            zoom_reset_action.triggered.connect(self.reset_zoom)
+            
+            grid_action = context_menu.addAction("Toggle Grid")
+            grid_action.triggered.connect(self.toggle_grid)
+            
+            # Add selection options when in select mode
+            if self.mode_manager.current_mode == Modes.SELECT:
+                context_menu.addSeparator()
+                selection_menu = context_menu.addMenu("Selection")
+                
+                select_all_devices_action = selection_menu.addAction("Select All Devices")
+                select_all_devices_action.triggered.connect(self.select_all_devices)
+                
+                select_all_connections_action = selection_menu.addAction("Select All Connections")
+                select_all_connections_action.triggered.connect(self.select_all_connections)
+                
+                deselect_all_action = selection_menu.addAction("Deselect All")
+                deselect_all_action.triggered.connect(self.deselect_all)
+            
+            # Create a "Create" menu for adding items
+            context_menu.addSeparator()
+            create_menu = context_menu.addMenu("Create")
+            
+            add_device_action = create_menu.addAction("Add Device")
             add_device_action.triggered.connect(lambda: self.add_device_requested.emit(scene_pos))
             
-            bulk_add_action = menu.addAction("Add Multiple Devices...")
-            # Find the main window and call its bulk add method
-            bulk_add_action.triggered.connect(self._request_bulk_add)
+            add_boundary_action = create_menu.addAction("Add Boundary")
+            add_boundary_action.triggered.connect(lambda: self.set_mode(Modes.ADD_BOUNDARY))
             
-            # Add more empty canvas actions here...
-            
-        elif item in self.devices:
-            # Device-specific menu options
-            if len(selected_devices) > 1:
-                # If multiple devices are selected, offer bulk edit and alignment
-                bulk_edit_action = menu.addAction(f"Edit {len(selected_devices)} Devices...")
-                bulk_edit_action.triggered.connect(self._request_bulk_edit)
+            # If we have selected items, show options specific to selection
+            selected_items = self.scene().selectedItems()
+            if selected_items:
+                context_menu.addSeparator()
                 
-                # Add connect selected devices option
-                connect_action = menu.addAction(f"Connect {len(selected_devices)} Devices...")
-                connect_action.triggered.connect(self.connect_all_selected_devices)
+                # Filter selected items by type
+                selected_devices = [item for item in selected_items if item in self.devices]
+                selected_connections = [item for item in selected_items if isinstance(item, Connection)]
+                selected_boundaries = [item for item in selected_items if isinstance(item, Boundary)]
                 
-                # Add alignment submenu
-                align_menu = menu.addMenu("Align Devices")
+                # If we have multiple devices selected, show bulk and alignment options
+                if len(selected_devices) > 1:
+                    # Allow deleting selected items
+                    delete_selected_action = context_menu.addAction("Delete Selected Items")
+                    delete_selected_action.triggered.connect(self.delete_selected_requested.emit)
+                    
+                    # Add alignment menu
+                    context_menu.addSeparator()
+                    align_menu = context_menu.addMenu("Alignment")
+                    
+                    # Import our new alignment helper
+                    from utils import alignment_helper
+                    
+                    # Basic alignments
+                    align_left_action = align_menu.addAction("Align Left")
+                    align_left_action.triggered.connect(lambda: alignment_helper.align_left(self))
+                    
+                    align_right_action = align_menu.addAction("Align Right")
+                    align_right_action.triggered.connect(lambda: alignment_helper.align_right(self))
+                    
+                    align_top_action = align_menu.addAction("Align Top")
+                    align_top_action.triggered.connect(lambda: alignment_helper.align_top(self))
+                    
+                    align_bottom_action = align_menu.addAction("Align Bottom")
+                    align_bottom_action.triggered.connect(lambda: alignment_helper.align_bottom(self))
+                    
+                    # Center alignments
+                    align_menu.addSeparator()
+                    align_center_h_action = align_menu.addAction("Center Horizontally")
+                    align_center_h_action.triggered.connect(lambda: alignment_helper.align_center_horizontal(self))
+                    
+                    align_center_v_action = align_menu.addAction("Center Vertically")
+                    align_center_v_action.triggered.connect(lambda: alignment_helper.align_center_vertical(self))
+                    
+                    # Distribution
+                    align_menu.addSeparator()
+                    distribute_h_action = align_menu.addAction("Distribute Horizontally")
+                    distribute_h_action.triggered.connect(lambda: alignment_helper.distribute_horizontally(self))
+                    
+                    distribute_v_action = align_menu.addAction("Distribute Vertically")
+                    distribute_v_action.triggered.connect(lambda: alignment_helper.distribute_vertically(self))
+                    
+                    # Network layouts submenu
+                    network_layouts = align_menu.addMenu("Network Layouts")
+                    
+                    grid_action = network_layouts.addAction("Grid Arrangement")
+                    grid_action.triggered.connect(lambda: alignment_helper.arrange_grid(self))
+                    
+                    circle_action = network_layouts.addAction("Circle Arrangement")
+                    circle_action.triggered.connect(lambda: alignment_helper.arrange_circle(self))
+                    
+                    star_action = network_layouts.addAction("Star Arrangement")
+                    star_action.triggered.connect(lambda: alignment_helper.arrange_star(self))
+                    
+                    bus_action = network_layouts.addAction("Bus Arrangement")
+                    bus_action.triggered.connect(lambda: alignment_helper.arrange_bus(self))
+                    
+                    # Add option to connect all selected devices
+                    context_menu.addSeparator()
+                    connect_all_action = context_menu.addAction("Connect All Selected Devices")
+                    connect_all_action.triggered.connect(self.connect_all_selected_devices)
+                    
+                    # Add bulk editing options
+                    bulk_menu = context_menu.addMenu("Bulk Operations")
+                    
+                    bulk_edit_action = bulk_menu.addAction("Edit Selected Devices")
+                    bulk_edit_action.triggered.connect(self._request_bulk_edit)
+                    
+                elif len(selected_items) == 1:
+                    # Handle single item selection
+                    selected_item = selected_items[0]
+                    
+                    # Option to delete this item
+                    delete_item_action = context_menu.addAction(f"Delete {type(selected_item).__name__}")
+                    delete_item_action.triggered.connect(lambda: self.delete_item_requested.emit(selected_item))
+                    
+                    # Device-specific options
+                    if selected_item in self.devices:
+                        device = selected_item
+                        
+                        # Emit Edit signal from device controller
+                        edit_device_action = context_menu.addAction("Edit Device")
+                        edit_device_action.triggered.connect(lambda: self.window().device_controller.edit_device(device))
+                        
+                        # Use the device's openProperties method if available
+                        if hasattr(device, 'openProperties'):
+                            properties_action = context_menu.addAction("Properties")
+                            properties_action.triggered.connect(device.openProperties)
+                    
+                    # Connection-specific options
+                    elif isinstance(selected_item, Connection):
+                        connection = selected_item
+                        
+                        # Edit connection properties
+                        edit_connection_action = context_menu.addAction("Edit Connection")
+                        edit_connection_action.triggered.connect(lambda: self.window().connection_controller.edit_connection(connection))
+                        
+                        # Use the connection's openProperties method if available
+                        if hasattr(connection, 'openProperties'):
+                            properties_action = context_menu.addAction("Properties")
+                            properties_action.triggered.connect(connection.openProperties)
+                            
+                    # Boundary-specific options
+                    elif isinstance(selected_item, Boundary):
+                        boundary = selected_item
+                        
+                        # Edit boundary properties
+                        edit_boundary_action = context_menu.addAction("Edit Boundary")
+                        edit_boundary_action.triggered.connect(lambda: self.window().boundary_controller.edit_boundary(boundary))
+                        
+                        # Use the boundary's openProperties method if available
+                        if hasattr(boundary, 'openProperties'):
+                            properties_action = context_menu.addAction("Properties")
+                            properties_action.triggered.connect(boundary.openProperties)
+            else:
+                # If no items are selected, show options for creating items at this location
+                add_device_here_action = context_menu.addAction("Add Device Here")
+                add_device_here_action.triggered.connect(lambda: self.add_device_requested.emit(scene_pos))
                 
-                # Basic alignment options
-                basic_align = align_menu.addMenu("Basic Alignment")
+                # Add the bulk add option
+                add_multiple_devices_action = context_menu.addAction("Add Multiple Devices Here")
+                add_multiple_devices_action.triggered.connect(
+                    lambda: self.window().bulk_device_controller.show_bulk_add_dialog(scene_pos))
                 
-                basic_actions = {
-                    "Align Left": "left",
-                    "Align Right": "right",
-                    "Align Top": "top",
-                    "Align Bottom": "bottom",
-                    "Align Center Horizontally": "center_h",
-                    "Align Center Vertically": "center_v",
-                    "Distribute Horizontally": "distribute_h",
-                    "Distribute Vertically": "distribute_v"
-                }
-                
-                for action_text, alignment_type in basic_actions.items():
-                    action = basic_align.addAction(action_text)
-                    action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                           self.align_selected_devices(a_type))
-                
-                # Network layouts submenu
-                network_layouts = align_menu.addMenu("Network Layouts")
-                
-                layout_actions = {
-                    "Grid Arrangement": "grid",
-                    "Circle Arrangement": "circle",
-                    "Star Arrangement": "star",
-                    "Bus Arrangement": "bus"
-                }
-                
-                for action_text, alignment_type in layout_actions.items():
-                    action = network_layouts.addAction(action_text)
-                    action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                           self.align_selected_devices(a_type))
-                
-                # NIST RMF related layouts
-                security_layouts = align_menu.addMenu("Security Architectures")
-                
-                security_actions = {
-                    "DMZ Architecture": "dmz",
-                    "Defense-in-Depth Layers": "defense_in_depth",
-                    "Segmented Network": "segments",
-                    "Zero Trust Architecture": "zero_trust",
-                    "SCADA/ICS Zones": "ics_zones"
-                }
-                
-                for action_text, alignment_type in security_actions.items():
-                    action = security_layouts.addAction(action_text)
-                    action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                           self.align_selected_devices(a_type))
-        
-        # Add bulk edit option if multiple devices are selected, regardless of what was clicked
-        elif len(selected_devices) > 1:
-            bulk_edit_action = menu.addAction(f"Edit {len(selected_devices)} Devices...")
-            bulk_edit_action.triggered.connect(self._request_bulk_edit)
+                # Make "Add Multiple Devices" the default option
+                context_menu.removeAction(add_device_here_action)  # Remove the single device option
+                add_multiple_here_action = context_menu.addAction("Add Device Here")  # Add it back with the same name
+                add_multiple_here_action.triggered.connect(
+                    lambda: self.window().bulk_device_controller.show_bulk_add_dialog(scene_pos))  # But connect to bulk add
             
-            # Add connect selected devices option
-            connect_action = menu.addAction(f"Connect {len(selected_devices)} Devices...")
-            connect_action.triggered.connect(self.connect_all_selected_devices)
+            # Add diagnostic option in debug mode
+            import os
+            if os.environ.get('DEBUG_MODE', '0') == '1':
+                context_menu.addSeparator()
+                diagnostics_action = context_menu.addAction("Canvas Diagnostics")
+                diagnostics_action.triggered.connect(self.diagnostics)
             
-            # Add alignment options
-            align_menu = menu.addMenu("Align Devices")
+            # Show the context menu at the event position
+            context_menu.exec_(event.globalPos())
             
-            # Basic alignment options
-            basic_align = align_menu.addMenu("Basic Alignment")
-            
-            basic_actions = {
-                "Align Left": "left",
-                "Align Right": "right",
-                "Align Top": "top",
-                "Align Bottom": "bottom",
-                "Align Center Horizontally": "center_h",
-                "Align Center Vertically": "center_v",
-                "Distribute Horizontally": "distribute_h",
-                "Distribute Vertically": "distribute_v"
-            }
-            
-            for action_text, alignment_type in basic_actions.items():
-                action = basic_align.addAction(action_text)
-                action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                       self.align_selected_devices(a_type))
-            
-            # Network layouts submenu
-            network_layouts = align_menu.addMenu("Network Layouts")
-            
-            layout_actions = {
-                "Grid Arrangement": "grid",
-                "Circle Arrangement": "circle",
-                "Star Arrangement": "star",
-                "Bus Arrangement": "bus"
-            }
-            
-            for action_text, alignment_type in layout_actions.items():
-                action = network_layouts.addAction(action_text)
-                action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                       self.align_selected_devices(a_type))
-            
-            # NIST RMF related layouts
-            security_layouts = align_menu.addMenu("Security Architectures")
-            
-            security_actions = {
-                "DMZ Architecture": "dmz",
-                "Defense-in-Depth Layers": "defense_in_depth",
-                "Segmented Network": "segments",
-                "Zero Trust Architecture": "zero_trust",
-                "SCADA/ICS Zones": "ics_zones"
-            }
-            
-            for action_text, alignment_type in security_actions.items():
-                action = security_layouts.addAction(action_text)
-                action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                       self.align_selected_devices(a_type))
-            
-        # Execute the menu
-        menu.exec_(event.globalPos())
+        except Exception as e:
+            self.logger.error(f"Error in contextMenuEvent: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def _request_bulk_add(self):
         """Request bulk device addition through main window."""

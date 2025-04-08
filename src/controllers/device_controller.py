@@ -793,8 +793,13 @@ class DeviceController:
     def _create_device(self, name, device_type, position, properties=None, custom_icon_path=None):
         """Create a device object and add it to the canvas."""
         try:
-            # Generate sequential device name if not provided or keep the passed name
-            if not name:
+            # Use the model name if available and no name was provided
+            if not name and properties and 'model' in properties and properties['model']:
+                model_name = properties['model']
+                self.device_counter += 1
+                name = f"{model_name} {self.device_counter}"
+            # Otherwise generate sequential device name if not provided or keep the passed name
+            elif not name:
                 # Generate Device N
                 self.device_counter += 1
                 name = f"Device {self.device_counter}"

@@ -1,5 +1,5 @@
 import logging
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QGridLayout, QPushButton, QLabel, QSpinBox, QComboBox, QDialogButtonBox
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QGridLayout, QPushButton, QLabel, QSpinBox, QComboBox, QDialogButtonBox, QGroupBox, QFormLayout
 from PyQt5.QtCore import QPointF, Qt
 
 from models.device import Device
@@ -108,7 +108,11 @@ class BulkDeviceAddDialog(QDialog):
         super().__init__(parent)
         self.position = position or QPointF(0, 0)
         self.setWindowTitle("Add Multiple Devices")
-        self.setMinimumWidth(450)
+        self.setMinimumWidth(500)
+        
+        # Import device models from DeviceDialog to keep them consistent
+        from views.device_dialog import DeviceDialog
+        self.DEVICE_MODELS = DeviceDialog.DEVICE_MODELS
         
         self._init_ui()
     
@@ -120,11 +124,18 @@ class BulkDeviceAddDialog(QDialog):
         layout.addWidget(QLabel("<b>Create multiple devices at once</b>"))
         
         # Grid layout for device types
+        devices_group = QGroupBox("Device Types and Counts")
         grid_layout = QGridLayout()
+        
+        # Headers
+        grid_layout.addWidget(QLabel("<b>Device Type</b>"), 0, 0)
+        grid_layout.addWidget(QLabel("<b>Count</b>"), 0, 1)
+        grid_layout.addWidget(QLabel("<b>Model</b>"), 0, 2)
         
         # Add entries for each device type
         self.device_counts = {}
-        row = 0
+        self.device_models = {}
+        row = 1
         
         # Use the get_all_types method to get all device types
         for device_type in DeviceTypes.get_all_types():
@@ -141,12 +152,29 @@ class BulkDeviceAddDialog(QDialog):
             count_spin.setValue(0)
             grid_layout.addWidget(count_spin, row, 1)
             
-            # Store reference to spin box
+            # Model dropdown for this device type
+            model_combo = QComboBox()
+            model_combo.addItem("Default", "")  # Default empty model
+            
+            # Add models from the device dialog
+            if device_type in self.DEVICE_MODELS:
+                for model in self.DEVICE_MODELS[device_type]:
+                    model_combo.addItem(model, model)
+            
+            # Enable the model combo only if count is > 0
+            model_combo.setEnabled(False)
+            count_spin.valueChanged.connect(lambda value, combo=model_combo: combo.setEnabled(value > 0))
+            
+            grid_layout.addWidget(model_combo, row, 2)
+            
+            # Store references
             self.device_counts[device_type] = count_spin
+            self.device_models[device_type] = model_combo
             
             row += 1
         
-        layout.addLayout(grid_layout)
+        devices_group.setLayout(grid_layout)
+        layout.addWidget(devices_group)
         
         # Layout options
         layout.addWidget(QLabel("<b>Layout Options</b>"))
@@ -181,6 +209,25 @@ class BulkDeviceAddDialog(QDialog):
         self.naming_prefix.setEditable(True)
         layout.addWidget(self.naming_prefix)
         
+        # RMF Defaults
+        rmf_group = QGroupBox("RMF Information (Applied to all devices)")
+        rmf_layout = QFormLayout()
+        
+        self.stig_combo = QComboBox()
+        self.stig_combo.addItems(["Use default for type", "Compliant", "Non-Compliant", "Exception", "In Progress"])
+        rmf_layout.addRow("STIG Compliance:", self.stig_combo)
+        
+        self.vuln_combo = QComboBox()
+        self.vuln_combo.addItems(["Use default for type", "Clean", "Critical Findings", "Moderate Findings", "Low Findings", "Pending"])
+        rmf_layout.addRow("Vulnerability Scan:", self.vuln_combo)
+        
+        self.ato_combo = QComboBox()
+        self.ato_combo.addItems(["Use default for type", "Full ATO", "Interim ATO", "Pending", "Expired", "No ATO"])
+        rmf_layout.addRow("ATO Status:", self.ato_combo)
+        
+        rmf_group.setLayout(rmf_layout)
+        layout.addWidget(rmf_group)
+        
         # Buttons
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -211,6 +258,19 @@ class BulkDeviceAddDialog(QDialog):
         
         # Choose naming scheme
         naming_prefix = self.naming_prefix.currentText()
+        # Check if using default or custom naming
+        use_default_naming = (naming_prefix == "Type")
+        # If the naming prefix is editable but empty, consider it as no prefix
+        use_empty_prefix = not use_default_naming and not naming_prefix.strip()
+        
+        # Get common RMF properties
+        common_properties = {}
+        if self.stig_combo.currentIndex() > 0:
+            common_properties["stig_compliance"] = self.stig_combo.currentText()
+        if self.vuln_combo.currentIndex() > 0:
+            common_properties["vulnerability_scan"] = self.vuln_combo.currentText()
+        if self.ato_combo.currentIndex() > 0:
+            common_properties["ato_status"] = self.ato_combo.currentText()
         
         device_index = 1
         
@@ -219,9 +279,13 @@ class BulkDeviceAddDialog(QDialog):
             count = spin_box.value()
             if count == 0:
                 continue
+            
+            # Get the selected model for this device type
+            model_combo = self.device_models[device_type]
+            model = model_combo.currentData() if model_combo.currentIndex() > 0 else ""
                 
             for i in range(count):
-                # Calculate position
+                # Calculate position based on selected layout
                 if layout_type == "Grid":
                     row = (device_index - 1) // 5
                     col = (device_index - 1) % 5
@@ -248,14 +312,32 @@ class BulkDeviceAddDialog(QDialog):
                         self.position.y() + radius * math.sin(angle)
                     )
                 
-                # Generate name
-                if naming_prefix == "Type":
-                    name = f"{device_type.title()}{device_index}"
+                # Generate name based on selected naming scheme
+                if use_default_naming:
+                    # If model is selected, use it as the base for the name
+                    if model:
+                        name = f"{model} {device_index}"
+                    else:
+                        # Fallback to device type if no model
+                        name = f"{device_type.title()}{device_index}"
+                elif use_empty_prefix:
+                    # If prefix is empty, prefer model name if available
+                    if model:
+                        name = f"{model} {device_index}"
+                    else:
+                        # Fallback to device type if no model and no prefix
+                        name = f"{device_type.title()}{device_index}"
                 else:
+                    # Use custom prefix as specified
                     name = f"{naming_prefix}{device_index}"
                 
+                # Create properties
+                properties = common_properties.copy()
+                if model:
+                    properties["model"] = model
+                
                 # Add device data
-                device_data.append((name, device_type, pos, None))
+                device_data.append((name, device_type, pos, properties))
                 device_index += 1
         
         return device_data

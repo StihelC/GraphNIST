@@ -48,6 +48,71 @@ class DeviceAlignmentController:
         self.undo_redo_manager = undo_redo_manager
         self.logger = logging.getLogger(__name__)
     
+    # Public alignment methods that should be accessible from the UI
+    def align_left(self):
+        """Public method to align devices to the left."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 2:
+                self.align_devices("left", selected_devices)
+    
+    def align_right(self):
+        """Public method to align devices to the right."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 2:
+                self.align_devices("right", selected_devices)
+    
+    def align_top(self):
+        """Public method to align devices to the top."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 2:
+                self.align_devices("top", selected_devices)
+    
+    def align_bottom(self):
+        """Public method to align devices to the bottom."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 2:
+                self.align_devices("bottom", selected_devices)
+    
+    def align_center_horizontal(self):
+        """Public method to align devices horizontally centered."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 2:
+                self.align_devices("center_h", selected_devices)
+    
+    def align_center_vertical(self):
+        """Public method to align devices vertically centered."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 2:
+                self.align_devices("center_v", selected_devices)
+    
+    def distribute_horizontally(self):
+        """Public method to distribute devices horizontally."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 3:
+                self.align_devices("distribute_h", selected_devices)
+    
+    def distribute_vertically(self):
+        """Public method to distribute devices vertically."""
+        if hasattr(self, 'canvas'):
+            selected_devices = [item for item in self.canvas.scene().selectedItems() 
+                              if item in self.canvas.devices]
+            if len(selected_devices) >= 3:
+                self.align_devices("distribute_v", selected_devices)
+    
     def align_devices(self, alignment_type, devices):
         """Align the selected devices according to the specified type.
         
@@ -129,7 +194,7 @@ class DeviceAlignmentController:
         
         # Notify that devices were aligned
         if self.event_bus:
-            self.event_bus.emit("devices_aligned", alignment_type, devices)
+            self.event_bus.emit("devices.aligned", alignment_type, devices)
     
     # Basic alignment operations
     

@@ -34,6 +34,7 @@ from controllers.device_alignment_controller import DeviceAlignmentController
 from dialogs.font_settings_dialog import FontSettingsDialog
 from dialogs.connection_type_dialog import ConnectionTypeDialog
 from dialogs.multi_connection_dialog import MultiConnectionDialog
+from utils import alignment_helper
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -314,21 +315,390 @@ class MainWindow(QMainWindow):
         bulk_edit_action.triggered.connect(self._on_edit_selected_devices)
         device_menu.addAction(bulk_edit_action)
         
+        device_menu.addSeparator()
+        
         # Device import/export submenu
         export_menu = QMenu("&Export", self)
-        export_menu.addAction("Export Selected Devices as CSV...")
-        export_menu.addAction("Export All Devices as CSV...")
+        
+        # CSV export actions
+        export_selected_csv_action = QAction("Export Selected Devices as CSV...", self)
+        export_selected_csv_action.triggered.connect(self._export_selected_to_csv)
+        export_menu.addAction(export_selected_csv_action)
+        
+        export_all_csv_action = QAction("Export All Devices as CSV...", self)
+        export_all_csv_action.triggered.connect(self._export_all_to_csv)
+        export_menu.addAction(export_all_csv_action)
+        
+        export_menu.addSeparator()
+        
+        # Excel export actions
+        export_selected_excel_action = QAction("Export Selected Devices as Excel...", self)
+        export_selected_excel_action.triggered.connect(self._export_selected_to_excel)
+        export_menu.addAction(export_selected_excel_action)
+        
+        export_all_excel_action = QAction("Export All Devices as Excel...", self)
+        export_all_excel_action.triggered.connect(self._export_all_to_excel)
+        export_menu.addAction(export_all_excel_action)
+        
         export_menu.addSeparator()
         
         # Add PDF export actions
-        export_pdf_action = QAction("Export Selected to PDF...", self)
+        export_pdf_action = QAction("Export Canvas to PDF...", self)
         export_pdf_action.triggered.connect(self.export_to_pdf)
         export_menu.addAction(export_pdf_action)
         
         device_menu.addMenu(export_menu)
         
-        import_action = QAction("&Import Devices from CSV...", self)
-        device_menu.addAction(import_action)
+        # Import submenu
+        import_menu = QMenu("&Import", self)
+        
+        # CSV import action
+        import_csv_action = QAction("Import Devices from CSV...", self)
+        import_csv_action.triggered.connect(self._import_from_csv)
+        import_menu.addAction(import_csv_action)
+        
+        # Excel import action
+        import_excel_action = QAction("Import Devices from Excel...", self)
+        import_excel_action.triggered.connect(self._import_from_excel)
+        import_menu.addAction(import_excel_action)
+        
+        # Add import submenu
+        device_menu.addMenu(import_menu)
+
+    def _export_selected_to_csv(self):
+        """Export selected devices to a CSV file."""
+        # Get selected devices
+        selected_devices = [item for item in self.canvas.scene().selectedItems() if item in self.canvas.devices]
+        
+        if not selected_devices:
+            QMessageBox.warning(self, "Export Failed", "No devices selected to export.")
+            return
+        
+        # Show file dialog
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Selected Devices",
+            "",
+            "CSV Files (*.csv);;All Files (*)",
+        )
+        
+        if not filepath:
+            return
+        
+        # Ensure file has .csv extension
+        if not filepath.lower().endswith('.csv'):
+            filepath += '.csv'
+        
+        # Import device exporter
+        from utils.device_exporter import DeviceExporter
+        exporter = DeviceExporter()
+        
+        # Export devices
+        result_path = exporter.export_to_csv(selected_devices, filepath)
+        
+        if result_path:
+            QMessageBox.information(
+                self, 
+                "Export Successful", 
+                f"Successfully exported {len(selected_devices)} devices to {result_path}"
+            )
+            self.statusBar().showMessage(f"Exported {len(selected_devices)} devices to CSV")
+        else:
+            QMessageBox.critical(
+                self, 
+                "Export Failed", 
+                "Failed to export devices. Check the log for details."
+            )
+    
+    def _export_all_to_csv(self):
+        """Export all devices to a CSV file."""
+        # Get all devices
+        devices = self.canvas.devices
+        
+        if not devices:
+            QMessageBox.warning(self, "Export Failed", "No devices available to export.")
+            return
+        
+        # Show file dialog
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export All Devices",
+            "",
+            "CSV Files (*.csv);;All Files (*)",
+        )
+        
+        if not filepath:
+            return
+        
+        # Ensure file has .csv extension
+        if not filepath.lower().endswith('.csv'):
+            filepath += '.csv'
+        
+        # Import device exporter
+        from utils.device_exporter import DeviceExporter
+        exporter = DeviceExporter()
+        
+        # Export devices
+        result_path = exporter.export_to_csv(devices, filepath)
+        
+        if result_path:
+            QMessageBox.information(
+                self, 
+                "Export Successful", 
+                f"Successfully exported {len(devices)} devices to {result_path}"
+            )
+            self.statusBar().showMessage(f"Exported {len(devices)} devices to CSV")
+        else:
+            QMessageBox.critical(
+                self, 
+                "Export Failed", 
+                "Failed to export devices. Check the log for details."
+            )
+    
+    def _export_selected_to_excel(self):
+        """Export selected devices to an Excel file."""
+        # Get selected devices
+        selected_devices = [item for item in self.canvas.scene().selectedItems() if item in self.canvas.devices]
+        
+        if not selected_devices:
+            QMessageBox.warning(self, "Export Failed", "No devices selected to export.")
+            return
+        
+        # Show file dialog
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Selected Devices",
+            "",
+            "Excel Files (*.xlsx *.xls);;All Files (*)",
+        )
+        
+        if not filepath:
+            return
+        
+        # Ensure file has .xlsx extension
+        if not filepath.lower().endswith('.xlsx'):
+            filepath += '.xlsx'
+        
+        # Import device exporter
+        from utils.device_exporter import DeviceExporter
+        exporter = DeviceExporter()
+        
+        # Export devices
+        try:
+            result_path = exporter.export_to_excel(selected_devices, filepath)
+            
+            if result_path:
+                QMessageBox.information(
+                    self, 
+                    "Export Successful", 
+                    f"Successfully exported {len(selected_devices)} devices to {result_path}"
+                )
+                self.statusBar().showMessage(f"Exported {len(selected_devices)} devices to Excel")
+            else:
+                QMessageBox.critical(
+                    self, 
+                    "Export Failed", 
+                    "Failed to export devices. Check the log for details."
+                )
+        except ImportError:
+            QMessageBox.critical(
+                self,
+                "Export Failed",
+                "Excel export requires the openpyxl library. Please install it with: pip install openpyxl"
+            )
+    
+    def _export_all_to_excel(self):
+        """Export all devices to an Excel file."""
+        # Get all devices
+        devices = self.canvas.devices
+        
+        if not devices:
+            QMessageBox.warning(self, "Export Failed", "No devices available to export.")
+            return
+        
+        # Show file dialog
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export All Devices",
+            "",
+            "Excel Files (*.xlsx *.xls);;All Files (*)",
+        )
+        
+        if not filepath:
+            return
+        
+        # Ensure file has .xlsx extension
+        if not filepath.lower().endswith('.xlsx'):
+            filepath += '.xlsx'
+        
+        # Import device exporter
+        from utils.device_exporter import DeviceExporter
+        exporter = DeviceExporter()
+        
+        # Export devices
+        try:
+            result_path = exporter.export_to_excel(devices, filepath)
+            
+            if result_path:
+                QMessageBox.information(
+                    self, 
+                    "Export Successful", 
+                    f"Successfully exported {len(devices)} devices to {result_path}"
+                )
+                self.statusBar().showMessage(f"Exported {len(devices)} devices to Excel")
+            else:
+                QMessageBox.critical(
+                    self, 
+                    "Export Failed", 
+                    "Failed to export devices. Check the log for details."
+                )
+        except ImportError:
+            QMessageBox.critical(
+                self,
+                "Export Failed",
+                "Excel export requires the openpyxl library. Please install it with: pip install openpyxl"
+            )
+    
+    def _import_from_csv(self):
+        """Import devices from a CSV file."""
+        # Show file dialog
+        filepath, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import Devices from CSV",
+            "",
+            "CSV Files (*.csv);;All Files (*)",
+        )
+        
+        if not filepath:
+            return
+        
+        # Confirm import
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Import",
+            "Importing devices will add them to the current canvas. Continue?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if confirm != QMessageBox.Yes:
+            return
+        
+        # Create device factory function
+        def device_factory(name, device_type, properties):
+            return self.device_controller.create_device(name, device_type, properties)
+        
+        # Import device importer
+        from utils.device_importer import DeviceImporter
+        importer = DeviceImporter(device_factory)
+        
+        # Import devices
+        devices = importer.import_from_csv(filepath)
+        
+        if devices:
+            QMessageBox.information(
+                self, 
+                "Import Successful", 
+                f"Successfully imported {len(devices)} devices from {filepath}"
+            )
+            self.statusBar().showMessage(f"Imported {len(devices)} devices from CSV")
+            
+            # Ensure all imported devices are visible
+            if devices:
+                # Calculate bounds
+                min_x = min(device.scenePos().x() for device in devices)
+                min_y = min(device.scenePos().y() for device in devices)
+                max_x = max(device.scenePos().x() + device.boundingRect().width() for device in devices)
+                max_y = max(device.scenePos().y() + device.boundingRect().height() for device in devices)
+                
+                # Create a rectangle with some padding
+                padding = 50
+                rect = QRectF(min_x - padding, min_y - padding, 
+                             (max_x - min_x) + 2 * padding, 
+                             (max_y - min_y) + 2 * padding)
+                
+                # Center on the imported devices
+                self.canvas.fitInView(rect, Qt.KeepAspectRatio)
+        else:
+            QMessageBox.critical(
+                self, 
+                "Import Failed", 
+                "Failed to import devices. Check the log for details."
+            )
+    
+    def _import_from_excel(self):
+        """Import devices from an Excel file."""
+        # Show file dialog
+        filepath, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import Devices from Excel",
+            "",
+            "Excel Files (*.xlsx *.xls);;All Files (*)",
+        )
+        
+        if not filepath:
+            return
+        
+        # Confirm import
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Import",
+            "Importing devices will add them to the current canvas. Continue?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if confirm != QMessageBox.Yes:
+            return
+        
+        # Create device factory function
+        def device_factory(name, device_type, properties):
+            return self.device_controller.create_device(name, device_type, properties)
+        
+        # Import device importer
+        from utils.device_importer import DeviceImporter
+        importer = DeviceImporter(device_factory)
+        
+        # Import devices
+        try:
+            devices = importer.import_from_excel(filepath)
+            
+            if devices:
+                QMessageBox.information(
+                    self, 
+                    "Import Successful", 
+                    f"Successfully imported {len(devices)} devices from {filepath}"
+                )
+                self.statusBar().showMessage(f"Imported {len(devices)} devices from Excel")
+                
+                # Ensure all imported devices are visible
+                if devices:
+                    # Calculate bounds
+                    min_x = min(device.scenePos().x() for device in devices)
+                    min_y = min(device.scenePos().y() for device in devices)
+                    max_x = max(device.scenePos().x() + device.boundingRect().width() for device in devices)
+                    max_y = max(device.scenePos().y() + device.boundingRect().height() for device in devices)
+                    
+                    # Create a rectangle with some padding
+                    padding = 50
+                    rect = QRectF(min_x - padding, min_y - padding, 
+                                 (max_x - min_x) + 2 * padding, 
+                                 (max_y - min_y) + 2 * padding)
+                    
+                    # Center on the imported devices
+                    self.canvas.fitInView(rect, Qt.KeepAspectRatio)
+            else:
+                QMessageBox.critical(
+                    self, 
+                    "Import Failed", 
+                    "Failed to import devices. Check the log for details."
+                )
+        except ImportError:
+            QMessageBox.critical(
+                self,
+                "Import Failed",
+                "Excel import requires the openpyxl library. Please install it with: pip install openpyxl"
+            )
 
     def _register_event_handlers(self):
         """Register event handlers with the event bus."""
@@ -596,6 +966,15 @@ class MainWindow(QMainWindow):
         """Show the alignment menu when the align button is clicked."""
         alignment_menu = QMenu(self)
         
+        # Import our new alignment helper
+        from utils import alignment_helper
+        
+        # Test movement option
+        test_move_action = alignment_menu.addAction("TEST: Move Selected Devices")
+        test_move_action.triggered.connect(lambda: alignment_helper.test_move(self.canvas))
+        
+        alignment_menu.addSeparator()
+        
         # Auto-layout optimization
         optimize_layout_action = alignment_menu.addAction("Optimize Network Layout...")
         optimize_layout_action.setToolTip("Automatically arrange devices to minimize connection crossings")
@@ -606,36 +985,49 @@ class MainWindow(QMainWindow):
         # Basic alignment submenu
         basic_align = alignment_menu.addMenu("Basic Alignment")
         
-        basic_actions = {
-            "Align Left": "left",
-            "Align Right": "right",
-            "Align Top": "top",
-            "Align Bottom": "bottom",
-            "Align Center Horizontally": "center_h",
-            "Align Center Vertically": "center_v",
-            "Distribute Horizontally": "distribute_h",
-            "Distribute Vertically": "distribute_v"
-        }
+        # Create individual actions to directly call alignment helper functions
+        align_left = basic_align.addAction("Align Left")
+        align_left.triggered.connect(lambda: alignment_helper.align_left(self.canvas))
         
-        for action_text, alignment_type in basic_actions.items():
-            action = basic_align.addAction(action_text)
-            action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                    self.canvas.align_selected_devices(a_type))
+        align_right = basic_align.addAction("Align Right")
+        align_right.triggered.connect(lambda: alignment_helper.align_right(self.canvas))
+        
+        align_top = basic_align.addAction("Align Top")
+        align_top.triggered.connect(lambda: alignment_helper.align_top(self.canvas))
+        
+        align_bottom = basic_align.addAction("Align Bottom")
+        align_bottom.triggered.connect(lambda: alignment_helper.align_bottom(self.canvas))
+        
+        basic_align.addSeparator()
+        
+        align_center_h = basic_align.addAction("Center Horizontally")
+        align_center_h.triggered.connect(lambda: alignment_helper.align_center_horizontal(self.canvas))
+        
+        align_center_v = basic_align.addAction("Center Vertically")
+        align_center_v.triggered.connect(lambda: alignment_helper.align_center_vertical(self.canvas))
+        
+        basic_align.addSeparator()
+        
+        distribute_h = basic_align.addAction("Distribute Horizontally")
+        distribute_h.triggered.connect(lambda: alignment_helper.distribute_horizontally(self.canvas))
+        
+        distribute_v = basic_align.addAction("Distribute Vertically")
+        distribute_v.triggered.connect(lambda: alignment_helper.distribute_vertically(self.canvas))
         
         # Network layouts submenu
         network_layouts = alignment_menu.addMenu("Network Layouts")
         
-        layout_actions = {
-            "Grid Arrangement": "grid",
-            "Circle Arrangement": "circle",
-            "Star Arrangement": "star",
-            "Bus Arrangement": "bus"
-        }
+        grid_action = network_layouts.addAction("Grid Arrangement")
+        grid_action.triggered.connect(lambda: alignment_helper.arrange_grid(self.canvas))
         
-        for action_text, alignment_type in layout_actions.items():
-            action = network_layouts.addAction(action_text)
-            action.triggered.connect(lambda checked=False, a_type=alignment_type: 
-                                    self.canvas.align_selected_devices(a_type))
+        circle_action = network_layouts.addAction("Circle Arrangement")
+        circle_action.triggered.connect(lambda: alignment_helper.arrange_circle(self.canvas))
+        
+        star_action = network_layouts.addAction("Star Arrangement")
+        star_action.triggered.connect(lambda: alignment_helper.arrange_star(self.canvas))
+        
+        bus_action = network_layouts.addAction("Bus Arrangement")
+        bus_action.triggered.connect(lambda: alignment_helper.arrange_bus(self.canvas))
         
         # Show the menu at the cursor position or below the button
         if position:
@@ -675,10 +1067,12 @@ class MainWindow(QMainWindow):
         """Handle connection removed event."""
         self.statusBar().showMessage("Connection removed", 3000)
 
-    def on_devices_aligned(self, devices, original_positions, alignment_type):
+    def on_devices_aligned(self, alignment_type, devices):
         """Handle device alignment for undo/redo support."""
         if hasattr(self, 'command_manager') and self.command_manager and hasattr(self.command_manager, 'undo_redo_manager'):
             # Create command for undo/redo
+            original_positions = {device: device.scenePos() for device in devices}
+            
             command = AlignDevicesCommand(
                 self.alignment_controller,
                 devices,
