@@ -13,8 +13,18 @@ class FileHandler:
     def save_canvas(canvas, filepath, options=None, recent_files_manager=None):
         """Save the canvas to the given filepath with specified options."""
         try:
+            # Debug print for boundaries
+            print(f"Canvas has {len(canvas.boundaries)} boundaries before serialization")
+            for i, boundary in enumerate(canvas.boundaries):
+                print(f"  Boundary {i+1}: {boundary.name}, rect={boundary.rect()}")
+            
             # Get serialized data
             data = CanvasSerializer.serialize_canvas(canvas)
+            
+            # Debug print for serialized boundaries
+            print(f"Serialized data has {len(data.get('boundaries', []))} boundaries")
+            for i, boundary_data in enumerate(data.get('boundaries', [])):
+                print(f"  Serialized boundary {i+1}: {boundary_data.get('name')}, rect={boundary_data.get('rect')}")
             
             # Add metadata if requested
             if options and options.get('include_metadata', True):
@@ -72,8 +82,21 @@ class FileHandler:
             boundary_count = len(data.get('boundaries', []))
             print(f"Loaded {device_count} devices, {connection_count} connections, and {boundary_count} boundaries")
             
+            # Debug boundary information from the loaded file
+            print("Boundaries in loaded file:")
+            for i, boundary_data in enumerate(data.get('boundaries', [])):
+                print(f"  Boundary {i+1}: {boundary_data.get('name')}, rect={boundary_data.get('rect')}")
+            
+            # Debug canvas boundaries before deserialization
+            print(f"Canvas has {len(canvas.boundaries)} boundaries before loading")
+            
             # Deserialize into canvas
             CanvasSerializer.deserialize_canvas(data, canvas)
+            
+            # Debug canvas boundaries after deserialization
+            print(f"Canvas has {len(canvas.boundaries)} boundaries after loading")
+            for i, boundary in enumerate(canvas.boundaries):
+                print(f"  Boundary {i+1}: {boundary.name}, rect={boundary.rect()}")
             
             # Add to recent files if manager is provided
             if recent_files_manager:

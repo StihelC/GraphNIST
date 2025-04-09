@@ -19,6 +19,7 @@ class PropertiesPanel(QWidget):
     boundary_property_changed = pyqtSignal(str, object)
     change_icon_requested = pyqtSignal(object)
     property_display_toggled = pyqtSignal(str, bool)
+    property_delete_requested = pyqtSignal(str)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -96,17 +97,39 @@ class PropertiesPanel(QWidget):
         layout = QFormLayout(group)
         layout.setVerticalSpacing(8)
         
-        # Device type 
+        # Name
+        self.name_edit = QLineEdit()
+        self.name_edit.editingFinished.connect(
+            lambda: self.name_changed.emit(self.name_edit.text())
+        )
+        layout.addRow("Name:", self.name_edit)
+        
+        # Device type (read-only)
         self.device_type_label = QLabel()
         layout.addRow("Type:", self.device_type_label)
         
-        # Device model
+        # Device model (read-only, shown separately)
         self.device_model_label = QLabel()
         layout.addRow("Model:", self.device_model_label)
         
-        # RMF ATO Accreditation section
-        self.rmf_group = QGroupBox("RMF ATO Accreditation")
-        rmf_layout = QFormLayout()
+        # Z-index (layer)
+        self.z_index_spin = QSpinBox()
+        self.z_index_spin.setMinimum(-10)
+        self.z_index_spin.setMaximum(100)
+        self.z_index_spin.setValue(10)
+        self.z_index_spin.valueChanged.connect(self.z_value_changed.emit)
+        layout.addRow("Layer:", self.z_index_spin)
+        
+        # Icon selection
+        icon_layout = QHBoxLayout()
+        self.icon_button = QPushButton("Change Icon...")
+        self.icon_button.clicked.connect(self._on_change_icon_clicked)
+        icon_layout.addWidget(self.icon_button)
+        layout.addRow("Icon:", icon_layout)
+        
+        # RMF ATO properties section
+        rmf_group = QGroupBox("RMF Status")
+        rmf_layout = QFormLayout(rmf_group)
         
         # STIG Compliance
         self.stig_label = QLabel()
@@ -122,35 +145,40 @@ class PropertiesPanel(QWidget):
         
         # Accreditation Date
         self.accred_date_label = QLabel()
-        rmf_layout.addRow("Accreditation Date:", self.accred_date_label)
+        rmf_layout.addRow("Accred Date:", self.accred_date_label)
         
-        self.rmf_group.setLayout(rmf_layout)
-        layout.addRow(self.rmf_group)
+        layout.addRow(rmf_group)
         
-        # Add button to change device icon
-        self.change_icon_button = QPushButton("Change Icon")
-        self.change_icon_button.setStyleSheet("QPushButton { padding: 4px 8px; }")
-        self.change_icon_button.clicked.connect(self._on_change_icon_clicked)
-        layout.addRow("Icon:", self.change_icon_button)
-        
-        # Display options group
+        # Display properties group
         display_group = QGroupBox("Display Options")
         display_layout = QVBoxLayout(display_group)
-        display_layout.setSpacing(6)
+        
+        # Checkboxes will be dynamically added
         self.display_checkboxes = {}
         
-        # We'll populate these checkboxes dynamically when a device is selected
-        display_layout.addWidget(QLabel("Show properties under icon:"))
+        # Add title display toggle to show/hide device name
+        title_checkbox = QCheckBox("Show Device Name")
+        title_checkbox.setChecked(True)
+        title_checkbox.setEnabled(False)  # Always enabled for now
+        display_layout.addWidget(title_checkbox)
+        self.display_checkboxes['title'] = title_checkbox
         
         layout.addRow(display_group)
         
         # Custom properties table
-        self.device_props_table = QTableWidget(0, 2)
-        self.device_props_table.setHorizontalHeaderLabels(["Property", "Value"])
+        self.device_props_table = QTableWidget(0, 4)  # Changed from 3 to 4 columns
+        self.device_props_table.setHorizontalHeaderLabels(["Property", "Value", "Display", "Delete"])
         self.device_props_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.device_props_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.device_props_table.setMinimumHeight(100)
+        self.device_props_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.device_props_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.device_props_table.setMinimumHeight(250)  # Increased from 100 to 250
         layout.addRow(self.device_props_table)
+        
+        # Add button for adding new properties
+        add_prop_button = QPushButton("Add Property")
+        add_prop_button.clicked.connect(self._add_new_property)
+        layout.addRow(add_prop_button)
         
         # Connect to slot that handles property changes
         self.device_props_table.cellChanged.connect(self._on_device_property_changed)
@@ -332,6 +360,34 @@ class PropertiesPanel(QWidget):
                 
                 # Create value item (editable)
                 self.device_props_table.setItem(row, 1, QTableWidgetItem(str(value)))
+                
+                # Create display checkbox
+                checkbox = QCheckBox()
+                is_displayed = False
+                if hasattr(device, 'display_properties'):
+                    is_displayed = device.display_properties.get(prop, False)
+                checkbox.setChecked(is_displayed)
+                # Connect checkbox state change to handler
+                checkbox.stateChanged.connect(lambda state, r=row: self._on_display_checkbox_changed(r, state))
+                self.device_props_table.setCellWidget(row, 2, checkbox)
+                
+                # Create delete button (X icon)
+                deleteWidget = QWidget()
+                deleteLayout = QHBoxLayout(deleteWidget)
+                deleteLayout.setContentsMargins(4, 0, 4, 0)  # Small margins for better appearance
+                deleteLayout.setAlignment(Qt.AlignCenter)
+                
+                deleteButton = QPushButton("✕")
+                deleteButton.setMaximumWidth(24)  # Make it small and square
+                deleteButton.setMaximumHeight(24)
+                deleteButton.setToolTip("Delete property")
+                deleteButton.setStyleSheet("QPushButton { font-weight: bold; }")
+                deleteButton.setProperty("row", row)
+                deleteButton.clicked.connect(self._on_delete_property_clicked)
+                
+                deleteLayout.addWidget(deleteButton)
+                self.device_props_table.setCellWidget(row, 3, deleteWidget)
+                
                 row += 1
         
         self.device_props_table.blockSignals(False)
@@ -469,10 +525,31 @@ class PropertiesPanel(QWidget):
     
     def _on_device_property_changed(self, row, column):
         """Handle changes in device property table."""
-        if column == 1:  # Only care about value column
-            key = self.device_props_table.item(row, 0).text()
-            value = self.device_props_table.item(row, 1).text()
-            self.device_property_changed.emit(key, value)
+        if column != 1:  # Only process changes to the value column
+            return
+            
+        # Get property name and value
+        prop_name = self.device_props_table.item(row, 0).text()
+        value = self.device_props_table.item(row, 1).text()
+        
+        # Check if this property exists in the device
+        property_exists = False
+        if self.current_item and hasattr(self.current_item, 'properties'):
+            property_exists = prop_name in self.current_item.properties
+        
+        # If it's a new property, add it to the device
+        if not property_exists and self.current_item and hasattr(self.current_item, 'properties'):
+            # Send property change event to add the new property
+            self.device_property_changed.emit(prop_name, value)
+            
+            # Get display checkbox state
+            checkbox = self.device_props_table.cellWidget(row, 2)
+            if checkbox:
+                # Initialize the display property if user has checked it
+                self.property_display_toggled.emit(prop_name, checkbox.isChecked())
+        else:
+            # Emit normal property change for existing property
+            self.device_property_changed.emit(prop_name, value)
     
     def _on_connection_property_changed(self, row, column):
         """Handle changes in connection property table."""
@@ -790,3 +867,95 @@ class PropertiesPanel(QWidget):
             }}
         """
         self.color_button.setStyleSheet(style)
+
+    def _add_new_property(self):
+        """Add a new property row to the device properties table."""
+        if not self.current_item or not hasattr(self.current_item, 'properties'):
+            return
+            
+        # Add a new row
+        row = self.device_props_table.rowCount()
+        self.device_props_table.insertRow(row)
+        
+        # Add a property name item (editable for new property)
+        prop_name_item = QTableWidgetItem("new_property")
+        self.device_props_table.setItem(row, 0, prop_name_item)
+        
+        # Add a value item
+        value_item = QTableWidgetItem("")
+        self.device_props_table.setItem(row, 1, value_item)
+        
+        # Add a display checkbox in the third column
+        checkbox = QCheckBox()
+        checkbox.setChecked(False)
+        # Connect checkbox state change to handler
+        checkbox.stateChanged.connect(lambda state, r=row: self._on_display_checkbox_changed(r, state))
+        
+        # Set the checkbox in the table
+        self.device_props_table.setCellWidget(row, 2, checkbox)
+        
+        # Create delete button (X icon)
+        deleteWidget = QWidget()
+        deleteLayout = QHBoxLayout(deleteWidget)
+        deleteLayout.setContentsMargins(4, 0, 4, 0)  # Small margins for better appearance
+        deleteLayout.setAlignment(Qt.AlignCenter)
+        
+        deleteButton = QPushButton("✕")
+        deleteButton.setMaximumWidth(24)  # Make it small and square
+        deleteButton.setMaximumHeight(24)
+        deleteButton.setToolTip("Delete property")
+        deleteButton.setStyleSheet("QPushButton { font-weight: bold; }")
+        deleteButton.setProperty("row", row)
+        deleteButton.clicked.connect(self._on_delete_property_clicked)
+        
+        deleteLayout.addWidget(deleteButton)
+        self.device_props_table.setCellWidget(row, 3, deleteWidget)
+
+    def _on_display_checkbox_changed(self, row, state):
+        """Handle changes to the display checkbox in the properties table."""
+        if not self.current_item or not hasattr(self.current_item, 'properties'):
+            return
+            
+        # Get the property name
+        prop_name = self.device_props_table.item(row, 0).text()
+        if not prop_name:
+            return
+            
+        # Convert state to boolean
+        display_enabled = state == Qt.Checked
+        
+        # Emit the signal to toggle this property's display
+        self.property_display_toggled.emit(prop_name, display_enabled)
+
+    def _on_delete_property_clicked(self):
+        """Handle clicks on property delete buttons."""
+        sender = self.sender()
+        if not sender or not self.current_item or not hasattr(self.current_item, 'properties'):
+            return
+            
+        # Get the row index from the button's property
+        row = sender.property("row")
+        if row is None:
+            return
+            
+        # Get the property name from the table
+        prop_name = self.device_props_table.item(row, 0).text()
+        if not prop_name:
+            return
+            
+        # Emit signal to delete the property
+        self.property_delete_requested.emit(prop_name)
+        
+        # Remove the row from the table
+        self.device_props_table.removeRow(row)
+        
+        # Also remove from display options if it exists
+        display_group = self._get_display_options_group()
+        if display_group:
+            layout = display_group.layout()
+            for i in range(layout.count()):
+                widget = layout.itemAt(i).widget()
+                if isinstance(widget, QCheckBox) and widget.property("property_name") == prop_name:
+                    layout.removeWidget(widget)
+                    widget.deleteLater()
+                    break

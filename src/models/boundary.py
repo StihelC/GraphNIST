@@ -26,7 +26,7 @@ class EditableTextItem(QGraphicsTextItem):
         """Update text color based on current theme."""
         # Check if our parent is a Boundary and it has theme info
         parent_boundary = self.parentItem()
-        if parent_boundary and hasattr(parent_boundary, 'theme_manager'):
+        if parent_boundary and hasattr(parent_boundary, 'theme_manager') and parent_boundary.theme_manager:
             # Set appropriate color based on theme
             if parent_boundary.theme_manager.is_dark_theme():
                 self.setDefaultTextColor(QColor(240, 240, 240, 220))  # Light color for dark theme
@@ -109,6 +109,13 @@ class Boundary(QGraphicsRectItem):
         
         self.logger = logging.getLogger(__name__)
         
+        # Check input parameters and provide defaults
+        if name is None:
+            name = "Boundary"
+        
+        if color is None:
+            color = QColor(40, 120, 200, 80)  # Default semi-transparent blue
+        
         # Store theme manager reference
         self.theme_manager = theme_manager
         
@@ -143,6 +150,10 @@ class Boundary(QGraphicsRectItem):
     
     def _create_label(self):
         """Create and position the editable label text."""
+        # Try to find a theme manager if not already set
+        if not self.theme_manager:
+            self.theme_manager = self.get_theme_manager()
+            
         # Create editable text item as a child of this boundary
         self.label = EditableTextItem(self.name, self)
         
@@ -256,13 +267,34 @@ class Boundary(QGraphicsRectItem):
             self.label.setPlainText(self.name)
 
     def update_theme(self, theme_name=None):
-        """Update visual appearance based on theme."""
-        # Update label text color
+        """Update boundary styling based on the theme."""
         if hasattr(self, 'label') and self.label:
             self.label.refresh_theme()
+            
+    def get_theme_manager(self):
+        """Try to find a theme manager if one isn't already set."""
+        if self.theme_manager:
+            return self.theme_manager
+            
+        # Try to get from scene
+        scene = self.scene()
+        if scene:
+            # Try to get from scene views
+            views = scene.views()
+            if views:
+                view = views[0]  # Get first view
+                # Try to get from view
+                if hasattr(view, 'theme_manager'):
+                    self.theme_manager = view.theme_manager
+                    return self.theme_manager
+                # Try to get from view's parent
+                if hasattr(view, 'parent') and callable(view.parent):
+                    parent = view.parent()
+                    if parent and hasattr(parent, 'theme_manager'):
+                        self.theme_manager = parent.theme_manager
+                        return self.theme_manager
         
-        # Force redraw
-        self.update()
+        return None
     
     def _setup_resize_handles(self):
         """Set up resize handle properties and state."""

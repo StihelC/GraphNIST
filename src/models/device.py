@@ -1087,11 +1087,26 @@ class Device(QGraphicsPixmapItem):
         
         # Create or update labels for each visible property
         for prop_name in visible_props:
+            # Skip if property no longer exists in properties
+            if prop_name not in self.properties:
+                # Remove the label if it exists
+                if prop_name in self.property_labels:
+                    if self.property_labels[prop_name] in self.childItems():
+                        self.scene().removeItem(self.property_labels[prop_name])
+                    del self.property_labels[prop_name]
+                # Remove from display_properties as well
+                if prop_name in self.display_properties:
+                    del self.display_properties[prop_name]
+                continue
+                
             # Get the property value
             prop_value = self.properties.get(prop_name, "")
             
+            # Convert to string to handle non-string values (numbers, booleans, etc.)
+            str_prop_value = str(prop_value) if prop_value is not None else ""
+            
             # Skip empty values
-            if not prop_value or prop_value.strip() == "" or prop_value == "N/A":
+            if not prop_value or str_prop_value.strip() == "" or str_prop_value == "N/A":
                 # If the property exists but is blank or N/A, remove the label if it exists
                 if prop_name in self.property_labels:
                     if self.property_labels[prop_name] in self.childItems():
@@ -1110,16 +1125,16 @@ class Device(QGraphicsPixmapItem):
             elif prop_name in ['stig_compliance', 'vulnerability_scan', 'ato_status', 'accreditation_date']:
                 # Format RMF properties with shorter display names
                 if prop_name == 'stig_compliance':
-                    display_value = f"STIG: {prop_value}"
+                    display_value = f"STIG: {str(prop_value)}"
                 elif prop_name == 'vulnerability_scan':
-                    display_value = f"Vuln: {prop_value}"
+                    display_value = f"Vuln: {str(prop_value)}"
                 elif prop_name == 'ato_status':
-                    display_value = f"ATO: {prop_value}"
+                    display_value = f"ATO: {str(prop_value)}"
                 elif prop_name == 'accreditation_date':
-                    display_value = f"Accred: {prop_value}"
+                    display_value = f"Accred: {str(prop_value)}"
             else:
                 # For other properties, show "name: value"
-                display_value = f"{prop_name}: {prop_value}"
+                display_value = f"{prop_name}: {str(prop_value)}"
                 
             # Skip if value is empty
             if not display_value.strip():
@@ -1235,6 +1250,12 @@ class Device(QGraphicsPixmapItem):
                 
     def toggle_property_display(self, property_name, show):
         """Toggle the display of a property on the canvas."""
+        # If property has been deleted, don't do anything
+        if property_name not in self.properties:
+            if property_name in self.display_properties:
+                del self.display_properties[property_name]
+            return
+            
         # Record the display state
         self.display_properties[property_name] = show
         
@@ -1245,7 +1266,11 @@ class Device(QGraphicsPixmapItem):
         self._update_property_label_positions()
     
     def get_property_display_state(self, property_name):
-        """Get whether a property is displayed."""
+        """Get whether a property is being displayed."""
+        # If property doesn't exist, it's not displayed
+        if property_name not in self.properties:
+            return False
+            
         return self.display_properties.get(property_name, False)
     
     def update(self):

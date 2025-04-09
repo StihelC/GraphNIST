@@ -64,6 +64,8 @@ class Canvas(QGraphicsView):
         self.boundaries = []
         self.connections = []
         
+        print("Canvas initialized with empty boundaries list:", self.boundaries)
+        
         # Event bus reference (will be set externally)
         self.event_bus = None
         

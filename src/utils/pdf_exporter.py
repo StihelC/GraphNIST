@@ -111,15 +111,17 @@ class PDFExporter:
             
             # Add metadata if requested
             if options.get('include_metadata', True):
-                pdf_writer.setCreator("NISTO PDF Exporter")
-                pdf_writer.setTitle("NISTO Canvas Export")
+                pdf_writer.setCreator("GraphNIST PDF Exporter")
+                pdf_writer.setTitle("GraphNIST Canvas Export")
             
-            # Store visibility state of all items to restore later
+            # Store visibility and style states
             visibility_states = {}
             text_color_states = {}
+            connection_pen_states = {}
             
             # Make everything visible and ensure text is black for export
             for item in canvas.scene().items():
+                # Store visibility state
                 visibility_states[item] = item.isVisible()
                 item.setVisible(True)  # Make all items visible for export
                 
@@ -129,6 +131,7 @@ class PDFExporter:
                     text_color_states[item] = item.defaultTextColor()
                     # Set text to black for PDF export
                     item.setDefaultTextColor(QColor(0, 0, 0))
+                
                 # Handle QGraphicsTextItem separately (they might be children of devices)
                 elif hasattr(item, 'childItems') and callable(getattr(item, 'childItems')):
                     for child in item.childItems():
@@ -136,6 +139,29 @@ class PDFExporter:
                             text_color_states[child] = child.defaultTextColor()
                             child.setDefaultTextColor(QColor(0, 0, 0))
                 
+                # Handle connection labels specially
+                if hasattr(item, 'label') and item.label is not None:
+                    if hasattr(item.label, 'defaultTextColor') and callable(getattr(item.label, 'defaultTextColor')):
+                        text_color_states[item.label] = item.label.defaultTextColor()
+                        item.label.setDefaultTextColor(QColor(0, 0, 0))
+                
+                # Force connections to be black for PDF export
+                if hasattr(item, 'pen') and callable(getattr(item, 'pen')) and callable(getattr(item, 'setPen', None)):
+                    # Store original pen for connections
+                    connection_pen_states[item] = item.pen()
+                    # Create a black pen with the same width and style
+                    black_pen = QPen(connection_pen_states[item])
+                    black_pen.setColor(QColor(0, 0, 0))
+                    item.setPen(black_pen)
+                
+                # Handle boundaries specially
+                if hasattr(item, 'boundary_type') or (hasattr(item, 'boundaryType') and item.boundaryType):
+                    if hasattr(item, 'setPen') and callable(getattr(item, 'setPen')):
+                        connection_pen_states[item] = item.pen()
+                        border_pen = QPen(connection_pen_states[item])
+                        border_pen.setColor(QColor(0, 0, 0))
+                        item.setPen(border_pen)
+            
             # Calculate scene rect containing all items
             scene_rect = canvas.scene().itemsBoundingRect()
             
@@ -164,6 +190,8 @@ class PDFExporter:
                     item.setVisible(was_visible)
                 for item, color in text_color_states.items():
                     item.setDefaultTextColor(color)
+                for item, pen in connection_pen_states.items():
+                    item.setPen(pen)
                 return False, "Failed to initialize PDF document"
             
             try:
@@ -256,6 +284,10 @@ class PDFExporter:
                 # Restore original text colors
                 for item, color in text_color_states.items():
                     item.setDefaultTextColor(color)
+                
+                # Restore original connection pens
+                for item, pen in connection_pen_states.items():
+                    item.setPen(pen)
                 
                 # Restore rectangle visibility for device items
                 for item in canvas.scene().items():

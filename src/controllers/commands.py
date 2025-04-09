@@ -484,24 +484,97 @@ class BulkTogglePropertyDisplayCommand(Command):
 class DevicePropertyCommand(Command):
     """Command to change a device property."""
     
-    def __init__(self, device, property_name, old_value, new_value):
-        super().__init__(f"Change {device.name} {property_name}")
+    def __init__(self, device, property_name, old_value, new_value, is_new=False):
+        action = "Add" if is_new else "Change"
+        super().__init__(f"{action} {device.name} {property_name}")
         self.device = device
         self.property_name = property_name
         self.old_value = old_value
         self.new_value = new_value
+        self.is_new = is_new
     
     def execute(self):
         """Set the new property value."""
         if hasattr(self.device, 'properties'):
             self.device.properties[self.property_name] = self.new_value
             self.device.update()
+            
+            # Initialize display property if this is a new property
+            if self.is_new and hasattr(self.device, 'display_properties'):
+                self.device.display_properties[self.property_name] = False
     
     def undo(self):
-        """Restore the old property value."""
+        """Restore the old property value or remove the property if it was newly added."""
         if hasattr(self.device, 'properties'):
-            self.device.properties[self.property_name] = self.old_value
+            if self.is_new:
+                # If this was a new property, remove it completely
+                if self.property_name in self.device.properties:
+                    del self.device.properties[self.property_name]
+                
+                # Also remove from display properties if it exists
+                if hasattr(self.device, 'display_properties') and self.property_name in self.device.display_properties:
+                    del self.device.display_properties[self.property_name]
+            else:
+                # Otherwise restore the old value
+                self.device.properties[self.property_name] = self.old_value
+            
             self.device.update()
+
+class DeletePropertyCommand(Command):
+    """Command to delete a device property with undo/redo support."""
+    
+    def __init__(self, device, property_name, old_value, display_state):
+        """Initialize the command.
+        
+        Args:
+            device: The device whose property is being deleted
+            property_name: Name of the property to delete
+            old_value: Original value of the property (for undo)
+            display_state: Whether the property was being displayed
+        """
+        super().__init__(f"Delete {device.name} {property_name}")
+        self.device = device
+        self.property_name = property_name
+        self.old_value = old_value
+        self.display_state = display_state
+        self.logger = logging.getLogger(__name__)
+    
+    def execute(self):
+        """Delete the property."""
+        if hasattr(self.device, 'properties') and self.property_name in self.device.properties:
+            del self.device.properties[self.property_name]
+            
+            # Also remove from display properties if it exists
+            if hasattr(self.device, 'display_properties') and self.property_name in self.device.display_properties:
+                del self.device.display_properties[self.property_name]
+                
+            # Update the display
+            if hasattr(self.device, 'update_property_labels'):
+                self.device.update_property_labels()
+            
+            # Force a visual update
+            self.device.update()
+            
+            self.logger.debug(f"Deleted property {self.property_name} from device {self.device.name}")
+    
+    def undo(self):
+        """Restore the deleted property."""
+        if hasattr(self.device, 'properties'):
+            # Restore the property value
+            self.device.properties[self.property_name] = self.old_value
+            
+            # Restore display state if it was being displayed
+            if hasattr(self.device, 'display_properties') and self.display_state:
+                self.device.display_properties[self.property_name] = self.display_state
+                
+            # Update the display
+            if hasattr(self.device, 'update_property_labels'):
+                self.device.update_property_labels()
+            
+            # Force a visual update
+            self.device.update()
+            
+            self.logger.debug(f"Restored property {self.property_name} to device {self.device.name}")
 
 class UpdatePropertyCommand(Command):
     """Command to update a property of an item with undo/redo support."""

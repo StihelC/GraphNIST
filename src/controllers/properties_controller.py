@@ -72,6 +72,7 @@ class PropertiesController:
         self.panel.boundary_property_changed.connect(self._on_boundary_property_changed)
         self.panel.change_icon_requested.connect(self._on_change_icon_requested)  # Connect new signal
         self.panel.property_display_toggled.connect(self._on_property_display_toggled)  # Connect the new signal
+        self.panel.property_delete_requested.connect(self._on_property_delete_requested)  # Connect property delete signal
         
         # Listen to canvas selection changes
         if hasattr(canvas, 'selection_changed'):
@@ -260,16 +261,25 @@ class PropertiesController:
         if self.selected_items:
             # Apply the change to all selected devices
             for device in self.selected_items:
-                if hasattr(device, 'properties') and key in device.properties:
-                    self._update_device_property(device, key, value)
+                if hasattr(device, 'properties'):
+                    # Handle existing or new properties
+                    if key in device.properties:
+                        self._update_device_property(device, key, value)
+                    else:
+                        # Add new property
+                        self._add_device_property(device, key, value)
             return
                 
         # For single device selected
         if not self.selected_item or not isinstance(self.selected_item, Device):
             return
             
-        if hasattr(self.selected_item, 'properties') and key in self.selected_item.properties:
-            self._update_device_property(self.selected_item, key, value)
+        if hasattr(self.selected_item, 'properties'):
+            if key in self.selected_item.properties:
+                self._update_device_property(self.selected_item, key, value)
+            else:
+                # Add new property
+                self._add_device_property(self.selected_item, key, value)
             
     def _update_device_property(self, device, key, value):
         """Update a device property with undo/redo support."""
@@ -305,6 +315,27 @@ class PropertiesController:
             
             # Notify via event bus
             self.event_bus.emit("device_property_changed", device, key, value)
+    
+    def _add_device_property(self, device, key, value):
+        """Add a new property to a device."""
+        if not hasattr(device, 'properties'):
+            device.properties = {}
+            
+        self.logger.info(f"Adding new device property '{key}' with value '{value}'")
+        
+        # Use command pattern if undo_redo_manager available
+        if self.undo_redo_manager:
+            from controllers.commands import DevicePropertyCommand
+            cmd = DevicePropertyCommand(device, key, None, value, is_new=True)
+            self.undo_redo_manager.push_command(cmd)
+        else:
+            device.properties[key] = value
+        
+        # Force a redraw
+        device.update()
+        
+        # Notify via event bus
+        self.event_bus.emit("device_property_added", device, key, value)
     
     def _on_connection_property_changed(self, key, value):
         """Handle connection property change in properties panel."""
@@ -462,6 +493,11 @@ class PropertiesController:
                 if isinstance(device, Device):
                     # Use device's toggle method 
                     device.toggle_property_display(key, enabled)
+                    # Force a visual update of the device
+                    device.update()
+                    device.update_property_labels()
+            # Notify via event bus for all devices at once
+            self.event_bus.emit("multiple_devices_display_properties_changed", self.selected_items, key, enabled)
             return
                 
         # For single device selected
@@ -554,6 +590,56 @@ class PropertiesController:
                 if self.event_bus:
                     self.event_bus.emit("device_property_changed", self.selected_item, property_name, value)
     
+    def _on_property_delete_requested(self, property_name):
+        """Handle property deletion requests."""
+        # For multiple devices selected
+        if self.selected_items:
+            # Apply the deletion to all selected devices
+            for device in self.selected_items:
+                if hasattr(device, 'properties') and property_name in device.properties:
+                    self._delete_device_property(device, property_name)
+            return
+                
+        # For single device selected
+        if not self.selected_item or not isinstance(self.selected_item, Device):
+            return
+            
+        if hasattr(self.selected_item, 'properties') and property_name in self.selected_item.properties:
+            self._delete_device_property(self.selected_item, property_name)
+    
+    def _delete_device_property(self, device, property_name):
+        """Delete a property from a device with undo/redo support."""
+        if not hasattr(device, 'properties') or property_name not in device.properties:
+            return
+            
+        # Store the current value for undo purposes
+        old_value = device.properties[property_name]
+        display_state = False
+        if hasattr(device, 'display_properties'):
+            display_state = device.display_properties.get(property_name, False)
+            
+        self.logger.info(f"Deleting device property '{property_name}' with value '{old_value}'")
+        
+        # Use command pattern if undo_redo_manager available
+        if self.undo_redo_manager:
+            from controllers.commands import DeletePropertyCommand
+            cmd = DeletePropertyCommand(device, property_name, old_value, display_state)
+            self.undo_redo_manager.push_command(cmd)
+        else:
+            # Direct deletion without undo/redo
+            del device.properties[property_name]
+            if hasattr(device, 'display_properties') and property_name in device.display_properties:
+                del device.display_properties[property_name]
+            
+            # Update display if needed
+            device.update_property_labels()
+        
+        # Force a redraw
+        device.update()
+        
+        # Notify via event bus
+        self.event_bus.emit("device_property_deleted", device, property_name)
+
 class TogglePropertyDisplayCommand(Command):
     """Command for toggling device property display."""
     
