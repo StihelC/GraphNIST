@@ -93,6 +93,7 @@ class PropertiesPanel(QWidget):
     
     def _create_device_section(self):
         """Create the device-specific properties section."""
+        logger = logging.getLogger(__name__)
         group = QGroupBox("Device Properties")
         group.setStyleSheet("QGroupBox { font-weight: bold; }")
         layout = QVBoxLayout(group)
@@ -198,7 +199,7 @@ class PropertiesPanel(QWidget):
         create_new_checkbox = True
         if hasattr(self, 'display_format_checkbox') and self.display_format_checkbox is not None:
             try:
-                # Check if the checkbox is valid
+                # Check if the checkbox is valid by trying to access a property
                 test = self.display_format_checkbox.isChecked()
                 # If we get here, the checkbox is valid
                 create_new_checkbox = False
@@ -206,13 +207,17 @@ class PropertiesPanel(QWidget):
                 # If it has a parent, detach it
                 if self.display_format_checkbox.parent() is not None:
                     self.display_format_checkbox.setParent(None)
-            except (RuntimeError, AttributeError):
+                    
+                logger.debug("Reusing existing display_format_checkbox")
+            except (RuntimeError, AttributeError) as e:
                 # Widget was deleted or is invalid
+                logger.warning(f"display_format_checkbox is invalid, creating new one: {str(e)}")
                 create_new_checkbox = True
                 self.display_format_checkbox = None
         
         # Create a new checkbox if needed
         if create_new_checkbox:
+            logger.debug("Creating new display_format_checkbox")
             self.display_format_checkbox = QCheckBox("Show Property Names")
             self.display_format_checkbox.setChecked(True)
             self.display_format_checkbox.setToolTip("Toggle between showing 'property: value' or just 'value'")
@@ -315,10 +320,18 @@ class PropertiesPanel(QWidget):
         # Store a reference to the display_format_checkbox before clearing layouts
         format_checkbox = None
         if hasattr(self, 'display_format_checkbox'):
-            format_checkbox = self.display_format_checkbox
-            # Detach it from its parent to prevent deletion
-            if format_checkbox is not None and format_checkbox.parent() is not None:
-                format_checkbox.setParent(None)
+            try:
+                # Check if the checkbox is still valid
+                test = self.display_format_checkbox.isChecked()  # This will raise RuntimeError if deleted
+                format_checkbox = self.display_format_checkbox
+                # Detach it from its parent to prevent deletion
+                if format_checkbox is not None and format_checkbox.parent() is not None:
+                    format_checkbox.setParent(None)
+            except RuntimeError:
+                # Checkbox was deleted, will create a new one later
+                logger.warning("PANEL DEBUG: display_format_checkbox was deleted, will create a new one")
+                self.display_format_checkbox = None
+                format_checkbox = None
         
         # Clear the content layout first
         self._reset_layout(self.content_layout)
@@ -779,6 +792,8 @@ class PropertiesPanel(QWidget):
             
     def clear(self):
         """Clear all content from the properties panel."""
+        logger = logging.getLogger(__name__)
+        
         # Reset current item reference
         self.current_item = None
         self.boundary_devices = []
@@ -786,10 +801,18 @@ class PropertiesPanel(QWidget):
         # Store a reference to the display_format_checkbox before clearing layouts
         format_checkbox = None
         if hasattr(self, 'display_format_checkbox'):
-            format_checkbox = self.display_format_checkbox
-            # Detach it from its parent to prevent deletion
-            if format_checkbox is not None and format_checkbox.parent() is not None:
-                format_checkbox.setParent(None)
+            try:
+                # Check if the checkbox is still valid
+                test = self.display_format_checkbox.isChecked()  # This will raise RuntimeError if deleted
+                format_checkbox = self.display_format_checkbox
+                # Detach it from its parent to prevent deletion
+                if format_checkbox is not None and format_checkbox.parent() is not None:
+                    format_checkbox.setParent(None)
+            except RuntimeError:
+                # Checkbox was deleted, will create a new one later
+                logger.warning("PANEL DEBUG: display_format_checkbox was deleted, will create a new one")
+                self.display_format_checkbox = None
+                format_checkbox = None
         
         # Clear the content layout first
         self._reset_layout(self.content_layout)
@@ -826,7 +849,7 @@ class PropertiesPanel(QWidget):
         no_selection_label.setAlignment(Qt.AlignCenter)
         no_selection_label.setStyleSheet("color: #95a5a6; font-style: italic; padding: 20px;")
         self.content_layout.addWidget(no_selection_label)
-    
+
     def _emit_property_change(self, prop_name, value):
         """Emit property change signal for multiple device editing."""
         self.device_property_changed.emit(prop_name, value)
