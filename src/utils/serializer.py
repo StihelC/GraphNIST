@@ -241,12 +241,20 @@ class CanvasSerializer:
     def serialize_boundary(boundary):
         """Convert a boundary to a serializable dictionary."""
         rect = boundary.rect()
+        scene_pos = boundary.scenePos()  # Important: get absolute position in scene
         
+        # Debug logging for boundary positions
+        print(f"  Serializing boundary: {boundary.name}")
+        print(f"    - Local rect: x={rect.x()}, y={rect.y()}, w={rect.width()}, h={rect.height()}")
+        print(f"    - Scene position: x={scene_pos.x()}, y={scene_pos.y()}")
+        print(f"    - Absolute position: x={scene_pos.x() + rect.x()}, y={scene_pos.y() + rect.y()}")
+        
+        # Combine the rect's dimensions with the scene position for absolute coordinates
         return {
             'name': boundary.name,
             'rect': {
-                'x': rect.x(),
-                'y': rect.y(),
+                'x': scene_pos.x() + rect.x(),  # Add the boundary's position to its rect
+                'y': scene_pos.y() + rect.y(),
                 'width': rect.width(),
                 'height': rect.height()
             },
@@ -561,7 +569,7 @@ class CanvasSerializer:
             # Extract boundary data
             name = data.get('name', 'Boundary')
             
-            # Create rectangle
+            # Create rectangle - these are absolute scene coordinates
             rect_data = data.get('rect', {'x': 0, 'y': 0, 'width': 100, 'height': 100})
             rect = QRectF(
                 rect_data.get('x', 0),
@@ -569,6 +577,10 @@ class CanvasSerializer:
                 rect_data.get('width', 100),
                 rect_data.get('height', 100)
             )
+            
+            # Debug logging for boundary positions
+            print(f"    - Deserializing boundary: {name}")
+            print(f"    - Creating with absolute coordinates: x={rect.x()}, y={rect.y()}, w={rect.width()}, h={rect.height()}")
             
             # Create color
             color_data = data.get('color', {'r': 40, 'g': 120, 'b': 200, 'a': 80})
@@ -592,10 +604,19 @@ class CanvasSerializer:
             print(f"  Using theme_manager: {theme_manager}")
             
             # Create boundary with theme manager
+            # Note: rect is passed directly because we've already calculated absolute coordinates
             boundary = Boundary(rect, name, color, theme_manager=theme_manager)
             
             # Add to scene
             canvas.scene().addItem(boundary)
+            
+            # Verify position after adding to scene
+            scene_pos = boundary.scenePos()
+            boundary_rect = boundary.rect()
+            print(f"    - After adding to scene: ")
+            print(f"      - Scene position: x={scene_pos.x()}, y={scene_pos.y()}")
+            print(f"      - Local rect: x={boundary_rect.x()}, y={boundary_rect.y()}, w={boundary_rect.width()}, h={boundary_rect.height()}")
+            print(f"      - Effective position: x={scene_pos.x() + boundary_rect.x()}, y={scene_pos.y() + boundary_rect.y()}")
             
             # Add to boundaries list
             if not hasattr(canvas, 'boundaries'):

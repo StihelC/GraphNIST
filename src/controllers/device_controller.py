@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QMessageBox, QGraphicsItem
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QFontMetrics, QColor
+from PyQt5.QtGui import QFontMetrics, QColor, QFont
 import logging
 import traceback
 import math
@@ -178,62 +178,61 @@ class DeviceController:
                     # Create a single device with undo support
                     if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
                         # Create device using command for undo support
-                        # Ensure name has sequential number
-                        device_name = device_data['name']
-                        if not any(char.isdigit() for char in device_name):
-                            self.device_counter += 1
-                            device_name = f"{device_name} {self.device_counter}"
-                        
-                        command = AddDeviceCommand(
+                        cmd = AddDeviceCommand(
                             self, 
                             device_data['type'], 
                             pos, 
-                            device_name,
-                            device_data['properties'],
+                            device_data['name'],
+                            device_data.get('properties', {}),
                             device_data.get('custom_icon_path')
                         )
-                        self.undo_redo_manager.push_command(command)
+                        self.undo_redo_manager.push_command(cmd)
                         return True
                     else:
                         # Create without undo support
-                        self.create_device(device_data['type'], pos)
+                        self._create_device(
+                            device_data['name'],
+                            device_data['type'],
+                            pos,
+                            device_data.get('properties', {}),
+                            device_data.get('custom_icon_path')
+                        )
                 else:
                     # Create multiple devices in a grid
                     self.logger.debug(f"BULK ADD: Starting creation of {multiplier} devices with spacing: {spacing_data}")
                     
-                    if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
-                        # Create a composite command for multiple device creation and connections
-                        from controllers.commands import CompositeCommand
+                    # Calculate initial position if not provided
+                    if pos is None:
+                        scene_rect = self.canvas.scene().sceneRect()
+                        pos = QPointF(scene_rect.width() / 2, scene_rect.height() / 2)
+                    
+                    # Create devices with proper spacing
+                    devices = []
+                    for i in range(multiplier):
+                        # Calculate position based on grid
+                        row = i // 5  # 5 devices per row
+                        col = i % 5
+                        device_pos = QPointF(
+                            pos.x() + col * spacing_data['horizontal'],
+                            pos.y() + row * spacing_data['vertical']
+                        )
                         
-                        # Create composite command
-                        composite_cmd = CompositeCommand(description=f"Add {multiplier} {device_data['type']} Devices")
+                        # Create device with incremented name
+                        device_name = f"{device_data['name']} {i + 1}"
+                        device = self._create_device(
+                            device_name,
+                            device_data['type'],
+                            device_pos,
+                            device_data.get('properties', {}),
+                            device_data.get('custom_icon_path')
+                        )
                         
-                        # Set a flag to prevent execution during command creation
-                        self.logger.debug(f"BULK ADD: Setting _in_bulk_creation flag to True")
-                        self._in_bulk_creation = True
-                        
-                        try:
-                            # Create devices through the command pattern
-                            device_info = self._create_multiple_devices_with_commands(
-                                device_data, pos, multiplier, composite_cmd, should_connect, connection_data, spacing_data
-                            )
-                            
-                            self.logger.debug(f"BULK ADD: Created {len(device_info['devices'])} devices with commands")
-                            
-                            # Push the composite command to the undo stack
-                            self.logger.debug(f"BULK ADD: Pushing composite command to undo stack")
-                            self.undo_redo_manager.push_command(composite_cmd)
-                        finally:
-                            # Clear the flag
-                            self.logger.debug(f"BULK ADD: Setting _in_bulk_creation flag to False")
-                            self._in_bulk_creation = False
-                    else:
-                        # Create without undo support
-                        device_info = self._create_multiple_devices(device_data, pos, multiplier, spacing_data)
-                        
-                        # Connect devices if specified
-                        if should_connect and device_info['devices'] and len(device_info['devices']) > 1:
-                            self._connect_devices(device_info, connection_data)
+                        if device:
+                            devices.append(device)
+                    
+                    # Connect devices if specified
+                    if should_connect and devices and len(devices) > 1:
+                        self._connect_multiple_devices(devices, connection_data)
                     
                 self.logger.info(f"Added {multiplier} device(s) of type {device_data['type']}")
                 return True
@@ -243,241 +242,111 @@ class DeviceController:
             self._show_error(f"Failed to add device: {str(e)}")
         return False
     
-    def _create_multiple_devices(self, device_data, pos, count, spacing_data=None):
-        """Create multiple devices arranged in a grid."""
-        if pos is None:
-            # Default position at center if none provided
-            scene_rect = self.canvas.scene().sceneRect()
-            pos = QPointF(scene_rect.width() / 2, scene_rect.height() / 2)
+    def _create_multiple_devices(self, device_data, pos, count, should_connect=False, 
+                               connection_data=None, spacing_data=None):
+        """Create multiple devices with optional connections."""
+        devices = []
+        base_name = device_data.get('name', '')
+        base_type = device_data.get('type')
+        properties = device_data.get('properties', {})
+        custom_icon = device_data.get('custom_icon_path')
         
-        # Get spacing configuration
-        if not spacing_data:
-            spacing_data = {
-                'horizontal_spacing': 100,
-                'vertical_spacing': 100,
-                'max_columns': 5
-            }
-        
-        horizontal_spacing = spacing_data.get('horizontal_spacing', 100)
-        vertical_spacing = spacing_data.get('vertical_spacing', 100)
-        max_columns = spacing_data.get('max_columns', 5)
-        
-        # Calculate grid size
+        # Calculate grid dimensions for aesthetic layout
+        # Use a 3-column grid by default, but adjust based on count
+        max_columns = 3
+        if count <= 3:
+            max_columns = count
+        elif count <= 6:
+            max_columns = 3
+        elif count <= 9:
+            max_columns = 3
+        else:
+            max_columns = 4
+            
         columns = min(count, max_columns)
         rows = (count + columns - 1) // columns  # Ceiling division
-        grid_size = (rows, columns)
         
-        # Device size for spacing calculation
-        device_width = 60  # Default device width
-        device_height = 60  # Default device height
+        # Set default spacing
+        horizontal_spacing = 150  # Default horizontal spacing
+        vertical_spacing = 150   # Default vertical spacing
         
-        # Calculate total grid width and height
-        grid_width = columns * device_width + (columns - 1) * horizontal_spacing
-        grid_height = rows * device_height + (rows - 1) * vertical_spacing
+        # Override with spacing data if provided
+        if spacing_data:
+            horizontal_spacing = spacing_data.get('horizontal', horizontal_spacing)
+            vertical_spacing = spacing_data.get('vertical', vertical_spacing)
         
-        # Calculate starting position (top-left of the grid)
-        start_x = pos.x() - grid_width / 2 + device_width / 2
-        start_y = pos.y() - grid_height / 2 + device_height / 2
-        
-        # Store created devices and their positions
-        created_devices = []
-        device_positions = []
-        
-        # Start numbering from next available number
-        start_number = self.device_counter + 1
-        
-        # Create devices in a grid layout
+        # Create devices in grid
         for i in range(count):
             row = i // columns
             col = i % columns
             
-            # Calculate position for this device
-            device_pos = QPointF(
-                start_x + col * (device_width + horizontal_spacing),
-                start_y + row * (device_height + vertical_spacing)
+            # Calculate position
+            x = pos.x() + col * horizontal_spacing
+            y = pos.y() + row * vertical_spacing
+            
+            # Create device with incremented name
+            device_name = f"{base_name} {i + 1}"
+            device = self._create_device(
+                device_name,
+                base_type,
+                QPointF(x, y),
+                properties,
+                custom_icon
             )
             
-            # Make a copy of device data and update name for uniqueness with sequential numbering
-            current_data = device_data.copy()
-            device_number = start_number + i
-            current_data['name'] = f"Device {device_number}"
-            
-            # Create the device without incrementing counter again
-            device = self.create_device(current_data['type'], device_pos)
             if device:
-                created_devices.append(device)
-                device_positions.append((row, col, device))
+                devices.append(device)
         
-        # Update device counter to the last device number used
-        self.device_counter = start_number + count - 1
+        # Connect devices if specified
+        if should_connect and devices and len(devices) > 1:
+            self._connect_multiple_devices(devices, connection_data)
         
-        # Return information about created devices
-        return {
-            'devices': created_devices,
-            'positions': device_positions,
-            'grid_size': grid_size,
-            'count': count
-        }
-    
+        return devices
+
     def _create_multiple_devices_with_commands(self, device_data, pos, count, composite_cmd, should_connect=False, connection_data=None, spacing_data=None):
-        """Create multiple devices arranged in a grid with undo/redo support."""
-        if pos is None:
-            # Default position at center if none provided
-            scene_rect = self.canvas.scene().sceneRect()
-            pos = QPointF(scene_rect.width() / 2, scene_rect.height() / 2)
+        """Create multiple devices with undo/redo support."""
+        devices = []
+        base_name = device_data.get('name', '')
+        model_name = device_data.get('properties', {}).get('model', '')
         
-        # Get spacing configuration
-        if not spacing_data:
-            spacing_data = {
-                'horizontal_spacing': 100,
-                'vertical_spacing': 100,
-                'max_columns': 5
-            }
-        
-        horizontal_spacing = spacing_data.get('horizontal_spacing', 100)
-        vertical_spacing = spacing_data.get('vertical_spacing', 100)
-        max_columns = spacing_data.get('max_columns', 5)
-        
-        # Calculate grid size
-        columns = min(count, max_columns)
-        rows = (count + columns - 1) // columns  # Ceiling division
-        grid_size = (rows, columns)
-        
-        # Device size for spacing calculation
-        device_width = 60  # Default device width
-        device_height = 60  # Default device height
-        
-        # Calculate total grid width and height
-        grid_width = columns * device_width + (columns - 1) * horizontal_spacing
-        grid_height = rows * device_height + (rows - 1) * vertical_spacing
-        
-        # Calculate starting position (top-left of the grid)
-        start_x = pos.x() - grid_width / 2 + device_width / 2
-        start_y = pos.y() - grid_height / 2 + device_height / 2
-        
-        # Check if we're within a command execution already to prevent double execution
-        is_executing = False
-        if hasattr(self, 'undo_redo_manager') and self.undo_redo_manager:
-            is_executing = self.undo_redo_manager.is_executing_command
-            self.logger.debug(f"BULK ADD: Command execution state: {is_executing}")
-            # Set flag to true to prevent recursive command execution
-            self.undo_redo_manager.is_executing_command = True
-            self.logger.debug(f"BULK ADD: Set executing_command flag to True")
-        
-        devices_created = 0
-        created_devices = []
-        device_positions = []
-        
-        try:
-            # Create all devices first
-            self.logger.debug(f"BULK ADD: Starting to create {count} devices in grid of {rows}x{columns}")
+        # If we have a model name, use it as the base for naming
+        if model_name:
+            base_name = model_name
             
-            # Store references to commands and devices they create for better tracking
-            device_commands = []
-            
-            # Start creating devices with sequential device numbers
-            start_number = self.device_counter + 1
-            
-            for i in range(count):
-                row = i // columns
-                col = i % columns
-                
-                # Calculate position for this device
-                device_pos = QPointF(
-                    start_x + col * (device_width + horizontal_spacing),
-                    start_y + row * (device_height + vertical_spacing)
-                )
-                
-                # Make a copy of device data with sequential name
-                current_data = device_data.copy()
-                device_number = start_number + i
-                current_data['name'] = f"Device {device_number}"
-                
-                # Create device command 
-                add_cmd = AddDeviceCommand(
-                    self, 
-                    current_data['type'],
-                    device_pos,
-                    current_data['name'],
-                    current_data['properties'],
-                    current_data.get('custom_icon_path')
-                )
-                
-                # Add command to composite command
-                composite_cmd.add_command(add_cmd)
-                self.logger.debug(f"BULK ADD: Added command for device {current_data['name']} at ({device_pos.x()}, {device_pos.y()})")
-                
-                # Only execute the command if we're not in the bulk creation process
-                # This prevents double device creation
-                device = None
-                if hasattr(self, '_in_bulk_creation') and self._in_bulk_creation:
-                    # Create the device directly without executing the command
-                    self.logger.debug(f"BULK ADD: Direct creation for {current_data['name']} (bulk mode)")
-                    device = self._create_device(
-                        current_data['name'],
-                        current_data['type'],
-                        device_pos,
-                        current_data['properties'],
-                        current_data.get('custom_icon_path')
-                    )
-                else:
-                    # Normal flow - execute the command
-                    self.logger.debug(f"BULK ADD: Executing command for {current_data['name']} (not in bulk mode)")
-                    device = add_cmd.execute()
-                
-                if device:
-                    created_devices.append(device)
-                    device_positions.append((row, col, device))
-                    self.logger.debug(f"BULK ADD: Successfully created device {device.name}")
-                    # Store the command with its target device for better tracking
-                    add_cmd.created_device = device
-                    device_commands.append((add_cmd, device))
-                else:
-                    self.logger.warning(f"BULK ADD: Failed to create device {current_data['name']}")
-                
-                devices_created += 1
-            
-            # Update the device counter to reflect the last device number created
-            self.device_counter = start_number + count - 1
-            
-            # Store device commands in composite command for better undo tracking
-            if hasattr(composite_cmd, '_device_commands'):
-                composite_cmd._device_commands = device_commands
-            else:
-                setattr(composite_cmd, '_device_commands', device_commands)
-                
-            self.logger.debug(f"BULK ADD: Stored {len(device_commands)} device commands in composite command")
-            
-            # Create connections if needed
-            if should_connect and len(created_devices) > 1:
-                self.logger.debug(f"BULK ADD: Creating connections between {len(created_devices)} devices")
-                device_info = {
-                    'devices': created_devices,
-                    'positions': device_positions,
-                    'grid_size': grid_size,
-                    'count': count
-                }
-                
-                # Create connections using commands
-                self._connect_devices_with_commands(device_info, connection_data, composite_cmd)
+        # Create a copy of the device data for this instance
+        instance_data = device_data.copy()
         
-        finally:
-            # Reset the execution flag
-            if hasattr(self, 'undo_redo_manager') and self.undo_redo_manager:
-                self.logger.debug(f"BULK ADD: Restoring executing_command flag to {is_executing}")
-                self.undo_redo_manager.is_executing_command = is_executing
+        for i in range(count):
+            # Set the name using the model name with sequential numbering
+            instance_data['name'] = f"{base_name} {i + 1}"
+            
+            # Create device command
+            cmd = AddDeviceCommand(
+                self,
+                instance_data['type'],
+                pos,
+                instance_data['name'],
+                instance_data.get('properties', {}),
+                instance_data.get('custom_icon_path')
+            )
+            
+            # Add command to composite
+            composite_cmd.add_command(cmd)
+            
+            # Execute command to create device
+            device = cmd.execute()
+            if device:
+                devices.append(device)
+                
+                # Update position for next device if spacing data is provided
+                if spacing_data and i < count - 1:
+                    pos = self._calculate_next_position(pos, spacing_data, i + 1)
         
-        # Ensure the canvas is updated
-        self.canvas.viewport().update()
-        
-        self.logger.debug(f"BULK ADD: Completed with {len(created_devices)} devices")
-        # Return info about created devices
-        return {
-            'devices': created_devices,
-            'positions': device_positions,
-            'grid_size': grid_size,
-            'count': count
-        }
+        # Connect devices if requested
+        if should_connect and len(devices) > 1:
+            self._connect_multiple_devices(devices, connection_data)
+            
+        return devices
     
     def _connect_devices(self, device_info, connection_data):
         """Connect devices in a grid pattern."""
@@ -756,40 +625,6 @@ class DeviceController:
                     )
                     composite_cmd.add_command(conn_cmd)
 
-    def create_device(self, device_data, pos=None):
-        """Create a device with the specified properties."""
-        try:
-            self.logger.info(f"Creating device '{device_data['name']}' of type '{device_data['type']}'")
-            
-            # Create device object
-            device = Device(device_data['name'], device_data['type'], device_data['properties'], device_data.get('custom_icon_path'))
-            device.setPos(pos)
-            
-            # Add to scene
-            scene = self.canvas.scene()
-            if scene:
-                scene.addItem(device)
-                
-                # Add to devices list
-                self.canvas.devices.append(device)
-                
-                # Notify through event bus
-                self.event_bus.emit("device_created", device)
-                
-                self.logger.info(f"Device '{device_data['name']}' added at position ({pos.x()}, {pos.y()})")
-                return device
-            else:
-                self.logger.error("No scene available to add device")
-                self._show_error("Canvas scene not initialized")
-        
-        except Exception as e:
-            self.logger.error(f"Error creating device: {str(e)}")
-            traceback.print_exc()
-            self._show_error(f"Failed to create device: {str(e)}")
-        
-        return None
-    
-    # Add this method for compatibility with commands
     def _create_device(self, name, device_type, position, properties=None, custom_icon_path=None):
         """Create a device object and add it to the canvas."""
         try:
@@ -834,21 +669,29 @@ class DeviceController:
                 device.update_font_settings(self.font_settings_manager)
             
             # Add to scene and tracking list
-            self.canvas.scene().addItem(device)
-            self.canvas.devices.append(device)
-            
-            # Connect signals
-            if hasattr(self.canvas, 'device_drag_started'):
-                device.signals.drag_started.connect(self.canvas.device_drag_started)
-            if hasattr(self.canvas, 'device_drag_finished'):
-                device.signals.drag_finished.connect(self.canvas.device_drag_finished)
-            if hasattr(self.canvas, 'device_selected'):
-                device.signals.selected.connect(self.canvas.device_selected)
-            
-            # Emit creation signal
-            self.event_bus.emit("device_created", device)
-            
-            return device
+            scene = self.canvas.scene()
+            if scene:
+                scene.addItem(device)
+                self.canvas.devices.append(device)
+                
+                # Connect signals
+                if hasattr(self.canvas, 'device_drag_started'):
+                    device.signals.drag_started.connect(self.canvas.device_drag_started)
+                if hasattr(self.canvas, 'device_drag_finished'):
+                    device.signals.drag_finished.connect(self.canvas.device_drag_finished)
+                if hasattr(self.canvas, 'device_selected'):
+                    device.signals.selected.connect(self.canvas.device_selected)
+                
+                # Emit creation signal
+                self.event_bus.emit("device_created", device)
+                
+                # Force a view update
+                self.canvas.viewport().update()
+                
+                return device
+            else:
+                self.logger.error("No scene available to add device")
+                return None
             
         except Exception as e:
             self.logger.error(f"Error creating device: {str(e)}")
@@ -943,29 +786,56 @@ class DeviceController:
         self.logger.error("Failed to find connection_controller")
         return None
 
-def on_delete_device_requested(self, device):
-    """Handle request to delete a device."""
-    # Use command manager if available, otherwise delete directly
-    if hasattr(self, 'command_manager') and self.command_manager:
-        from controllers.commands import DeleteDeviceCommand
-        cmd = DeleteDeviceCommand(self, device)
-        self.command_manager.execute_command(cmd)
-    else:
-        self._delete_device(device)
+    def _remove_connection_manually(self, conn):
+        """Manual connection cleanup when connection controller isn't available."""
+        if conn in self.canvas.connections:
+            self.canvas.connections.remove(conn)
+        
+        if conn.scene():
+            self.canvas.scene().removeItem(conn)
+        
+        # Remove from devices' connection lists
+        if hasattr(conn.source_device, 'connections'):
+            if conn in conn.source_device.connections:
+                conn.source_device.connections.remove(conn)
+        
+        if hasattr(conn.target_device, 'connections'):
+            if conn in conn.target_device.connections:
+                conn.target_device.connections.remove(conn)
 
-def _remove_connection_manually(self, conn):
-    """Manual connection cleanup when connection controller isn't available."""
-    if conn in self.canvas.connections:
-        self.canvas.connections.remove(conn)
-    
-    if conn.scene():
-        self.canvas.scene().removeItem(conn)
-    
-    # Remove from devices' connection lists
-    if hasattr(conn.source_device, 'connections'):
-        if conn in conn.source_device.connections:
-            conn.source_device.connections.remove(conn)
-    
-    if hasattr(conn.target_device, 'connections'):
-        if conn in conn.target_device.connections:
-            conn.target_device.connections.remove(conn)
+    def _connect_multiple_devices(self, devices, connection_data):
+        """Connect multiple devices in a chain."""
+        if len(devices) < 2:
+            return
+            
+        # Get connection properties
+        conn_type = connection_data.get('type', ConnectionTypes.ETHERNET)
+        label = connection_data.get('label', 'Ethernet')
+        bandwidth = connection_data.get('bandwidth', '')
+        latency = connection_data.get('latency', '')
+        
+        # Create connections between adjacent devices
+        for i in range(len(devices) - 1):
+            source = devices[i]
+            target = devices[i + 1]
+            
+            # Create connection
+            connection = Connection(source, target, conn_type)
+            
+            # Set label using label_text property
+            if hasattr(connection, 'label_text'):
+                connection.label_text = label
+            
+            # Set properties
+            if bandwidth:
+                connection.properties['Bandwidth'] = bandwidth
+            if latency:
+                connection.properties['Latency'] = latency
+            
+            # Add to canvas
+            self.canvas.scene().addItem(connection)
+            self.canvas.connections.append(connection)
+            
+            # Apply theme if available
+            if self.theme_manager and hasattr(connection, 'renderer'):
+                connection.renderer.update_theme(self.theme_manager.get_theme())

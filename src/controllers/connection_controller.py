@@ -59,8 +59,8 @@ class ConnectionController:
             # Delegate to shared method
             result = self.on_connection_requested(source_device, target_device, source_port, target_port, properties)
             
-            # Reset to SELECT mode after connection is created (with a small delay to ensure UI is updated)
-            QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+            # Don't reset to SELECT mode to allow creating multiple connections
+            # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
             
             return result
         except Exception as e:
@@ -242,123 +242,98 @@ class ConnectionController:
             return None
 
     def on_connect_multiple_devices_requested(self, devices):
-        """Handle request to connect multiple devices together.
-        
-        This creates connections between devices based on the selected strategy.
-        
-        Args:
-            devices: List of selected devices to connect
-        """
-        self.logger.info(f"CONNECTION DEBUG: Started on_connect_multiple_devices_requested with {len(devices)} devices")
-        self.logger.info(f"CONNECTION DEBUG: Current operation flag state: {self.connection_operation_in_progress}")
-        
-        if len(devices) < 2:
-            self.logger.warning("Need at least 2 devices to create connections")
-            return False
-        
-        # Check if a connection operation is already in progress
-        if self.connection_operation_in_progress:
-            self.logger.info("CONNECTION DEBUG: Connection operation already in progress, ignoring duplicate request")
-            return False
-            
-        # Set flag to indicate connection operation is in progress
-        self.connection_operation_in_progress = True
-        self.logger.info("CONNECTION DEBUG: Set connection_operation_in_progress = True")
-        
-        dialog = None
+        """Handle request to connect multiple devices together."""
         try:
-            # Show the multi-connection dialog to get user input
-            self.logger.info("CONNECTION DEBUG: Creating and showing MultiConnectionDialog")
-            dialog = MultiConnectionDialog(self.canvas.parent())
-            result = dialog.exec_()
-            self.logger.info(f"CONNECTION DEBUG: Dialog closed with result: {result}")
-            
-            if result != QDialog.Accepted:
-                self.logger.info("User cancelled the connection dialog")
-                self.connection_operation_in_progress = False  # Ensure flag is reset on cancel
-                self.logger.info("CONNECTION DEBUG: Reset connection_operation_in_progress = False on cancel")
+            # Don't proceed if already in progress - prevents duplicate dialogs
+            if self.connection_operation_in_progress:
+                self.logger.warning("CONNECTION DEBUG: Operation already in progress, ignoring duplicate request")
                 return False
                 
-            # Get the connection data from the dialog
+            # Set flag to indicate operation is starting
+            self.connection_operation_in_progress = True
+            self.logger.info("CONNECTION DEBUG: Setting connection_operation_in_progress = True")
+            
+            # Ensure we have at least 2 devices
+            if len(devices) < 2:
+                self.logger.warning("Need at least 2 devices to create connections")
+                self.connection_operation_in_progress = False
+                return False
+                
+            # Log the operation
+            self.logger.info(f"Connecting {len(devices)} devices")
+            
+            # Create dialog to configure connection options
+            from dialogs.multi_connection_dialog import MultiConnectionDialog
+            
+            # The dialog will be automatically cleaned up in the finally block
+            dialog = MultiConnectionDialog(parent=self.canvas.parent())
+            if dialog.exec_() != QDialog.Accepted:
+                self.logger.info("Connection cancelled by user")
+                self.connection_operation_in_progress = False
+                return False
+                
+            # Get connection data from dialog
             connection_data = dialog.get_connection_data()
+            strategy = connection_data.get('strategy', 'chain')
+            properties = connection_data.get('properties', {})
             
-            strategy = connection_data['strategy']
-            bidirectional = connection_data.get('bidirectional', True)
+            if connection_data.get('bidirectional', False):
+                properties['bidirectional'] = True
             
-            properties = {
-                'type': connection_data['type'],
-                'label': connection_data['label'],
-                'bandwidth': connection_data['bandwidth'],
-                'latency': connection_data['latency']
-            }
-            
-            self.logger.info(f"CONNECTION DEBUG: Using {strategy} strategy to connect {len(devices)} devices")
-            
-            # Use a composite command if undo/redo is available
-            if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
+            # If we have undo/redo support, use command pattern
+            if self.undo_redo_manager:
                 try:
+                    # Create a composite command for all connections
                     from controllers.commands import CompositeCommand, AddConnectionCommand
                     
-                    composite_cmd = CompositeCommand(description=f"Connect {len(devices)} Devices ({strategy})")
-                    added_connections = 0  # Track the number of actual connections added
+                    # Create different connection patterns based on strategy
+                    composite_cmd = CompositeCommand(f"Connect {len(devices)} Devices")
+                    added_connections = 0
                     
-                    # Create connections based on selected strategy
-                    # MESH strategy: connect all devices to each other
-                    if strategy == "mesh":
-                        self.logger.info(f"Creating mesh network connections for {len(devices)} devices")
-                        for i in range(len(devices)):
-                            source_device = devices[i]
-                            for j in range(len(devices)):
-                                if i == j:  # Skip self
-                                    continue
-                                    
-                                target_device = devices[j]
-                                
-                                # For non-bidirectional connections, only create one direction
-                                if not bidirectional and j <= i:
-                                    continue
-                                
-                                # Skip if connection already exists in either direction
-                                if self._connection_exists(source_device, target_device):
-                                    self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}, skipping")
-                                    continue
-                                
-                                # Create the connection command
-                                conn_cmd = AddConnectionCommand(
-                                    controller=self,
-                                    source_device=source_device, 
-                                    target_device=target_device,
-                                    properties=properties
-                                )
-                                
-                                composite_cmd.add_command(conn_cmd)
-                                added_connections += 1
+                    # Mesh connectivity - connect every device to every other device
+                    if strategy == 'mesh':
+                        for i, source_device in enumerate(devices):
+                            for j, target_device in enumerate(devices):
+                                if i != j:  # Don't connect device to itself
+                                    # Skip if connection already exists in either direction
+                                    if self._connection_exists(source_device, target_device):
+                                        self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}, skipping")
+                                        continue
+                                        
+                                    conn_cmd = AddConnectionCommand(
+                                        controller=self,
+                                        source_device=source_device,
+                                        target_device=target_device,
+                                        properties=properties
+                                    )
+                                    composite_cmd.add_command(conn_cmd)
+                                    added_connections += 1
                     
-                    # CHAIN strategy: connect devices in sequence
-                    elif strategy == "chain":
-                        self.logger.info(f"Creating chain connections for {len(devices)} devices")
-                        # Sort devices by position (left to right, then top to bottom)
+                    # Chain connectivity - connect devices in sequence
+                    elif strategy == 'chain':
+                        # Sort devices by position for more logical chaining
                         sorted_devices = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
                         
                         for i in range(len(sorted_devices)-1):
                             source_device = sorted_devices[i]
                             target_device = sorted_devices[i+1]
                             
-                            # Create forward connection if it doesn't already exist
-                            if not self._connection_exists(source_device, target_device):
-                                conn_cmd = AddConnectionCommand(
-                                    controller=self,
-                                    source_device=source_device, 
-                                    target_device=target_device,
-                                    properties=properties
-                                )
-                                composite_cmd.add_command(conn_cmd)
-                                added_connections += 1
-                            else:
-                                self.logger.info(f"Forward connection already exists between {source_device.name} and {target_device.name}, skipping")
+                            # Skip if connection already exists in either direction
+                            if self._connection_exists(source_device, target_device):
+                                self.logger.info(f"Connection already exists between {source_device.name} and {target_device.name}, skipping")
+                                continue
+                                
+                            conn_cmd = AddConnectionCommand(
+                                controller=self,
+                                source_device=source_device,
+                                target_device=target_device,
+                                properties=properties
+                            )
+                            composite_cmd.add_command(conn_cmd)
+                            added_connections += 1
                             
                             # Create backward connection if bidirectional
-                            if bidirectional and not self._connection_exists(target_device, source_device):
+                            if connection_data.get('bidirectional', False) and not self._connection_exists(target_device, source_device):
                                 conn_cmd = AddConnectionCommand(
                                     controller=self,
                                     source_device=target_device,
@@ -367,8 +342,36 @@ class ConnectionController:
                                 )
                                 composite_cmd.add_command(conn_cmd)
                                 added_connections += 1
-                            elif bidirectional:
-                                self.logger.info(f"Backward connection already exists between {target_device.name} and {source_device.name}, skipping")
+                    
+                    # Star connectivity - connect first device to all others
+                    elif strategy == 'star':
+                        center_device = devices[0]  # Use first device as center
+                        
+                        for other_device in devices[1:]:
+                            # Skip if connection already exists in either direction
+                            if self._connection_exists(center_device, other_device):
+                                self.logger.info(f"Connection already exists between {center_device.name} and {other_device.name}, skipping")
+                                continue
+                                
+                            conn_cmd = AddConnectionCommand(
+                                controller=self,
+                                source_device=center_device,
+                                target_device=other_device,
+                                properties=properties
+                            )
+                            composite_cmd.add_command(conn_cmd)
+                            added_connections += 1
+                            
+                            # Create backward connection if bidirectional
+                            if connection_data.get('bidirectional', False) and not self._connection_exists(other_device, center_device):
+                                conn_cmd = AddConnectionCommand(
+                                    controller=self,
+                                    source_device=other_device,
+                                    target_device=center_device,
+                                    properties=properties
+                                )
+                                composite_cmd.add_command(conn_cmd)
+                                added_connections += 1
                     
                     # Execute the composite command
                     if composite_cmd.commands:  # Only push if there are actual commands to execute
@@ -378,40 +381,56 @@ class ConnectionController:
                         # Notify through event bus
                         self.event_bus.emit("multiple_connections_added", added_connections)
                         
-                        # Reset to SELECT mode after connection is created (with a small delay to ensure UI is updated)
-                        QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                        # Don't reset to SELECT mode to allow creating more connections
+                        # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
                         
                         return True
                     else:
                         self.logger.info("No new connections were created")
                         return False
+                        
                 except Exception as e:
                     self.logger.error(f"Error in on_connect_multiple_devices_requested with undo/redo: {str(e)}")
                     self.logger.error(traceback.format_exc())
                     return False
             else:
-                # Direct implementation without undo/redo
+                # If no undo/redo support, directly create connections
                 try:
-                    self.logger.warning("Creating connections without undo support")
                     connection_count = 0
+                    properties = connection_data.get('properties', {})
                     
-                    # Only implementing mesh and chain modes for the direct creation path
-                    # as this is less commonly used
-                    if strategy == "mesh":
-                        # Mesh mode: connect all devices to each other
-                        for i in range(len(devices)):
-                            source_device = devices[i]
-                            for j in range(i+1, len(devices)):
-                                target_device = devices[j]
+                    # Implement different connection strategies
+                    if strategy == 'mesh':
+                        # Connect every device to every other device
+                        for i, source_device in enumerate(devices):
+                            for j, target_device in enumerate(devices):
+                                if i != j:  # Don't connect device to itself
+                                    # Skip if connection already exists in either direction
+                                    if self._connection_exists(source_device, target_device):
+                                        continue
+                                        
+                                    connection = self.create_connection(source_device, target_device, None, None, properties)
+                                    if connection:
+                                        connection_count += 1
+                    
+                    elif strategy == 'star':
+                        # Connect first device to all others
+                        center_device = devices[0]
+                        for other_device in devices[1:]:
+                            # Skip if connection already exists in either direction
+                            if self._connection_exists(center_device, other_device):
+                                continue
                                 
-                                # Skip if connection already exists in either direction
-                                if self._connection_exists(source_device, target_device):
-                                    continue
+                            connection = self.create_connection(center_device, other_device, None, None, properties)
+                            if connection:
+                                connection_count += 1
                                 
-                                # Create the connection
-                                connection = self.create_connection(source_device, target_device, None, None, properties)
+                            # Add reverse connection if bidirectional
+                            if connection_data.get('bidirectional', False) and not self._connection_exists(other_device, center_device):
+                                connection = self.create_connection(other_device, center_device, None, None, properties)
                                 if connection:
                                     connection_count += 1
+                    
                     else:
                         # Chain mode for all other strategies as fallback
                         sorted_devices = sorted(devices, key=lambda d: (d.scenePos().y(), d.scenePos().x()))
@@ -430,8 +449,8 @@ class ConnectionController:
                     
                     self.logger.info(f"Created {connection_count} connections")
                     
-                    # Reset to SELECT mode after connection is created (with a small delay to ensure UI is updated)
-                    QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                    # Don't reset to SELECT mode to allow creating more connections
+                    # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
                     
                     return connection_count > 0
                 except Exception as e:
@@ -447,8 +466,8 @@ class ConnectionController:
             self.connection_operation_in_progress = False
             self.logger.info("CONNECTION DEBUG: Reset connection_operation_in_progress = False in finally block")
             
-            # Reset to SELECT mode after connection operation (regardless of success or failure)
-            QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+            # Don't reset to SELECT mode in the finally block
+            # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
             
             # Clean up dialog if it exists
             if dialog:

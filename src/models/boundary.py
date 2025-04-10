@@ -369,8 +369,19 @@ class Boundary(QGraphicsRectItem):
         # Draw the standard boundary
         super().paint(painter, option, widget)
         
-        # Only draw resize handles when selected
+        # Only draw resize handles when properly selected
         if self.isSelected():
+            # Check if we're in a rubber band selection
+            canvas = self._get_canvas()
+            if canvas and hasattr(canvas, '_rubber_band_rect') and canvas._rubber_band_rect:
+                # Get the boundary's bounding rectangle
+                boundary_rect = self.sceneBoundingRect()
+                
+                # Check if the boundary is completely contained within the selection rectangle
+                if not canvas._rubber_band_rect.contains(boundary_rect):
+                    # If not completely contained, don't show resize handles
+                    return
+            
             # Determine handle colors based on theme
             if self.theme_manager and self.theme_manager.is_dark_theme():
                 painter.setPen(QPen(Qt.white, 1))
@@ -557,4 +568,19 @@ class Boundary(QGraphicsRectItem):
         if hasattr(self, 'label') and self.label:
             return self.label.font().pointSize()
         return 10  # Default font size
+
+    def _get_canvas(self):
+        """Get the canvas view that contains this boundary."""
+        # Get the scene
+        scene = self.scene()
+        if not scene:
+            return None
+            
+        # Get the views of the scene
+        views = scene.views()
+        if not views:
+            return None
+            
+        # Return the first view (should be the canvas)
+        return views[0]
 

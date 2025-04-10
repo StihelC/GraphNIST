@@ -392,6 +392,27 @@ class Canvas(QGraphicsView):
                 if not self._rubber_band_active:
                     self._rubber_band_active = True
                     self.logger.debug("Rubber band selection started during mouse move")
+                
+                # Get the current selection rectangle
+                current_pos = self.mapToScene(event.pos())
+                selection_rect = QRectF(self._rubber_band_origin, current_pos).normalized()
+                
+                # Process boundaries - only keep selected if completely contained
+                selected_items = self.scene().selectedItems()
+                for item in selected_items[:]:  # Create a copy of the list to avoid modification during iteration
+                    if isinstance(item, Boundary):
+                        # Get the boundary's bounding rectangle
+                        boundary_rect = item.sceneBoundingRect()
+                        
+                        # Check if the boundary is completely contained within the selection rectangle
+                        if not selection_rect.contains(boundary_rect):
+                            # If not completely contained, deselect it
+                            item.setSelected(False)
+                            selected_items.remove(item)
+                            # Also emit deselected signal to hide properties panel
+                            if hasattr(item, 'signals') and hasattr(item.signals, 'selected'):
+                                item.signals.selected.emit(item, False)
+                
                 return
             
             # Let the mode manager handle the event first
@@ -1124,6 +1145,25 @@ class Canvas(QGraphicsView):
             if self._rubber_band_active:
                 # Get the current selection
                 selected_items = self.scene().selectedItems()
+                
+                # Get the selection rectangle
+                selection_rect = QRectF(fromScenePoint, toScenePoint).normalized()
+                
+                # Process boundaries - only keep selected if completely contained
+                for item in selected_items[:]:  # Create a copy of the list to avoid modification during iteration
+                    if isinstance(item, Boundary):
+                        # Get the boundary's bounding rectangle
+                        boundary_rect = item.sceneBoundingRect()
+                        
+                        # Check if the boundary is completely contained within the selection rectangle
+                        if not selection_rect.contains(boundary_rect):
+                            # If not completely contained, deselect it
+                            item.setSelected(False)
+                            selected_items.remove(item)
+                            # Also emit deselected signal to hide properties panel
+                            if hasattr(item, 'signals') and hasattr(item.signals, 'selected'):
+                                item.signals.selected.emit(item, False)
+                
                 count = len(selected_items)
                 self.logger.debug(f"Rubber band selection completed with {count} selected items")
                 
@@ -1141,11 +1181,6 @@ class Canvas(QGraphicsView):
                                 child.setFlag(QGraphicsItem.ItemIsMovable, False)
                                 child.setFlag(QGraphicsItem.ItemIsSelectable, False)
                                 child.setAcceptedMouseButtons(Qt.NoButton)
-                            
-                        elif isinstance(item, Boundary):
-                            # Configure boundaries for group dragging
-                            item.setFlag(QGraphicsItem.ItemIsMovable, True)
-                            item.setFlag(QGraphicsItem.ItemIsSelectable, True)
                 
                 # Reset rubber band state
                 self._rubber_band_active = False

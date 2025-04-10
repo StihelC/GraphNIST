@@ -120,14 +120,52 @@ class DeviceDialog(QDialog):
         
         # Name field
         self.name_edit = QLineEdit()
-        # Connect name changes to update the model field
-        self.name_edit.textChanged.connect(self._update_model_from_name)
         form_layout.addRow("Name:", self.name_edit)
+        
+        # Multiple devices checkbox and spinner
+        multiple_layout = QHBoxLayout()
+        self.multiple_check = QCheckBox("Create Multiple Devices")
+        self.multiple_check.toggled.connect(self._toggle_multiple_options)
+        multiple_layout.addWidget(self.multiple_check)
+        
+        self.multiplier_spin = QSpinBox()
+        self.multiplier_spin.setRange(1, 100)
+        self.multiplier_spin.setValue(2)
+        self.multiplier_spin.setEnabled(False)
+        self.multiplier_spin.valueChanged.connect(self._update_connection_group_state)
+        multiple_layout.addWidget(self.multiplier_spin)
+        
+        form_layout.addRow("", multiple_layout)
+        
+        # Multiple devices group
+        self.multiple_group = QGroupBox("Multiple Device Options")
+        multiple_group_layout = QVBoxLayout()
+        
+        # Grid size
+        grid_layout = QHBoxLayout()
+        grid_layout.addWidget(QLabel("Grid Size:"))
+        self.grid_size_spin = QSpinBox()
+        self.grid_size_spin.setRange(1, 10)
+        self.grid_size_spin.setValue(3)
+        grid_layout.addWidget(self.grid_size_spin)
+        multiple_group_layout.addLayout(grid_layout)
+        
+        # Grid preview
+        self.grid_preview = QLabel()
+        self.grid_preview.setStyleSheet("color: #666; font-style: italic;")
+        multiple_group_layout.addWidget(self.grid_preview)
+        
+        # Connect devices checkbox
+        self.connect_devices_check = QCheckBox("Connect Devices")
+        self.connect_devices_check.setChecked(True)
+        multiple_group_layout.addWidget(self.connect_devices_check)
+        
+        self.multiple_group.setLayout(multiple_group_layout)
+        self.multiple_group.setVisible(False)
+        form_layout.addRow("", self.multiple_group)
         
         # Device type dropdown
         self.type_combo = QComboBox()
-        
-        # Add device types from constants
         self.type_combo.addItem("Router", DeviceTypes.ROUTER)
         self.type_combo.addItem("Switch", DeviceTypes.SWITCH)
         self.type_combo.addItem("Firewall", DeviceTypes.FIREWALL)
@@ -135,66 +173,44 @@ class DeviceDialog(QDialog):
         self.type_combo.addItem("Workstation", DeviceTypes.WORKSTATION)
         self.type_combo.addItem("Cloud", DeviceTypes.CLOUD)
         self.type_combo.addItem("Generic", DeviceTypes.GENERIC)
-        
+        self.type_combo.currentIndexChanged.connect(self._update_selected_type_label)
         form_layout.addRow("Type:", self.type_combo)
         
-        # Device model section - Now clearly shows it's related to the selected device type
-        self.model_group = QGroupBox("Device Model")
-        model_layout = QVBoxLayout()
-        
-        # Device type label that shows the currently selected type
+        # Selected type label
         self.selected_type_label = QLabel()
-        self.selected_type_label.setStyleSheet("font-weight: bold;")
-        model_layout.addWidget(self.selected_type_label)
+        self.selected_type_label.setStyleSheet("font-weight: bold; color: #2c3e50;")
+        form_layout.addRow("", self.selected_type_label)
         
-        # Label for model selection
-        self.model_label = QLabel("Select a common model for this device type:")
-        model_layout.addWidget(self.model_label)
-        
-        # Model dropdown
+        # Model selection
         self.model_combo = QComboBox()
         self.model_combo.setPlaceholderText("Select Model...")
-        model_layout.addWidget(self.model_combo)
-        
-        # Add a note about model name usage in bulk creation
-        model_note = QLabel("Note: When creating multiple devices, the model name can be used for device naming.")
-        model_note.setStyleSheet("font-style: italic; color: #666;")
-        model_note.setWordWrap(True)
-        model_layout.addWidget(model_note)
-        
-        # Connect device type dropdown to update models and type label
-        self.type_combo.currentIndexChanged.connect(self._update_selected_type_label)
-        self.type_combo.currentIndexChanged.connect(self._update_model_dropdown)
-        self.type_combo.currentIndexChanged.connect(self._update_rmf_defaults)
+        form_layout.addRow("Model:", self.model_combo)
         
         # Custom model input
-        self.custom_model_layout = QHBoxLayout()
-        self.custom_model_label = QLabel("Custom Model:")
         self.custom_model_edit = QLineEdit()
-        self.custom_model_layout.addWidget(self.custom_model_label)
-        self.custom_model_layout.addWidget(self.custom_model_edit)
-        model_layout.addLayout(self.custom_model_layout)
+        form_layout.addRow("Custom Model:", self.custom_model_edit)
         
-        self.model_group.setLayout(model_layout)
-        
-        # Add basic device info to the tab
         basic_layout.addLayout(form_layout)
-        basic_layout.addWidget(self.model_group)
         
-        # Additional device properties
-        properties_group = QGroupBox("Device Properties")
-        properties_layout = QFormLayout()
+        # Add the basic tab to the tab widget
+        tab_widget.addTab(basic_tab, "Basic Info")
         
-        # IP address field
+        # ===== Properties Tab =====
+        properties_tab = QWidget()
+        properties_layout = QVBoxLayout(properties_tab)
+        
+        # Network Properties
+        network_group = QGroupBox("Network Properties")
+        network_layout = QFormLayout()
+        
         self.ip_edit = QLineEdit()
-        properties_layout.addRow("IP Address:", self.ip_edit)
+        network_layout.addRow("IP Address:", self.ip_edit)
         
-        # Description field
         self.desc_edit = QLineEdit()
-        properties_layout.addRow("Description:", self.desc_edit)
+        network_layout.addRow("Description:", self.desc_edit)
         
-        properties_group.setLayout(properties_layout)
-        basic_layout.addWidget(properties_group)
+        network_group.setLayout(network_layout)
+        properties_layout.addWidget(network_group)
         
         # Custom icon selection
         icon_group = QGroupBox("Device Icon")
@@ -208,145 +224,69 @@ class DeviceDialog(QDialog):
         icon_layout.addWidget(self.icon_button)
         
         icon_group.setLayout(icon_layout)
-        basic_layout.addWidget(icon_group)
+        properties_layout.addWidget(icon_group)
         
-        # Add the basic tab to the tab widget
-        tab_widget.addTab(basic_tab, "Basic Info")
+        tab_widget.addTab(properties_tab, "Properties")
         
         # ===== RMF Tab =====
         rmf_tab = QWidget()
         rmf_layout = QVBoxLayout(rmf_tab)
         
+        # RMF Information
         rmf_group = QGroupBox("RMF Information")
         rmf_form = QFormLayout()
         
-        # Make RMF information editable with default values from device type
-        rmf_info_layout = QFormLayout()
-        
-        # Impact Level - now a combobox
+        # Impact Level
         self.rmf_impact_combo = QComboBox()
         self.rmf_impact_combo.addItems(["Low", "Moderate", "High", "Critical", "Varies"])
         rmf_form.addRow("Impact Level:", self.rmf_impact_combo)
         
-        # Security Categorization - now a combobox
+        # Security Categorization
         self.rmf_categorization_combo = QComboBox()
         self.rmf_categorization_combo.addItems(["Low", "Moderate", "High", "Varies"])
         rmf_form.addRow("Security Categorization:", self.rmf_categorization_combo)
         
-        # STIG Compliance - now a combobox
+        # STIG Compliance
         self.rmf_stig_combo = QComboBox()
-        self.rmf_stig_combo.setEditable(True)
-        self.rmf_stig_combo.addItems([
-            "DISA Router STIG", 
-            "DISA Switch STIG", 
-            "DISA Firewall STIG", 
-            "DISA OS STIG (based on OS type)",
-            "FedRAMP Compliance",
-            "Depends on device type"
-        ])
+        self.rmf_stig_combo.addItems(["Compliant", "Non-Compliant", "Exception", "In Progress"])
         rmf_form.addRow("STIG Compliance:", self.rmf_stig_combo)
         
-        # Authorization Requirements - now a combobox
+        # Authorization Requirements
         self.rmf_authorization_combo = QComboBox()
-        self.rmf_authorization_combo.setEditable(True)
-        self.rmf_authorization_combo.addItems([
-            "Boundary device, requires ATO",
-            "Infrastructure device, requires ATO",
-            "Security device, requires ATO",
-            "Server system, requires ATO",
-            "Cloud service, requires FedRAMP",
-            "End-user system, covered by site ATO",
-            "Varies by specific device"
-        ])
+        self.rmf_authorization_combo.addItems(["ATO Required", "ATO Not Required", "In Progress"])
         rmf_form.addRow("Authorization Requirements:", self.rmf_authorization_combo)
         
-        # Description field - now a text edit for better editing
+        # Description
         self.rmf_description_edit = QLineEdit()
-        self.rmf_description_edit.setMinimumWidth(300)
         rmf_form.addRow("Description:", self.rmf_description_edit)
         
         rmf_group.setLayout(rmf_form)
         rmf_layout.addWidget(rmf_group)
         
-        # STIG compliance dropdown
-        self.stig_combo = QComboBox()
-        self.stig_combo.addItems(["N/A", "Compliant", "Non-Compliant", "Exception", "In Progress"])
-        rmf_form.addRow("Current STIG Status:", self.stig_combo)
-        
-        # Vulnerability scan dropdown
-        self.vuln_combo = QComboBox()
-        self.vuln_combo.addItems(["N/A", "Clean", "Critical Findings", "Moderate Findings", "Low Findings", "Pending"])
-        rmf_form.addRow("Vulnerability Scan:", self.vuln_combo)
-        
-        # ATO Status dropdown
-        self.ato_combo = QComboBox()
-        self.ato_combo.addItems(["N/A", "Full ATO", "Interim ATO", "Pending", "Expired", "No ATO"])
-        rmf_form.addRow("ATO Status:", self.ato_combo)
-        
-        # Accreditation date
-        self.accred_date = QLineEdit()
-        rmf_form.addRow("Accreditation Date:", self.accred_date)
-        
-        tab_widget.addTab(rmf_tab, "RMF Info")
+        tab_widget.addTab(rmf_tab, "RMF")
         
         # ===== Layout Tab =====
         layout_tab = QWidget()
         layout_layout = QVBoxLayout(layout_tab)
         
-        # Grid placement options
-        self.grid_group = QGroupBox("Grid Placement")
-        grid_layout = QFormLayout()
+        # Spacing controls
+        spacing_group = QGroupBox("Spacing")
+        spacing_layout = QFormLayout()
         
-        # Grid layout preview
-        self.grid_preview = QLabel("Devices can be aligned to a grid for neat placement")
-        grid_layout.addRow(self.grid_preview)
+        self.h_spacing = QSpinBox()
+        self.h_spacing.setRange(10, 500)
+        self.h_spacing.setValue(100)
+        spacing_layout.addRow("Horizontal Spacing:", self.h_spacing)
         
-        # Enable grid placement
-        self.grid_snap_check = QCheckBox("Snap to Grid")
-        self.grid_snap_check.setChecked(False)
-        grid_layout.addRow("", self.grid_snap_check)
+        self.v_spacing = QSpinBox()
+        self.v_spacing.setRange(10, 500)
+        self.v_spacing.setValue(100)
+        spacing_layout.addRow("Vertical Spacing:", self.v_spacing)
         
-        # Grid size
-        self.grid_size_spin = QSpinBox()
-        self.grid_size_spin.setRange(10, 200)
-        self.grid_size_spin.setValue(50)
-        self.grid_size_spin.setSuffix(" px")
-        self.grid_size_spin.setEnabled(False)
-        grid_layout.addRow("Grid Size:", self.grid_size_spin)
-        
-        # Connect grid check to enable/disable grid size
-        self.grid_snap_check.toggled.connect(self.grid_size_spin.setEnabled)
-        self.grid_snap_check.toggled.connect(self._update_grid_preview)
-        self.grid_size_spin.valueChanged.connect(self._update_grid_preview)
-        
-        self.grid_group.setLayout(grid_layout)
-        layout_layout.addWidget(self.grid_group)
-        
-        # Multiple device creation - for new devices only
-        self.multiple_check = QCheckBox("Create Multiple Devices")
-        self.multiple_check.setChecked(False)
-        self.multiple_check.toggled.connect(self._toggle_multiple_options)
-        layout_layout.addWidget(self.multiple_check)
-        
-        # Settings for multiple devices
-        self.multiple_group = QGroupBox("Multiple Device Settings")
-        self.multiple_group.setVisible(False)
-        multiple_layout = QVBoxLayout()
-        
-        # Number of devices to create
-        multiplier_layout = QFormLayout()
-        self.multiplier_spin = QSpinBox()
-        self.multiplier_spin.setRange(1, 100)
-        self.multiplier_spin.setValue(2)
-        self.multiplier_spin.valueChanged.connect(self._update_connection_group_state)
-        multiplier_layout.addRow("Number of Devices:", self.multiplier_spin)
-        multiple_layout.addLayout(multiplier_layout)
-        
-        # Automatically connect the devices
-        self.connect_devices_check = QCheckBox("Connect Devices")
-        self.connect_devices_check.setChecked(False)
-        self.connect_devices_check.toggled.connect(self._toggle_connection_options)
-        multiple_layout.addWidget(self.connect_devices_check)
+        spacing_group.setLayout(spacing_layout)
+        spacing_group.setVisible(False)
+        self.spacing_group = spacing_group
+        layout_layout.addWidget(spacing_group)
         
         # Connection settings
         connection_group = QGroupBox("Connection Settings")
@@ -367,10 +307,7 @@ class DeviceDialog(QDialog):
         connection_layout.addRow("Label:", self.connection_label_edit)
         
         connection_group.setLayout(connection_layout)
-        multiple_layout.addWidget(connection_group)
-        
-        self.multiple_group.setLayout(multiple_layout)
-        layout_layout.addWidget(self.multiple_group)
+        layout_layout.addWidget(connection_group)
         
         tab_widget.addTab(layout_tab, "Layout")
         
@@ -394,7 +331,6 @@ class DeviceDialog(QDialog):
         self.setLayout(main_layout)
         
         # Initial updates
-        self._update_grid_preview()
         self._update_model_dropdown()
         self._update_selected_type_label()
         self._update_rmf_defaults()
@@ -450,6 +386,8 @@ class DeviceDialog(QDialog):
     def _toggle_multiple_options(self, checked):
         """Show or hide multiple device options based on checkbox state."""
         self.multiple_group.setVisible(checked)
+        self.multiplier_spin.setEnabled(checked)
+        self.spacing_group.setVisible(checked)
         
         # Adjust dialog size when toggling
         if checked:
@@ -459,6 +397,8 @@ class DeviceDialog(QDialog):
         if self.device is not None:
             self.multiple_check.setEnabled(False)
             self.multiple_group.setEnabled(False)
+            self.multiplier_spin.setEnabled(False)
+            self.spacing_group.setEnabled(False)
 
     def _toggle_connection_options(self, enabled):
         """Enable or disable the connection type options."""
@@ -588,16 +528,12 @@ class DeviceDialog(QDialog):
             'ip_address': self.ip_edit.text(),
             'description': self.desc_edit.text(),
             'model': self.custom_model_edit.text(),
-            'stig_compliance': "" if self.stig_combo.currentText() == "N/A" else self.stig_combo.currentText(),
-            'vulnerability_scan': "" if self.vuln_combo.currentText() == "N/A" else self.vuln_combo.currentText(),
-            'ato_status': "" if self.ato_combo.currentText() == "N/A" else self.ato_combo.currentText(),
-            'accreditation_date': self.accred_date.text(),
             
-            # Add custom RMF fields
-            'rmf_impact_level': self.rmf_impact_combo.currentText(),
-            'rmf_categorization': self.rmf_categorization_combo.currentText(),
-            'rmf_stig_compliance': self.rmf_stig_combo.currentText(),
-            'rmf_authorization': self.rmf_authorization_combo.currentText(),
+            # RMF properties
+            'impact_level': self.rmf_impact_combo.currentText(),
+            'security_categorization': self.rmf_categorization_combo.currentText(),
+            'stig_compliance': self.rmf_stig_combo.currentText(),
+            'authorization_requirements': self.rmf_authorization_combo.currentText(),
             'rmf_description': self.rmf_description_edit.text()
         }
         return properties
@@ -657,9 +593,8 @@ class DeviceDialog(QDialog):
     def get_spacing_data(self):
         """Get the grid spacing configuration."""
         return {
-            'horizontal_spacing': self.grid_size_spin.value(),
-            'vertical_spacing': self.grid_size_spin.value(),
-            'max_columns': self.grid_size_spin.value()
+            'horizontal': self.h_spacing.value(),
+            'vertical': self.v_spacing.value()
         }
 
     def _update_model_from_name(self):
@@ -672,9 +607,15 @@ class DeviceDialog(QDialog):
         """Handle save button click with name validation."""
         # Check if name is blank but we have a model
         if not self.name_edit.text().strip() and self.custom_model_edit.text().strip():
-            # Use the model name as the device name with a "1" suffix
+            # Use the model name as the device name
             model_name = self.custom_model_edit.text().strip()
-            self.name_edit.setText(f"{model_name} 1")
+            self.name_edit.setText(model_name)
+            
+        # If we're creating multiple devices and using the model name
+        if self.multiple_check.isChecked() and self.custom_model_edit.text().strip():
+            model_name = self.custom_model_edit.text().strip()
+            # Set the name to use the model name without a suffix
+            self.name_edit.setText(model_name)
             
         # Now accept the dialog
         self.accept()

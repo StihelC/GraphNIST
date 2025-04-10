@@ -144,15 +144,15 @@ class AddConnectionMode(DeviceInteractionMode):
                             pass
                         self.temp_line = None
                     
-                    self.canvas.statusMessage.emit("Connection created. Switching to select mode.")
+                    self.canvas.statusMessage.emit("Connection created. Click on a device to create another connection.")
                     
-                    # Switch back to SELECT mode after creating connection
-                    QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                    # Stay in ADD_CONNECTION mode - commented out to keep creating connections
+                    # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
                     
                     return True
                 else:
                     # User cancelled dialog
-                    self.canvas.statusMessage.emit("Connection cancelled. Switching to select mode.")
+                    self.canvas.statusMessage.emit("Connection cancelled. Click on a device to try again.")
                     self.source_device = None
                     if self.temp_line is not None:
                         try:
@@ -161,8 +161,8 @@ class AddConnectionMode(DeviceInteractionMode):
                             pass
                         self.temp_line = None
                     
-                    # Switch back to SELECT mode after cancelling
-                    QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                    # Stay in ADD_CONNECTION mode - commented out to keep creating connections
+                    # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
                     
                     return True
                 
@@ -176,10 +176,10 @@ class AddConnectionMode(DeviceInteractionMode):
                         pass
                     self.temp_line = None
                 
-                self.canvas.statusMessage.emit("Connection cancelled. Switching to select mode.")
+                self.canvas.statusMessage.emit("Connection cancelled. Click on a device to start creating a connection.")
                 
-                # Switch back to SELECT mode after cancelling
-                QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
+                # Stay in ADD_CONNECTION mode - commented out to keep creating connections
+                # QTimer.singleShot(100, lambda: self.canvas.set_mode(Modes.SELECT))
                 
                 return True
                 

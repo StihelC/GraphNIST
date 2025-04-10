@@ -16,7 +16,12 @@ class FileHandler:
             # Debug print for boundaries
             print(f"Canvas has {len(canvas.boundaries)} boundaries before serialization")
             for i, boundary in enumerate(canvas.boundaries):
-                print(f"  Boundary {i+1}: {boundary.name}, rect={boundary.rect()}")
+                position = boundary.scenePos()
+                rect = boundary.rect()
+                print(f"  Boundary {i+1}: {boundary.name}")
+                print(f"  - Scene position: x={position.x()}, y={position.y()}")
+                print(f"  - Local rect: x={rect.x()}, y={rect.y()}, w={rect.width()}, h={rect.height()}")
+                print(f"  - Absolute position: x={position.x() + rect.x()}, y={position.y() + rect.y()}")
             
             # Get serialized data
             data = CanvasSerializer.serialize_canvas(canvas)
@@ -24,7 +29,9 @@ class FileHandler:
             # Debug print for serialized boundaries
             print(f"Serialized data has {len(data.get('boundaries', []))} boundaries")
             for i, boundary_data in enumerate(data.get('boundaries', [])):
-                print(f"  Serialized boundary {i+1}: {boundary_data.get('name')}, rect={boundary_data.get('rect')}")
+                rect_data = boundary_data.get('rect', {})
+                print(f"  Serialized boundary {i+1}: {boundary_data.get('name')}")
+                print(f"  - Saved position: x={rect_data.get('x')}, y={rect_data.get('y')}, w={rect_data.get('width')}, h={rect_data.get('height')}")
             
             # Add metadata if requested
             if options and options.get('include_metadata', True):
@@ -57,7 +64,7 @@ class FileHandler:
     
     @staticmethod
     def load_canvas(canvas, filepath, recent_files_manager=None):
-        """Load the canvas from the given filepath."""
+        """Load canvas data from the given filepath."""
         try:
             print(f"Loading canvas from: {filepath}")
             # Detect if file is compressed
@@ -85,7 +92,9 @@ class FileHandler:
             # Debug boundary information from the loaded file
             print("Boundaries in loaded file:")
             for i, boundary_data in enumerate(data.get('boundaries', [])):
-                print(f"  Boundary {i+1}: {boundary_data.get('name')}, rect={boundary_data.get('rect')}")
+                rect_data = boundary_data.get('rect', {})
+                print(f"  Boundary {i+1}: {boundary_data.get('name')}")
+                print(f"  - Position in file: x={rect_data.get('x')}, y={rect_data.get('y')}, w={rect_data.get('width')}, h={rect_data.get('height')}")
             
             # Debug canvas boundaries before deserialization
             print(f"Canvas has {len(canvas.boundaries)} boundaries before loading")
@@ -96,7 +105,12 @@ class FileHandler:
             # Debug canvas boundaries after deserialization
             print(f"Canvas has {len(canvas.boundaries)} boundaries after loading")
             for i, boundary in enumerate(canvas.boundaries):
-                print(f"  Boundary {i+1}: {boundary.name}, rect={boundary.rect()}")
+                position = boundary.scenePos()
+                rect = boundary.rect()
+                print(f"  Boundary {i+1}: {boundary.name}")
+                print(f"  - Scene position: x={position.x()}, y={position.y()}")
+                print(f"  - Local rect: x={rect.x()}, y={rect.y()}, w={rect.width()}, h={rect.height()}")
+                print(f"  - Absolute position: x={position.x() + rect.x()}, y={position.y() + rect.y()}")
             
             # Add to recent files if manager is provided
             if recent_files_manager:

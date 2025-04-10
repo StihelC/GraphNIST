@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QGroupBox, 
     QFormLayout, QLineEdit, QSpinBox, QComboBox,
     QPushButton, QScrollArea, QHBoxLayout, QTableWidget,
-    QTableWidgetItem, QHeaderView, QCheckBox, QPlainTextEdit, QSpacerItem, QSizePolicy, QFrame, QGridLayout, QColorDialog
+    QTableWidgetItem, QHeaderView, QCheckBox, QPlainTextEdit, QSpacerItem, QSizePolicy, QFrame, QGridLayout, QColorDialog, QTabWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPalette
@@ -26,6 +26,7 @@ class PropertiesPanel(QWidget):
         self.setMinimumWidth(250)
         self.current_item = None
         self.boundary_devices = []
+        self.display_checkboxes = {}
         self._init_ui()
     
     def _init_ui(self):
@@ -94,94 +95,142 @@ class PropertiesPanel(QWidget):
         """Create the device-specific properties section."""
         group = QGroupBox("Device Properties")
         group.setStyleSheet("QGroupBox { font-weight: bold; }")
-        layout = QFormLayout(group)
-        layout.setVerticalSpacing(8)
+        layout = QVBoxLayout(group)
+        layout.setSpacing(10)
         
-        # Name
-        self.name_edit = QLineEdit()
-        self.name_edit.editingFinished.connect(
-            lambda: self.name_changed.emit(self.name_edit.text())
-        )
-        layout.addRow("Name:", self.name_edit)
+        # Create tab widget for organizing properties
+        tab_widget = QTabWidget()
+        
+        # ===== Basic Tab =====
+        basic_tab = QWidget()
+        basic_layout = QFormLayout(basic_tab)
+        basic_layout.setVerticalSpacing(8)
         
         # Device type (read-only)
         self.device_type_label = QLabel()
-        layout.addRow("Type:", self.device_type_label)
+        basic_layout.addRow("Type:", self.device_type_label)
         
-        # Device model (read-only, shown separately)
+        # Model (read-only)
         self.device_model_label = QLabel()
-        layout.addRow("Model:", self.device_model_label)
+        basic_layout.addRow("Model:", self.device_model_label)
         
-        # Z-index (layer)
-        self.z_index_spin = QSpinBox()
-        self.z_index_spin.setMinimum(-10)
-        self.z_index_spin.setMaximum(100)
-        self.z_index_spin.setValue(10)
-        self.z_index_spin.valueChanged.connect(self.z_value_changed.emit)
-        layout.addRow("Layer:", self.z_index_spin)
+        # RMF properties
+        self.rmf_impact_combo = QComboBox()
+        self.rmf_impact_combo.addItems(["Low", "Moderate", "High"])
+        self.rmf_impact_combo.currentTextChanged.connect(
+            lambda text: self.device_property_changed.emit('impact_level', text)
+        )
+        basic_layout.addRow("Impact Level:", self.rmf_impact_combo)
         
-        # Icon selection
-        icon_layout = QHBoxLayout()
-        self.icon_button = QPushButton("Change Icon...")
-        self.icon_button.clicked.connect(self._on_change_icon_clicked)
-        icon_layout.addWidget(self.icon_button)
-        layout.addRow("Icon:", icon_layout)
+        self.rmf_categorization_combo = QComboBox()
+        self.rmf_categorization_combo.addItems(["Low", "Moderate", "High"])
+        self.rmf_categorization_combo.currentTextChanged.connect(
+            lambda text: self.device_property_changed.emit('security_categorization', text)
+        )
+        basic_layout.addRow("Security Categorization:", self.rmf_categorization_combo)
         
-        # RMF ATO properties section
-        rmf_group = QGroupBox("RMF Status")
-        rmf_layout = QFormLayout(rmf_group)
+        self.rmf_stig_combo = QComboBox()
+        self.rmf_stig_combo.addItems(["Not Started", "In Progress", "Completed", "Not Applicable"])
+        self.rmf_stig_combo.currentTextChanged.connect(
+            lambda text: self.device_property_changed.emit('stig_compliance', text)
+        )
+        basic_layout.addRow("STIG Compliance:", self.rmf_stig_combo)
         
-        # STIG Compliance
-        self.stig_label = QLabel()
-        rmf_layout.addRow("STIG Compliance:", self.stig_label)
+        self.rmf_authorization_combo = QComboBox()
+        self.rmf_authorization_combo.addItems(["ATO Required", "ATO In Progress", "ATO Granted", "Not Applicable"])
+        self.rmf_authorization_combo.currentTextChanged.connect(
+            lambda text: self.device_property_changed.emit('authorization_requirements', text)
+        )
+        basic_layout.addRow("Authorization:", self.rmf_authorization_combo)
         
-        # Vulnerability Scan
-        self.vuln_label = QLabel()
-        rmf_layout.addRow("Vulnerability Scan:", self.vuln_label)
+        self.rmf_description_edit = QPlainTextEdit()
+        self.rmf_description_edit.setMaximumHeight(60)
+        self.rmf_description_edit.textChanged.connect(
+            lambda: self.device_property_changed.emit('rmf_description', self.rmf_description_edit.toPlainText())
+        )
+        basic_layout.addRow("RMF Description:", self.rmf_description_edit)
         
-        # ATO Status
-        self.ato_label = QLabel()
-        rmf_layout.addRow("ATO Status:", self.ato_label)
+        tab_widget.addTab(basic_tab, "Basic")
         
-        # Accreditation Date
-        self.accred_date_label = QLabel()
-        rmf_layout.addRow("Accred Date:", self.accred_date_label)
+        # ===== Network Tab =====
+        network_tab = QWidget()
+        network_layout = QFormLayout(network_tab)
+        network_layout.setVerticalSpacing(8)
         
-        layout.addRow(rmf_group)
+        # IP Address
+        self.ip_edit = QLineEdit()
+        self.ip_edit.editingFinished.connect(
+            lambda: self.device_property_changed.emit('ip_address', self.ip_edit.text())
+        )
+        network_layout.addRow("IP Address:", self.ip_edit)
+        
+        # Hostname
+        self.hostname_edit = QLineEdit()
+        self.hostname_edit.editingFinished.connect(
+            lambda: self.device_property_changed.emit('hostname', self.hostname_edit.text())
+        )
+        network_layout.addRow("Hostname:", self.hostname_edit)
+        
+        # Description
+        self.desc_edit = QLineEdit()
+        self.desc_edit.editingFinished.connect(
+            lambda: self.device_property_changed.emit('description', self.desc_edit.text())
+        )
+        network_layout.addRow("Description:", self.desc_edit)
+        
+        tab_widget.addTab(network_tab, "Network")
+        
+        # ===== Display Tab =====
+        display_tab = QWidget()
+        display_layout = QVBoxLayout(display_tab)
         
         # Display properties group
-        display_group = QGroupBox("Display Options")
-        display_layout = QVBoxLayout(display_group)
-        
-        # Checkboxes will be dynamically added
-        self.display_checkboxes = {}
+        self.display_options_group = QGroupBox("Display Options")
+        display_options_layout = QVBoxLayout(self.display_options_group)
         
         # Add title display toggle to show/hide device name
         title_checkbox = QCheckBox("Show Device Name")
         title_checkbox.setChecked(True)
         title_checkbox.setEnabled(False)  # Always enabled for now
-        display_layout.addWidget(title_checkbox)
-        self.display_checkboxes['title'] = title_checkbox
+        display_options_layout.addWidget(title_checkbox)
         
-        layout.addRow(display_group)
+        # Check if we need to create a new checkbox or reuse existing one
+        create_new_checkbox = True
+        if hasattr(self, 'display_format_checkbox') and self.display_format_checkbox is not None:
+            try:
+                # Check if the checkbox is valid
+                test = self.display_format_checkbox.isChecked()
+                # If we get here, the checkbox is valid
+                create_new_checkbox = False
+                
+                # If it has a parent, detach it
+                if self.display_format_checkbox.parent() is not None:
+                    self.display_format_checkbox.setParent(None)
+            except (RuntimeError, AttributeError):
+                # Widget was deleted or is invalid
+                create_new_checkbox = True
+                self.display_format_checkbox = None
         
-        # Custom properties table
-        self.device_props_table = QTableWidget(0, 4)  # Changed from 3 to 4 columns
-        self.device_props_table.setHorizontalHeaderLabels(["Property", "Value", "Display", "Delete"])
-        self.device_props_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.device_props_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.device_props_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.device_props_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.device_props_table.setMinimumHeight(250)  # Increased from 100 to 250
-        layout.addRow(self.device_props_table)
+        # Create a new checkbox if needed
+        if create_new_checkbox:
+            self.display_format_checkbox = QCheckBox("Show Property Names")
+            self.display_format_checkbox.setChecked(True)
+            self.display_format_checkbox.setToolTip("Toggle between showing 'property: value' or just 'value'")
+            self.display_format_checkbox.stateChanged.connect(
+                lambda state: self.property_display_toggled.emit('show_property_names', bool(state))
+            )
         
-        # Add button for adding new properties
-        add_prop_button = QPushButton("Add Property")
-        add_prop_button.clicked.connect(self._add_new_property)
-        layout.addRow(add_prop_button)
+        # Add the checkbox to the layout
+        display_options_layout.addWidget(self.display_format_checkbox)
         
-        # Connect to slot that handles property changes
-        self.device_props_table.cellChanged.connect(self._on_device_property_changed)
+        # Add the display options group to the display tab
+        display_layout.addWidget(self.display_options_group)
+        display_layout.addStretch()
+        
+        tab_widget.addTab(display_tab, "Display")
+        
+        # Add the tab widget to the main layout
+        layout.addWidget(tab_widget)
         
         return group
     
@@ -240,7 +289,7 @@ class PropertiesPanel(QWidget):
         
         # Add font size spinner
         self.boundary_font_size_spin = QSpinBox()
-        self.boundary_font_size_spin.setRange(8, 24)
+        self.boundary_font_size_spin.setRange(8, 50)
         self.boundary_font_size_spin.setSuffix(" pt")
         self.boundary_font_size_spin.valueChanged.connect(
             lambda value: self.boundary_property_changed.emit("font_size", value)
@@ -263,15 +312,37 @@ class PropertiesPanel(QWidget):
         
         # Important: No longer require double click to update panel
         
+        # Store a reference to the display_format_checkbox before clearing layouts
+        format_checkbox = None
+        if hasattr(self, 'display_format_checkbox'):
+            format_checkbox = self.display_format_checkbox
+            # Detach it from its parent to prevent deletion
+            if format_checkbox is not None and format_checkbox.parent() is not None:
+                format_checkbox.setParent(None)
+        
         # Clear the content layout first
         self._reset_layout(self.content_layout)
+        
+        # Restore the reference to display_format_checkbox
+        self.display_format_checkbox = format_checkbox
         
         # Update current item reference
         self.current_item = item
         logger.info(f"PANEL DEBUG: Set current_item reference to: {type(self.current_item).__name__}")
         
-        # Recreate sections if they've been deleted
-        if not hasattr(self, 'general_group') or not self._widget_exists(self.general_group):
+        # Check if sections need to be recreated
+        need_recreate = False
+        if (not hasattr(self, 'general_group') or 
+            not self._widget_exists(self.general_group) or
+            not hasattr(self, 'device_group') or
+            not self._widget_exists(self.device_group) or
+            not hasattr(self, 'connection_group') or
+            not self._widget_exists(self.connection_group) or
+            not hasattr(self, 'boundary_group') or
+            not self._widget_exists(self.boundary_group)):
+            need_recreate = True
+            
+        if need_recreate:
             logger.info("PANEL DEBUG: Recreating panel sections")
             self.general_group = self._create_general_section()
             self.device_group = self._create_device_section()
@@ -326,83 +397,48 @@ class PropertiesPanel(QWidget):
         self.boundary_group.setVisible(False)
         
         # Set basic properties
-        self.name_edit.setText(device.name)
-        self.z_index_spin.setValue(int(device.zValue()))
-        self.device_type_label.setText(device.device_type.capitalize())
+        if hasattr(device, 'name'):
+            self.name_edit.setText(device.name)
+            
+        if hasattr(device, 'zValue'):
+            self.z_index_spin.setValue(int(device.zValue()))
+            
+        if hasattr(device, 'device_type'):
+            self.device_type_label.setText(device.device_type.capitalize())
         
+        # Only proceed with property-related operations if device has properties
+        if not hasattr(device, 'properties'):
+            return
+            
         # Set model if available
         model_text = device.properties.get('model', '')
         self.device_model_label.setText(model_text)
         
-        # Set RMF ATO properties if available
-        self.stig_label.setText(device.properties.get('stig_compliance', ''))
-        self.vuln_label.setText(device.properties.get('vulnerability_scan', ''))
-        self.ato_label.setText(device.properties.get('ato_status', ''))
-        self.accred_date_label.setText(device.properties.get('accreditation_date', ''))
+        # Set RMF properties
+        self.rmf_impact_combo.setCurrentText(device.properties.get('impact_level', 'Low'))
+        self.rmf_categorization_combo.setCurrentText(device.properties.get('security_categorization', 'Low'))
+        self.rmf_stig_combo.setCurrentText(device.properties.get('stig_compliance', 'In Progress'))
+        self.rmf_authorization_combo.setCurrentText(device.properties.get('authorization_requirements', 'ATO Required'))
+        self.rmf_description_edit.setPlainText(device.properties.get('rmf_description', ''))
         
-        # Populate device properties table
-        self.device_props_table.setRowCount(0)
-        self.device_props_table.clearContents()
-        self.device_props_table.blockSignals(True)
+        # Set network properties
+        self.ip_edit.setText(device.properties.get('ip_address', ''))
+        self.hostname_edit.setText(device.properties.get('hostname', ''))
+        self.desc_edit.setText(device.properties.get('description', ''))
         
-        # Add ALL device properties to the table, including those displayed as separate fields
-        # This ensures all properties are editable
-        row = 0
-        for prop, value in device.properties.items():
-            # Skip only the icon property
-            if prop not in ['icon', 'color', 'width', 'height']:
-                self.device_props_table.insertRow(row)
-                
-                # Create property name item (not editable)
-                propItem = QTableWidgetItem(prop)
-                propItem.setFlags(propItem.flags() & ~Qt.ItemIsEditable)
-                self.device_props_table.setItem(row, 0, propItem)
-                
-                # Create value item (editable)
-                self.device_props_table.setItem(row, 1, QTableWidgetItem(str(value)))
-                
-                # Create display checkbox
-                checkbox = QCheckBox()
-                is_displayed = False
-                if hasattr(device, 'display_properties'):
-                    is_displayed = device.display_properties.get(prop, False)
-                checkbox.setChecked(is_displayed)
-                # Connect checkbox state change to handler
-                checkbox.stateChanged.connect(lambda state, r=row: self._on_display_checkbox_changed(r, state))
-                self.device_props_table.setCellWidget(row, 2, checkbox)
-                
-                # Create delete button (X icon)
-                deleteWidget = QWidget()
-                deleteLayout = QHBoxLayout(deleteWidget)
-                deleteLayout.setContentsMargins(4, 0, 4, 0)  # Small margins for better appearance
-                deleteLayout.setAlignment(Qt.AlignCenter)
-                
-                deleteButton = QPushButton("✕")
-                deleteButton.setMaximumWidth(24)  # Make it small and square
-                deleteButton.setMaximumHeight(24)
-                deleteButton.setToolTip("Delete property")
-                deleteButton.setStyleSheet("QPushButton { font-weight: bold; }")
-                deleteButton.setProperty("row", row)
-                deleteButton.clicked.connect(self._on_delete_property_clicked)
-                
-                deleteLayout.addWidget(deleteButton)
-                self.device_props_table.setCellWidget(row, 3, deleteWidget)
-                
-                row += 1
+        # Only update display options if device has the necessary methods
+        if hasattr(device, 'get_property_display_state'):
+            self._update_device_display_options(device)
         
-        self.device_props_table.blockSignals(False)
-        
-        # Update display options checkboxes
-        self._update_device_display_options(device)
+        # Set display format checkbox state if device supports it
+        if hasattr(self, 'display_format_checkbox') and hasattr(device, 'properties'):
+            show_property_names = device.properties.get('show_property_names', True)
+            self.display_format_checkbox.setChecked(show_property_names)
     
     def _get_display_options_group(self):
-        """Helper method to find the Display Options group within the device group."""
-        for i in range(self.device_group.layout().count()):
-            item = self.device_group.layout().itemAt(i)
-            if (item and item.widget() and 
-                isinstance(item.widget(), QGroupBox) and 
-                item.widget().title() == "Display Options"):
-                return item.widget()
+        """Helper method to find the Display Options group."""
+        if hasattr(self, 'display_options_group'):
+            return self.display_options_group
         return None
     
     def _reset_layout(self, layout):
@@ -412,24 +448,39 @@ class PropertiesPanel(QWidget):
         
         # Handle the case when layout is actually a QGroupBox
         if isinstance(layout, QGroupBox):
-            # Get the actual layout from the group box
-            box_layout = layout.layout()
-            if box_layout:
-                self._reset_layout(box_layout)
+            try:
+                # Get the actual layout from the group box
+                box_layout = layout.layout()
+                if box_layout:
+                    self._reset_layout(box_layout)
+            except Exception as e:
+                logging.getLogger(__name__).error(f"Error in _reset_layout with QGroupBox: {str(e)}")
             return
         
         # Handle the case when it's a real layout with a count method
         if hasattr(layout, 'count'):
             while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().hide()
-                    item.widget().deleteLater()
-                elif item.layout():
-                    self._reset_layout(item.layout())
-                elif item.spacerItem():
-                    # Just remove spacer items
-                    pass
+                try:
+                    item = layout.takeAt(0)
+                    if item.widget():
+                        widget = item.widget()
+                        
+                        # No special handling needed for display_format_checkbox
+                        # since we handle it explicitly before calling this method
+                        try:
+                            widget.hide()
+                            widget.deleteLater()
+                        except Exception as e:
+                            logging.getLogger(__name__).error(f"Error deleting widget: {str(e)}")
+                            
+                    elif item.layout():
+                        self._reset_layout(item.layout())
+                    elif item.spacerItem():
+                        # Just remove spacer items
+                        pass
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"Error in _reset_layout: {str(e)}")
+                    break
     
     def _display_connection_properties(self, connection):
         """Update the panel with connection-specific properties."""
@@ -732,11 +783,33 @@ class PropertiesPanel(QWidget):
         self.current_item = None
         self.boundary_devices = []
         
+        # Store a reference to the display_format_checkbox before clearing layouts
+        format_checkbox = None
+        if hasattr(self, 'display_format_checkbox'):
+            format_checkbox = self.display_format_checkbox
+            # Detach it from its parent to prevent deletion
+            if format_checkbox is not None and format_checkbox.parent() is not None:
+                format_checkbox.setParent(None)
+        
         # Clear the content layout first
         self._reset_layout(self.content_layout)
         
-        # Recreate the sections if they've been deleted
-        if not hasattr(self, 'general_group') or not self._widget_exists(self.general_group):
+        # Restore the reference to display_format_checkbox
+        self.display_format_checkbox = format_checkbox
+        
+        # Check if sections need to be recreated
+        need_recreate = False
+        if (not hasattr(self, 'general_group') or 
+            not self._widget_exists(self.general_group) or
+            not hasattr(self, 'device_group') or
+            not self._widget_exists(self.device_group) or
+            not hasattr(self, 'connection_group') or
+            not self._widget_exists(self.connection_group) or
+            not hasattr(self, 'boundary_group') or
+            not self._widget_exists(self.boundary_group)):
+            need_recreate = True
+            
+        if need_recreate:
             self.general_group = self._create_general_section()
             self.device_group = self._create_device_section()
             self.connection_group = self._create_connection_section()
@@ -767,18 +840,23 @@ class PropertiesPanel(QWidget):
 
     def _update_device_display_options(self, device):
         """Update the display options for a device."""
-        # Clear existing checkboxes
-        for i in reversed(range(self._get_display_options_group().layout().count())):
-            widget = self._get_display_options_group().layout().itemAt(i).widget()
-            if isinstance(widget, QCheckBox) and widget != self.display_checkboxes.get('title', None):
-                self._get_display_options_group().layout().removeWidget(widget)
+        # First check if we even have a device with display properties
+        if not hasattr(device, 'properties') or not hasattr(device, 'get_property_display_state'):
+            return
+            
+        display_group = self._get_display_options_group()
+        if not display_group:
+            return
+            
+        # Clear existing checkboxes that aren't the display format checkbox
+        for i in reversed(range(display_group.layout().count())):
+            widget = display_group.layout().itemAt(i).widget()
+            if isinstance(widget, QCheckBox) and widget != self.display_format_checkbox:
+                display_group.layout().removeWidget(widget)
                 widget.deleteLater()
         
-        # Clear display_checkboxes dict except for title checkbox
-        title_checkbox = self.display_checkboxes.get('title', None)
+        # Reset display_checkboxes dictionary
         self.display_checkboxes = {}
-        if title_checkbox:
-            self.display_checkboxes['title'] = title_checkbox
         
         # Common properties to show (in order)
         common_properties = [
@@ -808,6 +886,14 @@ class PropertiesPanel(QWidget):
     
     def _add_display_checkbox(self, device, prop_key, display_name):
         """Add a checkbox for controlling the display of a device property."""
+        display_group = self._get_display_options_group()
+        if not display_group:
+            return
+        
+        # Make sure device has the required method
+        if not hasattr(device, 'get_property_display_state'):
+            return
+            
         # Create the checkbox with a friendly display name
         checkbox = QCheckBox(display_name)
         
@@ -822,7 +908,7 @@ class PropertiesPanel(QWidget):
         checkbox.stateChanged.connect(self._handle_display_state_changed)
         
         # Add to layout and store reference
-        self._get_display_options_group().layout().addWidget(checkbox)
+        display_group.layout().addWidget(checkbox)
         self.display_checkboxes[prop_key] = checkbox
     
     def _on_boundary_color_change(self):
@@ -959,3 +1045,8 @@ class PropertiesPanel(QWidget):
                     layout.removeWidget(widget)
                     widget.deleteLater()
                     break
+
+    def _on_display_format_changed(self, state):
+        """Handle changes to the display format checkbox."""
+        show_property_names = state == Qt.Checked
+        self.device_property_changed.emit('show_property_names', show_property_names)

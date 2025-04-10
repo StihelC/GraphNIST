@@ -192,8 +192,13 @@ class SelectMode(CanvasMode):
     
     def mouse_release_event(self, event, scene_pos=None, item=None):
         """Handle mouse release to complete selection box operation."""
-        if event.button() == Qt.LeftButton and self.mouse_press_pos:
+        if event.button() == Qt.LeftButton:
             try:
+                # First, ensure any group drag is properly completed
+                if hasattr(self.canvas, 'group_selection_manager') and self.canvas.group_selection_manager:
+                    if self.canvas.group_selection_manager.is_drag_active():
+                        self.canvas.group_selection_manager.end_drag()
+                
                 # Ensure all devices have the correct flags
                 for device in self.canvas.devices:
                     if device.scene():
@@ -212,6 +217,11 @@ class SelectMode(CanvasMode):
                 if self.canvas.scene():
                     self.canvas.scene().update()
                     
+                # Emit the selection_changed signal
+                if hasattr(self.canvas, 'selection_changed'):
+                    selected_items = self.canvas.scene().selectedItems()
+                    self.canvas.selection_changed.emit(selected_items)
+                    
             except Exception as e:
                 self.logger.error(f"Error in mouse release: {e}")
                 import traceback
@@ -220,11 +230,6 @@ class SelectMode(CanvasMode):
             # Reset state variables
             self.mouse_press_pos = None
             self.click_item = None
-            
-            # Emit the selection_changed signal
-            if hasattr(self.canvas, 'selection_changed'):
-                selected_items = self.canvas.scene().selectedItems()
-                self.canvas.selection_changed.emit(selected_items)
             
             return True
         

@@ -755,31 +755,34 @@ class Device(QGraphicsPixmapItem):
             # Item is about to move
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' position changing")
             
-            # IMPROVED: Block individual dragging when part of multi-selection
-            selected_items = self.scene().selectedItems()
-            if len(selected_items) > 1 and self.isSelected():
-                # Get the canvas
-                if self.scene() and self.scene().views():
-                    canvas = self.scene().views()[0]
+            # Get the canvas
+            if self.scene() and self.scene().views():
+                canvas = self.scene().views()[0]
+                
+                # Check if we're in a group drag operation
+                if (hasattr(canvas, 'group_selection_manager') and 
+                    canvas.group_selection_manager and 
+                    canvas.group_selection_manager.is_drag_active()):
                     
-                    # Check if we have a group selection manager and it's active
-                    if (hasattr(canvas, 'group_selection_manager') and 
-                        canvas.group_selection_manager and 
-                        canvas.group_selection_manager.is_drag_active()):
-                        
-                        # If this item is being dragged as part of a group, let the manager handle it
-                        drag_items = canvas.group_selection_manager.get_drag_items()
-                        if self in drag_items:
-                            self.logger.debug(f"HANDLED: Device '{self.name}' movement handled by GroupSelectionManager")
-                            return value  # Allow the movement as it's managed by the GroupSelectionManager
-                    
-                    # If not being handled by the manager, check if we should block movement
-                    # This happens when select mode is active but we're not doing a group drag
-                    if hasattr(canvas, 'mode_manager'):
-                        from constants import Modes
-                        if canvas.mode_manager.current_mode == Modes.SELECT:
+                    # If this item is being dragged as part of a group, let the manager handle it
+                    drag_items = canvas.group_selection_manager.get_drag_items()
+                    if self in drag_items:
+                        self.logger.debug(f"HANDLED: Device '{self.name}' movement handled by GroupSelectionManager")
+                        return value  # Allow the movement as it's managed by the GroupSelectionManager
+                
+                # Check if we're in select mode
+                if hasattr(canvas, 'mode_manager'):
+                    from constants import Modes
+                    if canvas.mode_manager.current_mode == Modes.SELECT:
+                        # In select mode, check if we're part of a multi-selection
+                        selected_items = self.scene().selectedItems()
+                        if len(selected_items) > 1 and self.isSelected():
+                            # If we're part of a multi-selection, block individual movement
                             self.logger.debug(f"BLOCKED: Device '{self.name}' movement blocked as part of multi-selection")
-                            return self.pos()  # Block the movement to ensure group selection integrity
+                            return self.pos()
+                
+                # For single item movement, allow the change
+                return value
             
         elif change == QGraphicsItem.ItemPositionHasChanged and self.scene():
             # Item has moved
@@ -807,6 +810,9 @@ class Device(QGraphicsPixmapItem):
     
     def mousePressEvent(self, event):
         """Handle mouse press events, ensuring single-click selection."""
+        # Save the cursor position relative to item position for smoother dragging
+        self.drag_offset = event.pos()
+        
         # Accept the event immediately to ensure it's processed
         event.accept()
         
@@ -822,6 +828,10 @@ class Device(QGraphicsPixmapItem):
         """Handle mouse release events, ensuring selection state is updated."""
         # Accept the event immediately
         event.accept()
+        
+        # Clear the drag offset
+        if hasattr(self, 'drag_offset'):
+            self.drag_offset = None
         
         # Ensure selection state is updated and emit signal if changed
         if self.isSelected() != self.is_selected:
@@ -876,7 +886,30 @@ class Device(QGraphicsPixmapItem):
             event.ignore()
             return
         
-        # For single selection, handle dragging normally
+        # For single selection, use the drag offset for smoother movement
+        if hasattr(self, 'drag_offset'):
+            # Calculate the new position accounting for the drag offset
+            new_pos = self.mapToScene(event.pos() - self.drag_offset)
+            
+            # Set the position directly
+            if self.scene():
+                old_pos = self.pos()
+                self.setPos(new_pos)
+                
+                # Update connections
+                self.update_connections()
+                
+                # Update text and property labels
+                self.update_label_positions()
+                
+                # Emit signal that device has moved
+                if hasattr(self, 'signals'):
+                    self.signals.moved.emit(self)
+                
+                # Don't call super implementation as we've handled the drag manually
+                return
+        
+        # If drag_offset is not set, fallback to default behavior
         super().mouseMoveEvent(event)
         
         # Update text label position to stay centered under the device
@@ -1085,6 +1118,9 @@ class Device(QGraphicsPixmapItem):
         # Get properties that should be displayed
         visible_props = [prop for prop, visible in self.display_properties.items() if visible]
         
+        # Get display format preference
+        show_property_names = self.properties.get('show_property_names', True)
+        
         # Create or update labels for each visible property
         for prop_name in visible_props:
             # Skip if property no longer exists in properties
@@ -1114,27 +1150,27 @@ class Device(QGraphicsPixmapItem):
                     del self.property_labels[prop_name]
                 continue
                 
-            # Special handling for IP address (displayed always as IP if available)
+            # Format the display value based on the property and display format preference
             display_value = ""
             if prop_name == 'ip_address':
-                # For IP address, show just the value
+                # For IP address, always show just the value
                 display_value = str(prop_value)
             elif prop_name == 'model':
-                # For model, show just the value (not the prefix)
+                # For model, always show just the value
                 display_value = str(prop_value)
             elif prop_name in ['stig_compliance', 'vulnerability_scan', 'ato_status', 'accreditation_date']:
                 # Format RMF properties with shorter display names
                 if prop_name == 'stig_compliance':
-                    display_value = f"STIG: {str(prop_value)}"
+                    display_value = f"STIG: {str(prop_value)}" if show_property_names else str(prop_value)
                 elif prop_name == 'vulnerability_scan':
-                    display_value = f"Vuln: {str(prop_value)}"
+                    display_value = f"Vuln: {str(prop_value)}" if show_property_names else str(prop_value)
                 elif prop_name == 'ato_status':
-                    display_value = f"ATO: {str(prop_value)}"
+                    display_value = f"ATO: {str(prop_value)}" if show_property_names else str(prop_value)
                 elif prop_name == 'accreditation_date':
-                    display_value = f"Accred: {str(prop_value)}"
+                    display_value = f"Accred: {str(prop_value)}" if show_property_names else str(prop_value)
             else:
-                # For other properties, show "name: value"
-                display_value = f"{prop_name}: {str(prop_value)}"
+                # For other properties, show "name: value" or just "value" based on preference
+                display_value = f"{prop_name}: {str(prop_value)}" if show_property_names else str(prop_value)
                 
             # Skip if value is empty
             if not display_value.strip():
@@ -1276,4 +1312,24 @@ class Device(QGraphicsPixmapItem):
     def update(self):
         """Update the device display."""
         super().update()
+        self.update_property_labels()
+
+    def update_label_positions(self):
+        """Update positions of the name label and property labels."""
+        # Update text label position to stay centered under the device
+        if hasattr(self, 'text_item') and self.text_item:
+            text_width = self.text_item.boundingRect().width()
+            text_x = (self.width - text_width) / 2
+            self.text_item.setPos(text_x, self.height + 3)
+        
+        # Make sure all other child items stay aligned with the device
+        for child in self.childItems():
+            # Skip text_item and property labels
+            if child == self.text_item or child in self.property_labels.values():
+                continue
+            # All other children should be at 0,0 relative to device
+            elif child.pos() != QPointF(0, 0):
+                child.setPos(QPointF(0, 0))
+        
+        # Update property labels
         self.update_property_labels()

@@ -1,13 +1,14 @@
 import sys
 import logging
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QDir, Qt, QTimer
 import os
-from PyQt5.QtCore import QDir, Qt
 import datetime
 
 from views.main_window import MainWindow
 from controllers.command_manager import CommandManager
 from controllers.undo_redo_manager import UndoRedoManager
+from views.splash import SplashScreen
 
 def setup_logging():
     """Set up logging configuration."""
@@ -40,6 +41,54 @@ def setup_logging():
     
     logging.info(f"Logging configured. Log file: {log_filename}")
 
+def initialize_application(splash):
+    """Initialize the application with progress updates shown in splash screen."""
+    # Import main window here to avoid circular imports
+    splash.update_message("Creating main window...")
+    from views.main_window import MainWindow
+    
+    # Create main window
+    main_window = MainWindow()
+    
+    # Update splash message
+    splash.update_message("Setting up controllers...")
+    
+    # Setup command manager after window is created
+    undo_redo_manager = UndoRedoManager(main_window.event_bus)
+    
+    # Pass both undo_redo_manager and event_bus to CommandManager
+    command_manager = CommandManager(undo_redo_manager, main_window.event_bus)
+    main_window.command_manager = command_manager
+    
+    # Now that command_manager is set up, create the properties controller
+    main_window.setup_properties_controller()
+    
+    # Setup controllers with undo/redo manager
+    main_window.device_controller.undo_redo_manager = undo_redo_manager
+    main_window.connection_controller.undo_redo_manager = undo_redo_manager
+    main_window.boundary_controller.undo_redo_manager = undo_redo_manager
+    
+    # Update splash message
+    splash.update_message("Initializing UI components...")
+    
+    # Set font settings manager on the device controller
+    main_window.device_controller.font_settings_manager = main_window.font_settings_manager
+    
+    # Set theme manager on the connection controller
+    main_window.connection_controller.theme_manager = main_window.theme_manager
+    
+    # Update undo/redo in the edit menu that was already created
+    main_window._update_undo_redo_actions()
+    
+    # Final splash message
+    splash.update_message("Starting GraphNIST...")
+    
+    # Apply font settings to existing devices
+    for device in main_window.canvas.devices:
+        device.update_font_settings(main_window.font_settings_manager)
+    
+    return main_window
+
 def main():
     # Set up detailed logging
     setup_logging()
@@ -59,42 +108,27 @@ def main():
     app_path = os.path.dirname(os.path.abspath(__file__))
     QDir.setCurrent(app_path)
     
-    # Import main window here to avoid circular imports
-    from views.main_window import MainWindow
+    # Create the splash screen with 70% of the original size
+    splash_path = os.path.join(app_path, 'resources', 'icons', 'svg', 'loading.png')
+    splash = SplashScreen(app, splash_path, scale_factor=0.7)
     
-    # Create main window
-    main_window = MainWindow()
-    main_window.show()
-    main_window.resize(1200, 800)  # Set default size
-    
-    # Setup command manager after window is created
-    # Pass the event_bus from main_window to UndoRedoManager
-    undo_redo_manager = UndoRedoManager(main_window.event_bus)
-    
-    # Pass both undo_redo_manager and event_bus to CommandManager
-    command_manager = CommandManager(undo_redo_manager, main_window.event_bus)
-    main_window.command_manager = command_manager
-    
-    # Now that command_manager is set up, create the properties controller
-    main_window.setup_properties_controller()
-    
-    # Setup controllers with undo/redo manager
-    main_window.device_controller.undo_redo_manager = undo_redo_manager
-    main_window.connection_controller.undo_redo_manager = undo_redo_manager
-    main_window.boundary_controller.undo_redo_manager = undo_redo_manager
-    
-    # Set font settings manager on the device controller
-    main_window.device_controller.font_settings_manager = main_window.font_settings_manager
-    
-    # Set theme manager on the connection controller
-    main_window.connection_controller.theme_manager = main_window.theme_manager
-    
-    # Update undo/redo in the edit menu that was already created
-    main_window._update_undo_redo_actions()
-    
-    # Apply font settings to existing devices
-    for device in main_window.canvas.devices:
-        device.update_font_settings(main_window.font_settings_manager)
+    # Show splash screen with initial message
+    if not splash.show("Initializing..."):
+        # If splash failed, initialize and show main window immediately
+        main_window = initialize_application(splash)
+        main_window.show()
+        main_window.resize(1200, 800)
+    else:
+        # Initialize with splash screen
+        main_window = initialize_application(splash)
+        
+        # Set up function to close splash and show main window
+        def show_main_window():
+            main_window.show()
+            main_window.resize(1200, 800)
+        
+        # Schedule splash screen to close after 1500ms
+        splash.delay_close(1500, show_main_window)
     
     # Run application
     sys.exit(app.exec_())
