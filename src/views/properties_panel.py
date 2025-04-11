@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPalette
 import logging
+from constants import DeviceTypes
 
 class PropertiesPanel(QWidget):
     """A panel for displaying and editing properties of selected items."""
@@ -20,6 +21,7 @@ class PropertiesPanel(QWidget):
     change_icon_requested = pyqtSignal(object)
     property_display_toggled = pyqtSignal(str, bool)
     property_delete_requested = pyqtSignal(str)
+    device_selected = pyqtSignal(object)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -107,13 +109,23 @@ class PropertiesPanel(QWidget):
         basic_layout = QFormLayout(basic_tab)
         basic_layout.setVerticalSpacing(8)
         
-        # Device type (read-only)
-        self.device_type_label = QLabel()
-        basic_layout.addRow("Type:", self.device_type_label)
+        # Device type (editable)
+        self.device_type_edit = QComboBox()
+        # Populate with available device types
+        for device_type in DeviceTypes.get_all_types():
+            # Display capitalized device type for better readability
+            self.device_type_edit.addItem(device_type.capitalize(), device_type)
+        self.device_type_edit.currentIndexChanged.connect(
+            lambda: self.device_property_changed.emit('device_type', self.device_type_edit.currentData())
+        )
+        basic_layout.addRow("Type:", self.device_type_edit)
         
-        # Model (read-only)
-        self.device_model_label = QLabel()
-        basic_layout.addRow("Model:", self.device_model_label)
+        # Model (editable)
+        self.device_model_edit = QLineEdit()
+        self.device_model_edit.editingFinished.connect(
+            lambda: self.device_property_changed.emit('model', self.device_model_edit.text())
+        )
+        basic_layout.addRow("Model:", self.device_model_edit)
         
         # RMF properties
         self.rmf_impact_combo = QComboBox()
@@ -301,12 +313,24 @@ class PropertiesPanel(QWidget):
         )
         layout.addRow("Text Size:", self.boundary_font_size_spin)
         
-        # Show contained devices
-        self.boundary_devices_table = QTableWidget(0, 1)
-        self.boundary_devices_table.setHorizontalHeaderLabels(["Contained Devices"])
+        # Add boundary name editor
+        self.boundary_name_edit = QLineEdit()
+        self.boundary_name_edit.setPlaceholderText("Enter boundary name")
+        self.boundary_name_edit.editingFinished.connect(
+            lambda: self.boundary_property_changed.emit("name", self.boundary_name_edit.text())
+        )
+        layout.addRow("Name:", self.boundary_name_edit)
+        
+        # Show contained devices with clickable items
+        self.boundary_devices_table = QTableWidget(0, 2)
+        self.boundary_devices_table.setHorizontalHeaderLabels(["Device Name", "Type"])
         self.boundary_devices_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.boundary_devices_table.setMinimumHeight(100)
-        layout.addRow(self.boundary_devices_table)
+        self.boundary_devices_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.boundary_devices_table.setMinimumHeight(150)
+        self.boundary_devices_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.boundary_devices_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.boundary_devices_table.itemClicked.connect(self._on_boundary_device_clicked)
+        layout.addRow("Contained Devices:", self.boundary_devices_table)
         
         return group
     
@@ -417,7 +441,10 @@ class PropertiesPanel(QWidget):
             self.z_index_spin.setValue(int(device.zValue()))
             
         if hasattr(device, 'device_type'):
-            self.device_type_label.setText(device.device_type.capitalize())
+            # Set the device type in the combo box
+            index = self.device_type_edit.findText(device.device_type.capitalize())
+            if index >= 0:
+                self.device_type_edit.setCurrentIndex(index)
         
         # Only proceed with property-related operations if device has properties
         if not hasattr(device, 'properties'):
@@ -425,7 +452,7 @@ class PropertiesPanel(QWidget):
             
         # Set model if available
         model_text = device.properties.get('model', '')
-        self.device_model_label.setText(model_text)
+        self.device_model_edit.setText(model_text)
         
         # Set RMF properties
         self.rmf_impact_combo.setCurrentText(device.properties.get('impact_level', 'Low'))
@@ -570,14 +597,22 @@ class PropertiesPanel(QWidget):
             font_size = boundary.get_font_size()
             self.boundary_font_size_spin.setValue(font_size)
         
-        # Note: Contained devices are displayed separately via set_boundary_contained_devices
+        # Update boundary name
+        if hasattr(boundary, 'name'):
+            self.boundary_name_edit.setText(boundary.name)
+        
+        # Clear and update the devices table
         self.boundary_devices_table.setRowCount(0)
         
         # Find devices that are contained within this boundary
         if self.boundary_devices:
             for row, device in enumerate(self.boundary_devices):
                 self.boundary_devices_table.insertRow(row)
-                self.boundary_devices_table.setItem(row, 0, QTableWidgetItem(device.name))
+                name_item = QTableWidgetItem(device.name)
+                name_item.setData(Qt.UserRole, device)  # Store device reference
+                type_item = QTableWidgetItem(device.device_type)
+                self.boundary_devices_table.setItem(row, 0, name_item)
+                self.boundary_devices_table.setItem(row, 1, type_item)
     
     def set_boundary_contained_devices(self, devices):
         """Set the list of devices contained within the selected boundary."""
@@ -1073,3 +1108,14 @@ class PropertiesPanel(QWidget):
         """Handle changes to the display format checkbox."""
         show_property_names = state == Qt.Checked
         self.device_property_changed.emit('show_property_names', show_property_names)
+
+    def _on_boundary_device_clicked(self, item):
+        """Handle clicking on a device in the boundary's contained devices table."""
+        if item is None:
+            return
+            
+        # Get the device reference from the first column
+        device = self.boundary_devices_table.item(item.row(), 0).data(Qt.UserRole)
+        if device:
+            # Emit signal to select the clicked device
+            self.device_selected.emit(device)

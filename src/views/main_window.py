@@ -9,6 +9,7 @@ import logging
 import os
 from PyQt5.QtPrintSupport import QPrinter
 
+from utils import theme_manager
 from views.canvas.canvas import Canvas
 from constants import Modes
 from controllers.menu_manager import MenuManager
@@ -1045,6 +1046,41 @@ class MainWindow(QMainWindow):
             if device.display_properties[property_name]:
                 device.update_property_labels()
 
+    def _on_connection_property_changed(self, connection, property_name, value=None):
+        """Handle connection property change events."""
+        # Check if connection is an actual connection object and not a string
+        if isinstance(connection, str):
+            self.logger.warning(f"Received string instead of connection object: {connection}")
+            return
+            
+        # Update the connection's appearance based on the changed property
+        if hasattr(connection, 'update_appearance'):
+            connection.update_appearance()
+        # Force a visual update
+        if hasattr(connection, 'update'):
+            connection.update()
+        if hasattr(connection, 'scene') and callable(connection.scene) and connection.scene():
+            # Update a slightly larger area to ensure all visual elements are refreshed
+            update_rect = connection.sceneBoundingRect().adjusted(-5, -5, 5, 5)
+            connection.scene().update(update_rect)
+                
+    def _on_boundary_property_changed(self, boundary, property_name, value=None):
+        """Handle boundary property change events."""
+        # Check if boundary is an actual boundary object and not a string
+        if isinstance(boundary, str):
+            self.logger.warning(f"Received string instead of boundary object: {boundary}")
+            return
+            
+        # Update the boundary's appearance based on the changed property
+        if hasattr(boundary, 'update_appearance'):
+            boundary.update_appearance()
+        # Force a visual update
+        if hasattr(boundary, 'update'):
+            boundary.update()
+        if hasattr(boundary, 'scene') and callable(boundary.scene) and boundary.scene():
+            update_rect = boundary.sceneBoundingRect().adjusted(-5, -5, 5, 5)
+            boundary.scene().update(update_rect)
+                
     def _on_device_display_properties_changed(self, device, property_name=None, enabled=None):
         """Handle changes to which properties are displayed under devices."""
         device.update_property_labels()
@@ -1113,7 +1149,7 @@ class MainWindow(QMainWindow):
         for device in self.canvas.devices:
             # Apply theme update via the device's method
             if hasattr(device, 'update_theme'):
-                device.update_theme(theme_name)
+                device.update_theme(theme) # type: ignore
                 
             # Directly set text colors in case update_theme doesn't work
             if hasattr(device, 'text_item') and device.text_item:
@@ -1303,7 +1339,33 @@ class MainWindow(QMainWindow):
         pass
 
     def connect_signals(self):
-        """Connect signals with their handlers."""
+        """Connect signals between components."""
+        # Connect canvas signals
+        self.canvas.selection_changed.connect(self._on_selection_changed)
+        
+        # Connect device signals
+        for device in self.canvas.devices:
+            if hasattr(device, 'signals') and hasattr(device.signals, 'double_clicked'):
+                device.signals.double_clicked.connect(self._on_device_double_clicked)
+        
+        # Connect properties panel signals
+        self.properties_panel.name_changed.connect(
+            lambda item, name: self._on_property_changed(item, "name", name))
+        self.properties_panel.z_value_changed.connect(
+            lambda: self._handle_z_value_changed())
+        self.properties_panel.device_property_changed.connect(self._on_device_property_changed)
+        self.properties_panel.connection_property_changed.connect(self._on_connection_property_changed)
+        self.properties_panel.boundary_property_changed.connect(self._on_boundary_property_changed)
+        self.properties_panel.change_icon_requested.connect(self._on_change_icon_requested)
+        self.properties_panel.property_display_toggled.connect(self._on_property_display_toggled)
+        self.properties_panel.property_delete_requested.connect(self._on_property_delete_requested)
+        self.properties_panel.device_selected.connect(self._on_device_selected)
+        
+        # Connect font settings signals
+        self.font_settings_manager.ui_font_changed.connect(self._apply_ui_font)
+        self.font_settings_manager.device_label_font_changed.connect(self._apply_device_label_font)
+        self.font_settings_manager.device_property_font_changed.connect(self._apply_device_property_font)
+        
         # Connect device controller signals
         self.canvas.add_device_requested.connect(self.device_controller.on_add_device_requested)
         self.canvas.delete_device_requested.connect(self.device_controller.on_delete_device_requested)
@@ -1336,49 +1398,35 @@ class MainWindow(QMainWindow):
     
     def _on_selection_changed(self, selected_items):
         """Handle selection changes in the canvas by showing the properties panel."""
+        self.logger.debug(f"MAINWINDOW DEBUG: Selection changed. Items: {[type(item).__name__ for item in selected_items]}")
+        
         if selected_items and len(selected_items) > 0:
             # Show properties panel when objects are selected
             if hasattr(self, 'properties_dock'):
-                # Make properties dock visible
+                self.logger.debug("MAINWINDOW DEBUG: Making properties dock visible")
                 self.properties_dock.setVisible(True)
                 self.properties_dock.raise_()
-                
-                # Set a timer to make sure the panel stays visible
-                # This prevents race conditions with other UI events
-                QTimer.singleShot(50, self._ensure_properties_visible)
     
-    def _ensure_properties_visible(self):
-        """Ensure properties panel stays visible (called after a short delay)."""
-        if hasattr(self, 'properties_dock') and not self.properties_dock.isVisible():
-            self.properties_dock.setVisible(True)
-            self.properties_dock.raise_()
-
     def _connect_device_double_click(self, device):
         """Connect a device's double-clicked signal to show properties panel."""
+        self.logger.debug(f"MAINWINDOW DEBUG: Connecting double-click for device: {device.name}")
         if hasattr(device, 'signals') and hasattr(device.signals, 'double_clicked'):
             device.signals.double_clicked.connect(self._on_device_double_clicked)
     
     def _on_device_double_clicked(self, device):
         """Handle device double-click by showing properties panel and selecting the device."""
-        # Ensure the device is selected
-        if not device.isSelected():
-            # Clear existing selection first
-            self.canvas.scene().clearSelection()
-            device.setSelected(True)
+        self.logger.debug(f"MAINWINDOW DEBUG: Device double-clicked: {device.name}")
+        # Use selection manager to handle the selection
+        if hasattr(self, 'properties_controller') and hasattr(self.properties_controller, 'selection_manager'):
+            self.logger.debug("MAINWINDOW DEBUG: Using selection manager to select device")
+            self.properties_controller.selection_manager.select_item(device)
             
-        # Get all selected items (should include our device)
-        selected_items = [device]
-        
-        # Show properties panel and update it with the device
-        if hasattr(self, 'properties_panel') and self.properties_panel:
-            # Make sure properties panel is visible
+            # Ensure properties panel is visible
             if hasattr(self, 'properties_dock'):
+                self.logger.debug("MAINWINDOW DEBUG: Making properties dock visible after double-click")
                 self.properties_dock.setVisible(True)
-            
-            # Make sure the properties controller is updated
-            if hasattr(self, 'properties_controller'):
-                self.properties_controller.update_properties_panel(selected_items)
-    
+                self.properties_dock.raise_()
+
     def set_mode(self, mode):
         """Set the current interaction mode."""
         self.canvas.set_mode(mode)
@@ -1647,3 +1695,52 @@ class MainWindow(QMainWindow):
         label.setFont(font)
         label.setAlignment(Qt.AlignCenter)
         return label
+
+    def _on_device_selected(self, device):
+        """Handle device selection from properties panel."""
+        if device:
+            # Clear current selection
+            self.canvas.scene().clearSelection()
+            # Select the clicked device
+            device.setSelected(True)
+            # Update properties panel
+            self._on_selection_changed([device])
+
+    def _on_property_changed(self, item, property_name, value):
+        """Handle property changes from the properties panel."""
+        if hasattr(item, 'set_property'):
+            item.set_property(property_name, value)
+            # Update the canvas to reflect changes
+            self.canvas.update()
+
+    def _on_change_icon_requested(self, device):
+        """Handle request to change a device's icon."""
+        if device and hasattr(self.device_controller, 'change_device_icon'):
+            self.device_controller.change_device_icon(device)
+    
+    def _on_property_display_toggled(self, device, property_name, enabled):
+        """Handle toggling of property display under a device."""
+        if device and hasattr(device, 'set_property_display'):
+            device.set_property_display(property_name, enabled)
+    
+    def _on_property_delete_requested(self, item, property_name):
+        """Handle request to delete a custom property."""
+        if item and hasattr(item, 'delete_property'):
+            item.delete_property(property_name)
+            # Update the properties panel
+            if hasattr(self.properties_panel, 'update_properties'):
+                self.properties_panel.update_properties(item)
+
+    def _handle_z_value_changed(self):
+        """Handle z-value changes from properties panel without parameters."""
+        # Get the selected item from the scene
+        selected_items = self.canvas.scene().selectedItems()
+        if selected_items:
+            item = selected_items[0]
+            # Get the z-value directly from the properties panel
+            if hasattr(self.properties_panel, 'get_z_value'):
+                z_value = self.properties_panel.get_z_value()
+                self._on_property_changed(item, "z_value", z_value)
+            elif hasattr(item, 'zValue'):
+                z_value = item.zValue()
+                self._on_property_changed(item, "z_value", z_value)

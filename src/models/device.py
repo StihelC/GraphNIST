@@ -735,9 +735,35 @@ class Device(QGraphicsPixmapItem):
         if name == 'show_connection_points':
             self._show_connection_points = value
             self.update()  # Force redraw
+        elif name == 'device_type':
+            # Update the device type
+            old_type = self.device_type
+            self.device_type = value
+            
+            # If the device type changed, update device properties based on the new type
+            if old_type != value:
+                # Get default properties for the new device type
+                default_props = self.DEVICE_PROPERTIES.get(value, self.DEVICE_PROPERTIES[DeviceTypes.GENERIC]).copy()
+                
+                # Keep existing custom properties
+                for key, val in self.properties.items():
+                    if key not in default_props:
+                        default_props[key] = val
+                
+                # Update properties
+                self.properties = default_props
+                
+                # Reload the icon based on new device type
+                self._try_load_icon()
+                self.update()  # Force redraw
         else:
             # Store in properties dict
             self.properties[name] = value
+            
+            # For model changes, consider updating the icon
+            if name == 'model' and value:
+                self._try_load_icon()
+                self.update()  # Force redraw
     
     def add_connection(self, connection):
         """Add a connection to this device's connections list."""
@@ -748,6 +774,35 @@ class Device(QGraphicsPixmapItem):
         """Remove a connection from this device's connections list."""
         if connection in self.connections:
             self.connections.remove(connection)
+            
+    def set_property(self, property_name, value):
+        """Set a property and update the device accordingly."""
+        # Log the property change
+        self.logger.debug(f"Setting property {property_name} to {value} for device {self.name}")
+        
+        # Handle special properties
+        if property_name == 'name':
+            self.name = value
+            self.update_name()
+        elif property_name == 'z_value':
+            try:
+                z_value = float(value)
+                self.setZValue(z_value)
+            except (ValueError, TypeError):
+                self.logger.warning(f"Invalid z-value: {value}")
+        elif property_name == 'device_type':
+            # Use our specialized setProperty method for device_type
+            self.setProperty('device_type', value)
+        else:
+            # Regular property
+            self.setProperty(property_name, value)
+            
+            # Update property labels if displayed
+            if property_name in self.display_properties and self.display_properties[property_name]:
+                self.update_property_labels()
+                
+        # Force visual update
+        self.update()
     
     def itemChange(self, change, value):
         """Handle item changes."""

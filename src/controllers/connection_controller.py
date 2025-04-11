@@ -287,7 +287,7 @@ class ConnectionController:
                     from controllers.commands import CompositeCommand, AddConnectionCommand
                     
                     # Create different connection patterns based on strategy
-                    composite_cmd = CompositeCommand(f"Connect {len(devices)} Devices")
+                    composite_cmd = CompositeCommand(commands=[], description=f"Connect {len(devices)} Devices")
                     added_connections = 0
                     
                     # Mesh connectivity - connect every device to every other device

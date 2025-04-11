@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QDialog, QComboBox, QVBoxLayout, QLabel, QCheckBox, QPushButton, QMessageBox
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QColor
 import logging
 import traceback
@@ -56,13 +56,20 @@ class PropertiesController:
     
     def __init__(self, canvas, properties_panel, event_bus, undo_redo_manager=None):
         """Initialize the properties controller."""
+        super().__init__()
         self.canvas = canvas
         self.panel = properties_panel
         self.event_bus = event_bus
         self.undo_redo_manager = undo_redo_manager
         self.logger = logging.getLogger(__name__)
         self.selected_item = None
-        self.selected_items = []  # Add this line to store multiple selected items
+        self.selected_items = []
+        
+        # Add debounce timer
+        self.update_timer = QTimer()
+        self.update_timer.setSingleShot(True)
+        self.update_timer.timeout.connect(self._process_pending_update)
+        self.pending_update = None
         
         # Connect panel signals
         self.panel.name_changed.connect(self._on_name_changed)
@@ -70,141 +77,106 @@ class PropertiesController:
         self.panel.device_property_changed.connect(self._on_device_property_changed)
         self.panel.connection_property_changed.connect(self._on_connection_property_changed)
         self.panel.boundary_property_changed.connect(self._on_boundary_property_changed)
-        self.panel.change_icon_requested.connect(self._on_change_icon_requested)  # Connect new signal
-        self.panel.property_display_toggled.connect(self._on_property_display_toggled)  # Connect the new signal
-        self.panel.property_delete_requested.connect(self._on_property_delete_requested)  # Connect property delete signal
+        self.panel.change_icon_requested.connect(self._on_change_icon_requested)
+        self.panel.property_display_toggled.connect(self._on_property_display_toggled)
+        self.panel.property_delete_requested.connect(self._on_property_delete_requested)
         
-        # Listen to canvas selection changes
-        if hasattr(canvas, 'selection_changed'):
-            canvas.selection_changed.connect(self.on_selection_changed)
-    
-    def on_selection_changed(self, selected_items):
-        """Handle canvas selection changes."""
-        self.logger.info(f"SELECTION DEBUG: Selection changed with {len(selected_items)} items")
-        for item in selected_items:
-            self.logger.info(f"SELECTION DEBUG: Selected item type: {type(item).__name__}, id: {id(item)}")
+        # Initialize selection manager
+        from controllers.selection_manager import SelectionManager
+        self.selection_manager = SelectionManager(canvas, self)
         
-        # Update properties panel with selected items - don't clear if empty selection
-        if selected_items and len(selected_items) > 0:
-            # Only update if there are actual items selected
-            self.update_properties_panel(selected_items)
-            
-            # Ensure the properties panel is visible by finding the main window
-            self._show_properties_panel()
+        # Connect selection manager signals
+        self.selection_manager.single_item_selected.connect(self._on_single_item_selected)
+        self.selection_manager.multiple_items_selected.connect(self._on_multiple_items_selected)
+        self.selection_manager.selection_cleared.connect(self._on_selection_cleared)
     
-    def _show_properties_panel(self):
-        """Ensure the properties panel is visible."""
-        # Try to find the main window containing properties_dock
-        try:
-            # Method 1: Find through parent hierarchy of the panel widget
-            main_window = None
-            parent = self.panel
-            while parent and not hasattr(parent, 'properties_dock'):
-                parent = parent.parent()
-            
-            if parent and hasattr(parent, 'properties_dock'):
-                main_window = parent
-                main_window.properties_dock.setVisible(True)
-                main_window.properties_dock.raise_()
-                return
-                
-            # Method 2: Find through application instance
-            import sys
-            if 'PyQt5.QtWidgets' in sys.modules:
-                app = sys.modules['PyQt5.QtWidgets'].QApplication.instance()
-                if app:
-                    for widget in app.topLevelWidgets():
-                        if hasattr(widget, 'properties_dock'):
-                            widget.properties_dock.setVisible(True)
-                            widget.properties_dock.raise_()
-                            
-                            # Set a timer to ensure the dock stays visible (avoid race conditions)
-                            if hasattr(widget, '_ensure_properties_visible'):
-                                from PyQt5.QtCore import QTimer
-                                QTimer.singleShot(50, widget._ensure_properties_visible)
-                            return
-        except Exception as e:
-            # Log error but don't crash
-            self.logger.error(f"Error showing properties panel: {str(e)}")
-            import traceback
-            self.logger.error(traceback.format_exc())
+    def _process_pending_update(self):
+        """Process the pending update after debounce delay."""
+        if self.pending_update:
+            self.logger.debug(f"PROPERTIES DEBUG: Processing pending update for {self.pending_update['type']}")
+            if self.pending_update['type'] == 'single':
+                self._on_single_item_selected(self.pending_update['item'])
+            elif self.pending_update['type'] == 'multiple':
+                self._on_multiple_items_selected(self.pending_update['items'])
+            elif self.pending_update['type'] == 'clear':
+                self._on_selection_cleared()
+            self.pending_update = None
     
     def update_properties_panel(self, selected_items=None):
-        """Update properties panel based on selection."""
-        self.logger.info(f"SELECTION DEBUG: Updating properties panel")
+        """Update properties panel based on selection with debounce."""
+        self.logger.debug(f"PROPERTIES DEBUG: Update requested for {len(selected_items) if selected_items else 0} items")
         
-        if selected_items is None:
-            # If no items provided, get the current selection from the canvas
-            selected_items = self.canvas.scene().selectedItems()
-            self.logger.info(f"SELECTION DEBUG: Got {len(selected_items)} selected items from scene")
+        # Stop any pending timer
+        self.update_timer.stop()
         
-        # Clear current selection reference
+        if not selected_items:
+            self.pending_update = {'type': 'clear'}
+        elif len(selected_items) == 1:
+            self.pending_update = {'type': 'single', 'item': selected_items[0]}
+        else:
+            self.pending_update = {'type': 'multiple', 'items': selected_items}
+        
+        # Start debounce timer
+        self.update_timer.start(100)  # 100ms debounce
+    
+    def _on_single_item_selected(self, item):
+        """Handle single item selection."""
+        self.logger.debug(f"PROPERTIES DEBUG: Processing single item selection for {type(item).__name__} (ID: {id(item)})")
+        self.selected_item = item
+        self.selected_items = []
+        
+        # Ensure panel is visible
+        if hasattr(self.panel, 'parent') and hasattr(self.panel.parent(), 'setVisible'):
+            self.logger.debug("PROPERTIES DEBUG: Making properties panel visible")
+            self.panel.parent().setVisible(True)
+            self.panel.parent().raise_()
+            
+        # Update panel
+        self.logger.debug("PROPERTIES DEBUG: Updating properties panel for single item")
+        
+        # If the item is a boundary name text item, get its parent boundary
+        if hasattr(item, 'parentItem') and isinstance(item.parentItem(), Boundary):
+            item = item.parentItem()
+            
+        self.panel.display_item_properties(item)
+        
+        # If a boundary is selected, find contained devices
+        if isinstance(item, Boundary):
+            self.logger.debug("PROPERTIES DEBUG: Boundary selected, finding contained devices")
+            contained_devices = self._get_devices_in_boundary(item)
+            self.panel.set_boundary_contained_devices(contained_devices)
+    
+    def _on_multiple_items_selected(self, items):
+        """Handle multiple items selection."""
+        self.logger.debug(f"PROPERTIES DEBUG: Multiple items selected: {len(items)}")
+        self.selected_item = None
+        self.selected_items = items
+        
+        # Ensure panel is visible
+        if hasattr(self.panel, 'parent') and hasattr(self.panel.parent(), 'setVisible'):
+            self.logger.debug("PROPERTIES DEBUG: Making properties panel visible")
+            self.panel.parent().setVisible(True)
+            self.panel.parent().raise_()
+            
+        # Update panel
+        self.logger.debug("PROPERTIES DEBUG: Updating properties panel for multiple items")
+        self.panel.show_multiple_devices(items)
+    
+    def _on_selection_cleared(self):
+        """Handle selection being cleared."""
+        self.logger.debug("PROPERTIES DEBUG: Selection cleared")
         self.selected_item = None
         self.selected_items = []
         
-        # Handle the case when no items are selected
-        if not selected_items:
-            # Nothing selected, show empty panel
-            self.logger.info("SELECTION DEBUG: No items selected, clearing panel")
-            self.panel.clear()
-            return
+        # Ensure panel is visible
+        if hasattr(self.panel, 'parent') and hasattr(self.panel.parent(), 'setVisible'):
+            self.logger.debug("PROPERTIES DEBUG: Making properties panel visible")
+            self.panel.parent().setVisible(True)
+            self.panel.parent().raise_()
             
-        # Handle the case when multiple items are selected
-        if len(selected_items) > 1:
-            # Filter to handle only devices for multi-selection
-            devices = [item for item in selected_items if item in self.canvas.devices]
-            self.logger.info(f"SELECTION DEBUG: Multiple items ({len(selected_items)}), filtered to {len(devices)} devices")
-            
-            # Check if we're in a connection operation - if so, don't show the multi-device panel
-            # This prevents showing the common properties when clicking Connect Multiple Devices
-            in_connection_operation = False
-            
-            # Find the connection controller
-            controller_container = self.canvas.parent()
-            if controller_container:
-                if hasattr(controller_container, 'connection_controller'):
-                    connection_controller = controller_container.connection_controller
-                    if hasattr(connection_controller, 'connection_operation_in_progress'):
-                        in_connection_operation = connection_controller.connection_operation_in_progress
-                        self.logger.info(f"SELECTION DEBUG: Connection operation in progress: {in_connection_operation}")
-            
-            # Only show multi-device panel if not in a connection operation
-            if devices and not in_connection_operation:
-                self.selected_items = devices
-                self.panel.show_multiple_devices(devices)
-                return
-        
-        # If we reach here, only one item is selected or we're in a connection operation
-        # Get the first selected item
-        item = selected_items[0]
-        self.logger.info(f"SELECTION DEBUG: Single item selected, type: {type(item).__name__}, id: {id(item)}")
-        
-        # For simplicity, focus on the first selected item
-        self.selected_item = item
-        self.logger.info(f"SELECTION DEBUG: Displaying properties for item: {type(self.selected_item).__name__}")
-        self.panel.display_item_properties(self.selected_item)
-        
-        # Log selection details for debugging
-        self.logger.info(f"Selected item: {type(self.selected_item).__name__}")
-        
-        # If a boundary is selected, find contained devices
-        if isinstance(self.selected_item, Boundary):
-            contained_devices = self._get_devices_in_boundary(self.selected_item)
-            self.panel.set_boundary_contained_devices(contained_devices)
-    
-    def _get_devices_in_boundary(self, boundary):
-        """Get all devices contained within the boundary."""
-        devices = []
-        boundary_rect = boundary.sceneBoundingRect()
-        
-        for item in self.canvas.scene().items():
-            if isinstance(item, Device):
-                # Check if device is fully contained within boundary
-                device_rect = item.sceneBoundingRect()
-                if boundary_rect.contains(device_rect):
-                    devices.append(item)
-        
-        return devices
+        # Clear panel
+        self.logger.debug("PROPERTIES DEBUG: Clearing properties panel")
+        self.panel.clear()
     
     def _on_name_changed(self, new_name):
         """Handle name change in properties panel."""
@@ -639,6 +611,26 @@ class PropertiesController:
         
         # Notify via event bus
         self.event_bus.emit("device_property_deleted", device, property_name)
+
+    def _get_devices_in_boundary(self, boundary):
+        """Get all devices contained within a boundary."""
+        if not hasattr(boundary, 'scene'):
+            return []
+            
+        # Get all devices in the scene
+        all_devices = [item for item in boundary.scene().items() if isinstance(item, Device)]
+        
+        # Filter devices that are within the boundary's bounds
+        boundary_rect = boundary.boundingRect()
+        boundary_pos = boundary.pos()
+        contained_devices = []
+        
+        for device in all_devices:
+            device_pos = device.pos()
+            if (boundary_rect.contains(device_pos - boundary_pos)):
+                contained_devices.append(device)
+                
+        return contained_devices
 
 class TogglePropertyDisplayCommand(Command):
     """Command for toggling device property display."""
