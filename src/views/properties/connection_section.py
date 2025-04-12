@@ -1,10 +1,11 @@
 from PyQt5.QtWidgets import (
     QFormLayout, QComboBox, QTableWidget, QTableWidgetItem, 
-    QHeaderView
+    QHeaderView, QVBoxLayout, QHBoxLayout, QLabel, QGroupBox, QPushButton
 )
 from PyQt5.QtCore import pyqtSignal, Qt
+import logging
 
-from models.connection import Connection
+from models.connection.connection import Connection, ConnectionTypes, RoutingStyle
 from .base_section import BaseSection
 
 class ConnectionSection(BaseSection):

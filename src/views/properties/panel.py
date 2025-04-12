@@ -6,8 +6,8 @@ from PyQt5.QtCore import Qt, pyqtSignal
 import logging
 
 from models.device import Device
-from models.connection import Connection  
-from models.boundary import Boundary
+from models.connection.connection import Connection  
+from models.boundary.boundary import Boundary
 
 from .general_section import GeneralSection
 from .device_section import DeviceSection

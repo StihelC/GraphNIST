@@ -3,7 +3,8 @@ from PyQt5.QtCore import Qt
 import logging
 
 from constants import Modes, DeviceTypes
-from models.connection import Connection
+from models.device import Device
+from models.connection.connection import Connection
 
 class MenuManager:
     """Manager for creating and managing all menus and toolbars."""
@@ -25,7 +26,6 @@ class MenuManager:
         style_menu = connection_menu.addMenu("Routing Style")
         
         # Straight style
-        from models.connection import Connection
         straight_action = style_menu.addAction("Straight")
         straight_action.triggered.connect(
             lambda checked, s=Connection.STYLE_STRAIGHT: self.main_window.connection_controller.set_connection_style(s))

@@ -1,11 +1,13 @@
 import logging
-from PyQt5.QtCore import Qt, QEvent, QPointF
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsView
+from PyQt5.QtCore import Qt, QEvent, QPointF, QPoint, QRectF, QTimer
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsView, QGraphicsScene
+from PyQt5.QtGui import QPen, QColor, QBrush
 
 from views.canvas.modes.base_mode import CanvasMode
-from models.boundary import Boundary
+from models.boundary.boundary import Boundary
 from models.device import Device
-from models.connection import Connection
+from models.connection.connection import Connection
+from constants import Modes
 
 class SelectMode(CanvasMode):
     """Mode for selecting and manipulating devices and boundaries."""
@@ -104,8 +106,8 @@ class SelectMode(CanvasMode):
             if item:
                 # Check if it's a device, connection, or boundary
                 from models.device import Device
-                from models.connection import Connection
-                from models.boundary import Boundary
+                from models.connection.connection import Connection
+                from models.boundary.boundary import Boundary
                 
                 if isinstance(item, (Device, Connection, Boundary)):
                     # Directly clicked on a selectable item

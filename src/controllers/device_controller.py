@@ -1,12 +1,13 @@
 from PyQt5.QtWidgets import QDialog, QMessageBox, QGraphicsItem
-from PyQt5.QtCore import QPointF
+from PyQt5.QtCore import QPointF, QRectF, QSizeF, Qt
 from PyQt5.QtGui import QFontMetrics, QColor, QFont
 import logging
 import traceback
 import math
+import random
 
 from models.device import Device
-from models.connection import Connection
+from models.connection.connection import Connection
 from views.device_dialog import DeviceDialog
 from constants import DeviceTypes, ConnectionTypes
 from controllers.commands import AddDeviceCommand, DeleteDeviceCommand
@@ -152,7 +153,7 @@ class DeviceController:
         """Show dialog to add a new device."""
         try:
             # Only create dialog when explicitly requested
-            self.logger.info("Explicitly opening device dialog for adding a new device")
+            self.logger.info(f"AddDeviceMode: Opening device dialog at position {pos}")
             dialog = DeviceDialog(self.canvas.parent())
             if dialog.exec_() == QDialog.Accepted:
                 device_data = dialog.get_device_data()
@@ -232,6 +233,10 @@ class DeviceController:
                         self._connect_multiple_devices(devices, connection_data)
                     
                 self.logger.info(f"Added {multiplier} device(s) of type {device_data['type']}")
+                return True
+            else:
+                self.logger.info("AddDeviceMode: User cancelled device creation dialog")
+                # Still return True to indicate the event was handled, even though no device was created
                 return True
         except Exception as e:
             self.logger.error(f"Error adding device: {str(e)}")

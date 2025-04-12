@@ -14,7 +14,7 @@ from PyQt5.QtGui import QColor, QBrush
 
 # Import the boundary class
 sys.path.insert(0, '..')  # Add parent directory to path
-from models.boundary import Boundary
+from models.boundary.boundary import Boundary
 
 class BoundaryTestWindow(QMainWindow):
     """Test window for boundary resizing."""

@@ -26,8 +26,8 @@ from .modes.add_boundary_mode import AddBoundaryMode
 from .modes.add_connection_mode import AddConnectionMode
 
 from models.device import Device
-from models.connection import Connection
-from models.boundary import Boundary
+from models.connection.connection import Connection
+from models.boundary.boundary import Boundary
 
 class Canvas(QGraphicsView):
     """Canvas widget for displaying and interacting with network devices."""

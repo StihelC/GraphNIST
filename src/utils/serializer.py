@@ -3,6 +3,7 @@ from PyQt5.QtCore import QPointF, QRectF, QByteArray
 from PyQt5.QtGui import QColor
 import uuid
 import os
+from models.connection.connection import Connection, ConnectionTypes, RoutingStyle
 
 class CanvasSerializer:
     """Handles serialization and deserialization of canvas elements."""
@@ -433,7 +434,7 @@ class CanvasSerializer:
     @staticmethod
     def deserialize_connection(data, canvas, device_lookup):
         """Create a connection from serialized data."""
-        from models.connection import Connection, ConnectionTypes, RoutingStyle
+        from models.connection.connection import Connection, ConnectionTypes, RoutingStyle
         from PyQt5.QtCore import Qt
         
         try:
@@ -560,7 +561,7 @@ class CanvasSerializer:
     @staticmethod
     def deserialize_boundary(data, canvas):
         """Create a boundary from serialized data."""
-        from models.boundary import Boundary
+        from models.boundary.boundary import Boundary
         
         try:
             # Debug print for input data

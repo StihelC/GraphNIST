@@ -10,7 +10,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Import the boundary class
-from src.models.boundary import Boundary
+from src.models.boundary.boundary import Boundary
 
 # Create a mock theme manager for testing
 class MockThemeManager:

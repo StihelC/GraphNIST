@@ -1,11 +1,11 @@
 import logging
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtWidgets import QGraphicsItem
 
-from .base_mode import DeviceInteractionMode, CanvasMode
-from models.boundary import Boundary
-from models.connection import Connection
+from views.canvas.modes.base_mode import DeviceInteractionMode, CanvasMode
 from models.device import Device
+from models.connection.connection import Connection
+from models.boundary.boundary import Boundary
 
 class DeleteMode(DeviceInteractionMode):
     """Mode for deleting items from the canvas."""

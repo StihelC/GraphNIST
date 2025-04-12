@@ -5,8 +5,8 @@ import logging
 import traceback
 
 from models.device import Device
-from models.connection import Connection
-from models.boundary import Boundary
+from models.connection.connection import Connection, RoutingStyle
+from models.boundary.boundary import Boundary
 from controllers.commands import (
     UpdatePropertyCommand, SetZValueCommand, UpdateNameCommand, Command,
     TogglePropertyDisplayCommand, UpdateConnectionTypeCommand,
@@ -347,7 +347,6 @@ class PropertiesController:
         if key == 'line_style':
             try:
                 # Convert string to RoutingStyle enum
-                from models.connection import RoutingStyle
                 if isinstance(value, str):
                     new_style = RoutingStyle.from_string(value)
                 else:

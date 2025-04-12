@@ -3,8 +3,8 @@ from venv import logger
 from PyQt5.QtCore import QPointF, QRectF
 from controllers.undo_redo_manager import Command
 from models.device import Device
-from models.connection import Connection
-from models.boundary import Boundary
+from models.connection.connection import Connection
+from models.boundary.boundary import Boundary
 import logging
 
 class AddDeviceCommand(Command):

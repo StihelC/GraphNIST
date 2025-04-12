@@ -3,7 +3,8 @@ from PyQt5.QtWidgets import QGraphicsView
 import logging
 
 from models.device import Device
-from models.boundary import Boundary
+from models.connection.connection import Connection
+from models.boundary.boundary import Boundary
 
 
 class GroupSelectionManager(QObject):

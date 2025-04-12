@@ -4,7 +4,7 @@ from PyQt5.QtGui import QColor
 import logging
 import traceback
 
-from models.boundary import Boundary
+from models.boundary.boundary import Boundary
 from controllers.commands import AddBoundaryCommand, DeleteBoundaryCommand
 
 class BoundaryController:
@@ -30,17 +30,43 @@ class BoundaryController:
         # Register with event bus for theme changes
         if self.event_bus:
             self.event_bus.on('theme_changed', self.update_boundaries_theme)
+            
+        # Connect to canvas signals if they exist
+        # These connections are now handled in main_window.py to prevent duplicates
+        # if hasattr(canvas, 'add_boundary_requested'):
+        #     self.canvas.add_boundary_requested.connect(self.on_add_boundary_requested)
+        #     self.logger.info("Connected to canvas add_boundary_requested signal")
+        
+        # if hasattr(canvas, 'delete_boundary_requested'):
+        #     self.canvas.delete_boundary_requested.connect(self.on_delete_boundary_requested)
+        #     self.logger.info("Connected to canvas delete_boundary_requested signal")
     
     def on_add_boundary_requested(self, rect, name=None, color=None):
         """Handle request to add a boundary with the given rect."""
+        self.logger.info(f"Adding boundary at rect {rect.x()},{rect.y()} size {rect.width()}x{rect.height()}")
+        
         # Use command pattern if undo_redo_manager is available
         if self.undo_redo_manager and not self.undo_redo_manager.is_in_command_execution():
             command = AddBoundaryCommand(self, rect, name, color)
             self.undo_redo_manager.push_command(command)
-            return command.created_boundary
+            boundary = command.created_boundary
+            
+            # Debug output
+            if boundary:
+                self.logger.info(f"Created boundary '{boundary.name}' using command")
+                return boundary
+            else:
+                self.logger.error("Failed to create boundary with command")
+                # Fall back to direct creation
+                return self.create_boundary(rect, name, color)
         else:
-            # Original implementation
-            return self.create_boundary(rect, name, color)
+            # Direct creation as fallback
+            boundary = self.create_boundary(rect, name, color)
+            if boundary:
+                self.logger.info(f"Created boundary '{boundary.name}' directly")
+            else:
+                self.logger.error("Failed to create boundary directly")
+            return boundary
     
     def on_delete_boundary_requested(self, boundary):
         """Handle request to delete a specific boundary."""
@@ -73,39 +99,58 @@ class BoundaryController:
     
     def create_boundary(self, rect, name=None, color=None):
         """Create a new boundary with the given parameters."""
-        # Implementation for creating a boundary directly
-        # Will be used by both normal calls and from commands
-        from models.boundary import Boundary
-        from PyQt5.QtGui import QColor
-        
-        # Use default name if none provided
-        if not name:
-            name = f"Boundary {len(self.canvas.boundaries) + 1}"
-        
-        # Use default color if none provided
-        if not color:
-            color = QColor(40, 120, 200, 80)
-        
-        # Create the boundary with theme manager
-        boundary = Boundary(rect, name, color, theme_manager=self.theme_manager)
-        
-        # Add to scene
-        self.canvas.scene().addItem(boundary)
-        
-        # Add to boundaries list
-        self.canvas.boundaries.append(boundary)
-        
-        self.logger.info(f"Created boundary '{name}'")
-        
-        # Register with theme manager if available
-        if self.theme_manager and hasattr(self.theme_manager, 'register_theme_observer'):
-            self.theme_manager.register_theme_observer(boundary)
-        
-        # Notify through event bus
-        if self.event_bus:
-            self.event_bus.emit("boundary_created", boundary)
-        
-        return boundary
+        try:
+            self.logger.info(f"Creating boundary at rect {rect.x()},{rect.y()} size {rect.width()}x{rect.height()}")
+            
+            # Use default name and color if not provided
+            if not name:
+                name = f"Boundary {len(self.canvas.boundaries) + 1}"
+            if not color:
+                color = QColor(60, 150, 230, 120)  # Brighter blue with higher opacity
+            
+            # Create the boundary
+            boundary = Boundary(rect, name, color, theme_manager=self.theme_manager)
+            
+            # Ensure good visibility
+            boundary.setVisible(True)
+            boundary.setZValue(0)
+            boundary.setOpacity(1.0)
+            
+            # Add to scene
+            scene = self.canvas.scene()
+            if not scene:
+                self.logger.error("No scene available to add boundary to")
+                return None
+                
+            self.logger.debug(f"Adding boundary to scene at {rect.x()},{rect.y()}")
+            scene.addItem(boundary)
+            
+            # Add to boundaries list
+            if not hasattr(self.canvas, 'boundaries'):
+                self.logger.warning("Canvas has no boundaries list, creating it")
+                self.canvas.boundaries = []
+                
+            self.logger.debug(f"Adding boundary to canvas.boundaries list (current count: {len(self.canvas.boundaries)})")
+            self.canvas.boundaries.append(boundary)
+            
+            # Register with theme manager
+            if self.theme_manager and hasattr(self.theme_manager, 'register_theme_observer'):
+                self.theme_manager.register_theme_observer(boundary)
+            
+            # Notify through event bus
+            if self.event_bus:
+                self.event_bus.emit("boundary_created", boundary)
+            
+            # Force update to ensure visibility
+            scene.update(boundary.sceneBoundingRect().adjusted(-20, -20, 20, 20))
+            self.canvas.viewport().update()
+            
+            self.logger.info(f"Successfully created boundary '{name}', total count: {len(self.canvas.boundaries)}")
+            return boundary
+        except Exception as e:
+            self.logger.error(f"Error creating boundary: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            return None
     
     def _show_error(self, message):
         """Show error message dialog."""

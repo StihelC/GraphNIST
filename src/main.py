@@ -68,6 +68,18 @@ def initialize_application(splash):
     main_window.connection_controller.undo_redo_manager = undo_redo_manager
     main_window.boundary_controller.undo_redo_manager = undo_redo_manager
     
+    # Add logging to verify boundary controller setup
+    logger = logging.getLogger(__name__)
+    logger.debug("Setting up boundary controller in initialize_application")
+    if hasattr(main_window, 'boundary_controller') and main_window.boundary_controller:
+        logger.debug("Boundary controller exists")
+        if hasattr(main_window.boundary_controller, 'undo_redo_manager'):
+            logger.debug(f"Boundary controller undo_redo_manager: {main_window.boundary_controller.undo_redo_manager}")
+        else:
+            logger.warning("Boundary controller does not have undo_redo_manager attribute")
+    else:
+        logger.warning("Main window does not have boundary_controller")
+    
     # Update splash message
     splash.update_message("Initializing UI components...")
     

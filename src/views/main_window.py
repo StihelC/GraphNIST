@@ -25,8 +25,8 @@ from utils.theme_manager import ThemeManager
 from utils.font_settings_manager import FontSettingsManager
 from utils.icon_manager import icon_manager
 from models.device import Device
-from models.connection import Connection
-from models.boundary import Boundary
+from models.connection.connection import Connection
+from models.boundary.boundary import Boundary
 from views.properties import PropertiesPanel
 from controllers.properties_controller import PropertiesController
 from views.alignment_toolbar import AlignmentToolbar
@@ -1343,7 +1343,15 @@ class MainWindow(QMainWindow):
         self.canvas.delete_device_requested.connect(self.device_controller.on_delete_device_requested)
         self.canvas.add_connection_requested.connect(self.connection_controller.on_add_connection_requested)
         self.canvas.delete_connection_requested.connect(self.connection_controller.on_delete_connection_requested)
+        
+        # Add debug logging for boundary signal connections
+        self.logger.debug("MainWindow: Connecting add_boundary_requested signal to boundary_controller")
         self.canvas.add_boundary_requested.connect(self.boundary_controller.on_add_boundary_requested)
+        
+        # Check if the signal was connected successfully
+        connection_count = self.canvas.receivers(self.canvas.add_boundary_requested)
+        self.logger.debug(f"MainWindow: add_boundary_requested has {connection_count} connections after connecting to boundary_controller")
+        
         self.canvas.delete_boundary_requested.connect(self.boundary_controller.on_delete_boundary_requested)
         self.canvas.delete_selected_requested.connect(self.on_delete_selected_requested)
         self.canvas.selection_changed.connect(self._on_selection_changed)
@@ -1445,8 +1453,8 @@ class MainWindow(QMainWindow):
                 
             # Dispatch to appropriate controller based on type
             from models.device import Device
-            from models.connection import Connection
-            from models.boundary import Boundary
+            from models.connection.connection import Connection
+            from models.boundary.boundary import Boundary
             
             if isinstance(top_item, Device):
                 self.device_controller.on_delete_device_requested(top_item)

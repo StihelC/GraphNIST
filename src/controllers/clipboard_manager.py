@@ -1,9 +1,11 @@
-from PyQt5.QtCore import QObject, QPointF
+from PyQt5.QtCore import QObject, QPointF, QMimeData, QByteArray
 import logging
 import copy
+import json
+from PyQt5.QtWidgets import QApplication
 
 from models.device import Device
-from models.connection import Connection
+from models.connection.connection import Connection
 
 class ClipboardManager(QObject):
     """Manager for handling copy and paste operations on canvas elements."""

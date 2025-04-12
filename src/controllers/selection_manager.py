@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 import logging
+from models.connection.connection import Connection
 
 class SelectionManager(QObject):
     """
@@ -67,6 +68,14 @@ class SelectionManager(QObject):
     def _on_canvas_selection_changed(self, selected_items):
         """Handle selection changes from the canvas (single source of truth)."""
         self.logger.debug(f"SELECTION DEBUG: Canvas selection changed. Items: {[type(item).__name__ for item in selected_items]}")
+        
+        # IMPORTANT: Skip processing selection changes when in boundary creation mode
+        # This prevents conflicts between selection handling and boundary creation
+        if self.canvas and hasattr(self.canvas, 'mode_manager') and hasattr(self.canvas.mode_manager, 'current_mode'):
+            from constants import Modes
+            if self.canvas.mode_manager.current_mode == Modes.ADD_BOUNDARY:
+                self.logger.debug("SELECTION DEBUG: Bypassing selection processing during boundary creation")
+                return
         
         # Skip update if we're in the middle of a drag operation
         if self._is_drag_in_progress():
@@ -196,10 +205,9 @@ class SelectionManager(QObject):
     
     def get_selected_boundaries(self):
         """Get only boundaries from the current selection."""
-        from models.boundary import Boundary
+        from models.boundary.boundary import Boundary
         return [item for item in self.selected_items if isinstance(item, Boundary)]
     
     def get_selected_connections(self):
         """Get only connections from the current selection."""
-        from models.connection import Connection
         return [item for item in self.selected_items if isinstance(item, Connection)] 

@@ -113,7 +113,7 @@ class ConnectionRenderer:
         current_theme = "dark" if (self.theme_manager and self.theme_manager.is_dark_theme()) else "light"
         
         # Import Connection types if needed
-        from models.connection import ConnectionTypes
+        from .connection import ConnectionTypes
         
         # Default to a style if not found
         style = {

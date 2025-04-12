@@ -9,8 +9,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from controllers.connection_controller import ConnectionController
-from models.connection import Connection
-from constants import ConnectionTypes, RoutingStyle
+from models.connection.connection import Connection, ConnectionTypes, RoutingStyle
 
 class TestConnectionController:
     """Test suite for ConnectionController."""

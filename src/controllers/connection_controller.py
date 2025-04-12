@@ -5,9 +5,9 @@ import logging
 import traceback
 import math
 
-from models.connection import Connection
+from models.connection.connection import Connection, ConnectionTypes, RoutingStyle
 from controllers.commands import AddConnectionCommand, DeleteConnectionCommand
-from constants import ConnectionTypes, RoutingStyle, Modes
+from constants import Modes
 from dialogs.multi_connection_dialog import MultiConnectionDialog
 
 class ConnectionController:

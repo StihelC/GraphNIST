@@ -6,7 +6,7 @@ from PyQt5.QtTest import QTest
 from PyQt5.QtGui import QColor
 
 # Import the boundary class
-from models.boundary import Boundary
+from models.boundary.boundary import Boundary
 
 class TestBoundaryResize(unittest.TestCase):
     """Test case for boundary resizing functionality."""

@@ -5,10 +5,10 @@ import uuid
 import logging
 from enum import Enum, auto
 
-from models.connection_signals import ConnectionSignals
-from models.connection_renderer import ConnectionRenderer
-from models.connection_label_manager import ConnectionLabelManager
-from models.connection_interaction_handler import ConnectionInteractionHandler
+from .connection_signals import ConnectionSignals
+from .connection_renderer import ConnectionRenderer
+from .connection_label_manager import ConnectionLabelManager
+from .connection_interaction_handler import ConnectionInteractionHandler
 from constants import RoutingStyle as ConstRoutingStyle
 
 class ConnectionTypes(Enum):
