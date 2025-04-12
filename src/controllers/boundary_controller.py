@@ -97,12 +97,13 @@ class BoundaryController:
         
         self.logger.info(f"Created boundary '{name}'")
         
-        # Notify through event bus
-        self.event_bus.emit("boundary_created", boundary)
-        
         # Register with theme manager if available
         if self.theme_manager and hasattr(self.theme_manager, 'register_theme_observer'):
             self.theme_manager.register_theme_observer(boundary)
+        
+        # Notify through event bus
+        if self.event_bus:
+            self.event_bus.emit("boundary_created", boundary)
         
         return boundary
     

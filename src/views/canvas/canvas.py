@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QGraphicsView, QGraphicsScene, QMenu, 
-    QGraphicsItem, QApplication, QAction, QInputDialog, QGraphicsPixmapItem, QGraphicsTextItem
+    QGraphicsItem, QApplication, QAction, QInputDialog, QGraphicsPixmapItem, QGraphicsTextItem,
+    QWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QEvent, QTimer, QRectF, QSettings
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QCursor, QTransform, QPixmap, QIcon
@@ -43,6 +44,16 @@ class Canvas(QGraphicsView):
     statusMessage = pyqtSignal(str)  # Signal for status bar messages
     selection_changed = pyqtSignal(list)  # Signal for selection changes
     
+    # Signal for editing a device
+    device_edit_requested = pyqtSignal(object)  # device to edit
+    
+    # Signal for showing properties of a device
+    device_properties_requested = pyqtSignal(object)  # device to show properties for
+    
+    # Signals for handling multiple devices
+    multi_device_edit_requested = pyqtSignal(list)  # devices to edit
+    multi_device_delete_requested = pyqtSignal(list)  # devices to delete
+    
     # New signal for device alignment
     align_devices_requested = pyqtSignal(str, list)  # alignment_type, devices
     
@@ -81,10 +92,20 @@ class Canvas(QGraphicsView):
         self._pan_start_x = 0
         self._pan_start_y = 0
         
-        # Set rendering hints for better quality
+        # Set rendering hints for better quality and performance
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.SmoothPixmapTransform)
         self.setRenderHint(QPainter.TextAntialiasing)
+        
+        # Enable viewport optimizations
+        self.setCacheMode(QGraphicsView.CacheBackground)
+        self.setViewportUpdateMode(QGraphicsView.MinimalViewportUpdate)
+        self.setOptimizationFlag(QGraphicsView.DontAdjustForAntialiasing, True)
+        self.setOptimizationFlag(QGraphicsView.DontSavePainterState, True)
+        
+        # Enable double buffering to reduce flicker
+        self.setViewport(QWidget())  # Create a new viewport widget
+        self.viewport().setAttribute(Qt.WA_NoSystemBackground)
         
         # Set scene rectangle to support large networks (10,000+ devices)
         self._scene.setSceneRect(-50000, -50000, 100000, 100000)
@@ -127,9 +148,6 @@ class Canvas(QGraphicsView):
         
         # Enable rubber band selection
         self.setDragMode(QGraphicsView.RubberBandDrag)
-        
-        # Set viewport update mode to get smoother updates
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         
         # Enhanced rubber band selection setup with stronger styling
         self.setRubberBandSelectionMode(Qt.IntersectsItemShape)
@@ -194,6 +212,11 @@ class Canvas(QGraphicsView):
         """Get item at the given view position."""
         scene_pos = self.mapToScene(pos)
         return self.scene().itemAt(scene_pos, self.transform())
+    
+    def _on_canvas_selection_changed(self, selected_items):
+        """Internal handler for selection changes - emit once to avoid duplication."""
+        # Just emit the signal once without any debug info
+        self.selection_changed.emit(selected_items)
     
     def mousePressEvent(self, event):
         """Handle mouse press events with improved device dragging and rubber band selection."""
@@ -382,6 +405,13 @@ class Canvas(QGraphicsView):
                 self._pan_start_y = event.y()
                 event.accept()
                 return
+                
+            # Handle individual device dragging - disable property updates during drag
+            if event.buttons() & Qt.LeftButton and self._drag_item:
+                # Just call the parent implementation for smooth dragging
+                # without triggering additional property updates
+                super().mouseMoveEvent(event)
+                return
             
             # Check if we're in rubber band selection mode
             if event.buttons() & Qt.LeftButton and self._rubber_band_origin is not None:
@@ -426,111 +456,85 @@ class Canvas(QGraphicsView):
             traceback.print_exc()
             
     def mouseReleaseEvent(self, event):
-        """Handle mouse release events and update selection state."""
+        """Override mouseReleaseEvent to optimize performance."""
         try:
-            # Handle completion of multi-selection dragging using the group selection manager
-            if event.button() == Qt.LeftButton and self.group_selection_manager.is_drag_active():
-                # End the drag through the manager
-                self.group_selection_manager.end_drag()
-                
-                # Accept the event
+            # Handle group drag end
+            if self.group_selection_manager.is_drag_active():
+                # End the group drag
+                end_pos = self.mapToScene(event.pos())
+                self.group_selection_manager.end_drag(end_pos)
                 event.accept()
                 
-                # Emit selection changed signal
+                # Emit selection changed signal exactly once
+                selected_items = self.scene().selectedItems()
+                self.selection_changed.emit(selected_items)
+                return
+                
+            # Handle end of panning
+            if self._is_panning:
+                self._is_panning = False
+                self.setCursor(Qt.ArrowCursor)
+                self.setDragMode(QGraphicsView.RubberBandDrag)
+                event.accept()
+                return
+                
+            # Track device move for undo/redo
+            if event.button() == Qt.LeftButton and self._drag_item and self._drag_start_pos:
+                device = self._drag_item
+                end_pos = device.scenePos()
+                
+                # Only record if position actually changed
+                if self._drag_start_pos != end_pos:
+                    # Record the move for undo/redo if applicable
+                    if self.event_bus:
+                        self.event_bus.emit('item.moved', 
+                            item=device,
+                            old_pos=self._drag_start_pos,
+                            new_pos=end_pos
+                        )
+                    
+                    # Clear rubber band mode after drag
+                    self.setDragMode(QGraphicsView.NoDrag)
+                    
+                    # Reset rubber band tracking
+                    self._rubber_band_active = False
+                    self._rubber_band_origin = None
+                    self._rubber_band_rect = None
+                    
+                # Clear drag tracking
+                self._drag_item = None
+                self._drag_start_pos = None
+                
+                # Emit selection changed signal exactly once
                 selected_items = self.scene().selectedItems()
                 self.selection_changed.emit(selected_items)
                 
+                # Let parent handle the release
+                super().mouseReleaseEvent(event)
+                
+                # Force a viewport update to clear any artifacts
+                self.viewport().update()
                 return
                 
-            # End canvas panning
-            if hasattr(self, '_is_panning') and self._is_panning:
-                if event.button() == Qt.MiddleButton or (event.button() == Qt.LeftButton and event.modifiers() & Qt.ShiftModifier):
-                    self._is_panning = False
-                    self.setCursor(Qt.ArrowCursor)
-                    self.setDragMode(QGraphicsView.RubberBandDrag)  # Restore rubber band mode
-                    event.accept()
-                    return
-            
-            # Get scene position and item at the release position
-            scene_pos = self.mapToScene(event.pos())
-            item = self.get_item_at(event.pos())
-            
-            # Handle rubber band selection completion
-            if self._rubber_band_active:
-                # Rubber band selection is active and being completed
-                self.logger.debug(f"Rubber band selection completing: {len(self.scene().selectedItems())} items selected")
-                # We'll let the rubberBandChanged event handle the actual selection
-                
-                # Reset rubber band state
-                self._rubber_band_active = False
-                self._rubber_band_origin = None
-            
-            # Handle device drag finish
-            if hasattr(self, '_drag_item') and self._drag_item:
-                # Get the final position
-                drag_end_pos = self._drag_item.scenePos()
-                
-                # If we have undo/redo support and the item actually moved
-                if (hasattr(self, 'undo_redo_manager') and self.undo_redo_manager and 
-                    self._drag_start_pos != drag_end_pos):
-                    
-                    # Create a move command for the undo/redo system
-                    from controllers.commands import MoveItemCommand
-                    
-                    # Double-check that we have valid positions
-                    if self._drag_start_pos and drag_end_pos:
-                        # Create and execute the command
-                        cmd = MoveItemCommand(
-                            self._drag_item,
-                            self._drag_start_pos,
-                            drag_end_pos
-                        )
-                        self.undo_redo_manager.push_command(cmd)
-                        self.logger.debug(f"Created move command for {type(self._drag_item).__name__}")
-                
-                # Reset drag tracking variables
-                self._drag_start_pos = None
-                self._drag_item = None
-            
-            # First let the mode manager handle the event
-            handled = self.mode_manager.handle_event("mouse_release_event", event, scene_pos, item)
-            
-            # If the mode didn't handle it, let Qt handle it
-            if not handled:
+            # Let the mode manager handle the event first
+            if not self.mode_manager.handle_event("mouse_release_event", event):
+                # If not handled, call parent implementation
                 super().mouseReleaseEvent(event)
-            
-            # After mouse release, ensure we're in rubber band drag mode if in select mode
-            if self.mode_manager.current_mode == Modes.SELECT:
-                self.setDragMode(QGraphicsView.RubberBandDrag)
                 
-                # Ensure all devices have proper flags set (fix for bug after multi-selection)
-                for device in self.devices:
-                    device.setFlag(QGraphicsItem.ItemIsMovable, True)
-                    device.setFlag(QGraphicsItem.ItemIsSelectable, True)
-                    
-                    # Force all child items to be non-draggable and not independently selectable
-                    for child in device.childItems():
-                        child.setFlag(QGraphicsItem.ItemIsMovable, False)
-                        child.setFlag(QGraphicsItem.ItemIsSelectable, False)
-                        child.setAcceptedMouseButtons(Qt.NoButton)
-            
-            # Get the current selection state after all processing
-            selected_items = self.scene().selectedItems()
-            
-            # Always emit selection_changed to update UI components
-            # This is critical to ensure properties panel shows the correct items
-            self.logger.debug(f"Mouse release - emitting selection_changed with {len(selected_items)} items selected")
-            self.selection_changed.emit(selected_items)
-            
+            # Force a viewport update to clear any artifacts
+            self.viewport().update()
+                
         except Exception as e:
             self.logger.error(f"Error in mouseReleaseEvent: {str(e)}")
             import traceback
             traceback.print_exc()
             
-    def _emit_selection_changed(self, items):
-        """Emit selection changed signal with items. Used for delayed emission."""
-        self.logger.debug(f"Delayed selection changed with {len(items)} items")
-        self.selection_changed.emit(items)
+            # Always reset state in case of error
+            self._is_panning = False
+            self.setCursor(Qt.ArrowCursor)
+            self._drag_item = None
+            self._drag_start_pos = None
+            super().mouseReleaseEvent(event)
     
     def keyPressEvent(self, event):
         """Handle key press events with keyboard shortcuts for common operations."""
@@ -748,17 +752,6 @@ class Canvas(QGraphicsView):
             # Always clean up the flag when done
             self._connecting_in_progress = False
     
-    def device_selected(self, device, is_selected):
-        """Handle device selection."""
-        self.logger.debug(f"CANVAS DEBUG: Device {device.name} selection changed to {is_selected}")
-        
-        # Get current selection
-        selected_items = self.scene().selectedItems()
-        self.logger.debug(f"CANVAS DEBUG: Current selection: {[type(item).__name__ for item in selected_items]}")
-        
-        # Emit selection changed signal
-        self.selection_changed.emit(selected_items)
-    
     def select_all_devices(self):
         """Select all devices on the canvas."""
         # First deselect everything
@@ -802,9 +795,7 @@ class Canvas(QGraphicsView):
         """Handle context menu events."""
         # Get the item under the cursor
         item = self.itemAt(event.pos())
-        if not item:
-            return
-            
+        
         # Create context menu
         menu = QMenu(self)
         
@@ -817,14 +808,38 @@ class Canvas(QGraphicsView):
                 menu.addAction("Edit Device", lambda: self.edit_device(selected_items[0]))
                 menu.addAction("Delete Device", lambda: self.delete_device(selected_items[0]))
                 menu.addAction("Show Properties", lambda: self.show_properties(selected_items[0]))
+            elif isinstance(selected_items[0], Connection):
+                menu.addAction("Delete Connection", lambda: self.delete_connection_requested.emit(selected_items[0]))
+            elif isinstance(selected_items[0], Boundary):
+                menu.addAction("Delete Boundary", lambda: self.delete_boundary_requested.emit(selected_items[0]))
         elif len(selected_items) > 1:
             # Multiple items selected
-            menu.addAction("Edit Selected", lambda: self.edit_selected_devices(selected_items))
-            menu.addAction("Delete Selected", lambda: self.delete_selected_devices(selected_items))
-            menu.addAction("Connect All", lambda: self.connect_selected_devices(selected_items))
+            devices = [item for item in selected_items if isinstance(item, Device)]
+            if devices:
+                menu.addAction("Edit Selected Devices", lambda: self.edit_selected_devices(devices))
+                menu.addAction("Delete Selected Devices", lambda: self.delete_selected_devices(devices))
+                menu.addAction("Connect All Devices", lambda: self.connect_selected_devices(devices))
+            
+            # Add option to delete all selected items (devices, connections, boundaries)
+            menu.addAction("Delete All Selected", lambda: self.delete_selected_requested.emit())
+        else:
+            # No items selected, just show canvas-related options
+            menu.addAction("Reset View", self.reset_view)
+            menu.addAction("Toggle Grid", self.toggle_grid)
         
-        # Show the menu
-        menu.exec_(event.globalPos())
+        # Add viewport controls regardless of selection
+        if menu.actions():
+            menu.addSeparator()
+        
+        # Add zoom controls
+        zoom_menu = menu.addMenu("Zoom")
+        zoom_menu.addAction("Zoom In", self.zoom_in)
+        zoom_menu.addAction("Zoom Out", self.zoom_out)
+        zoom_menu.addAction("Reset Zoom", self.reset_zoom)
+        
+        # Only show the menu if it has actions
+        if menu.actions():
+            menu.exec_(event.globalPos())
     
     def edit_device(self, device):
         """Edit a single device."""
@@ -836,7 +851,7 @@ class Canvas(QGraphicsView):
         """Delete a single device."""
         self.logger.debug(f"CANVAS DEBUG: Deleting device: {device.name}")
         # Emit signal to delete device
-        self.device_delete_requested.emit(device)
+        self.delete_device_requested.emit(device)
     
     def show_properties(self, device):
         """Show properties for a device."""

@@ -145,6 +145,19 @@ class PDFExporter:
                         text_color_states[item.label] = item.label.defaultTextColor()
                         item.label.setDefaultTextColor(QColor(0, 0, 0))
                 
+                # Handle device text items
+                if hasattr(item, 'text_item') and item.text_item is not None:
+                    if hasattr(item.text_item, 'defaultTextColor') and callable(getattr(item.text_item, 'defaultTextColor')):
+                        text_color_states[item.text_item] = item.text_item.defaultTextColor()
+                        item.text_item.setDefaultTextColor(QColor(0, 0, 0))
+                
+                # Handle property labels
+                if hasattr(item, 'property_labels'):
+                    for label in item.property_labels.values():
+                        if hasattr(label, 'defaultTextColor') and callable(getattr(label, 'defaultTextColor')):
+                            text_color_states[label] = label.defaultTextColor()
+                            label.setDefaultTextColor(QColor(0, 0, 0))
+                
                 # Force connections to be black for PDF export
                 if hasattr(item, 'pen') and callable(getattr(item, 'pen')) and callable(getattr(item, 'setPen', None)):
                     # Store original pen for connections

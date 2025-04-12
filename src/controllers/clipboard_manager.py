@@ -78,10 +78,10 @@ class ClipboardManager(QObject):
         new_devices = {}  # Maps original device ID to new device
         
         # First, create copies of all devices
-        for device in self.copied_devices:
+        for i, device in enumerate(self.copied_devices):
             # Get device data
             pos = device.scenePos() + offset
-            name = f"{device.name} (Copy)"
+            name = f"{device.name} {i + 1}"  # Add sequential number to name
             custom_icon_path = device.custom_icon_path if hasattr(device, 'custom_icon_path') else None
             
             # Create a copy of the device's properties

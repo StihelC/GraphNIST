@@ -81,14 +81,40 @@ class PropertiesController:
         self.panel.property_display_toggled.connect(self._on_property_display_toggled)
         self.panel.property_delete_requested.connect(self._on_property_delete_requested)
         
-        # Initialize selection manager
-        from controllers.selection_manager import SelectionManager
-        self.selection_manager = SelectionManager(canvas, self)
+        # Subscribe to selection events on the event bus
+        self._register_event_handlers()
         
-        # Connect selection manager signals
-        self.selection_manager.single_item_selected.connect(self._on_single_item_selected)
-        self.selection_manager.multiple_items_selected.connect(self._on_multiple_items_selected)
-        self.selection_manager.selection_cleared.connect(self._on_selection_cleared)
+        # Initialize selection manager reference (will be set externally)
+        self.selection_manager = None
+    
+    def _register_event_handlers(self):
+        """Register for selection events on the event bus."""
+        if self.event_bus:
+            # Register this controller
+            self.event_bus.register_controller('properties_controller', self)
+            
+            # Subscribe to the consolidated selection events
+            self.event_bus.on('selection.changed', self._on_selection_changed)
+    
+    def _on_selection_changed(self, items=None, count=0, type=None, item=None, **kwargs):
+        """Handle consolidated selection change events from event bus."""
+        if not self.event_bus:
+            return
+            
+        self.logger.debug(f"Properties: Selection change of type '{type}' with {count} items")
+        
+        if type == "single" and item:
+            self._on_single_item_selected(item)
+        elif type == "multiple" and items:
+            self._on_multiple_items_selected(items)
+        elif type == "cleared" or count == 0:
+            self._on_selection_cleared()
+        elif count == 1 and items:
+            # Fallback for single item in items list
+            self._on_single_item_selected(items[0])
+        elif count > 1 and items:
+            # Fallback for multiple items
+            self._on_multiple_items_selected(items)
     
     def _process_pending_update(self):
         """Process the pending update after debounce delay."""
@@ -147,20 +173,18 @@ class PropertiesController:
             self.panel.set_boundary_contained_devices(contained_devices)
     
     def _on_multiple_items_selected(self, items):
-        """Handle multiple items selection."""
-        self.logger.debug(f"PROPERTIES DEBUG: Multiple items selected: {len(items)}")
-        self.selected_item = None
-        self.selected_items = items
-        
-        # Ensure panel is visible
-        if hasattr(self.panel, 'parent') and hasattr(self.panel.parent(), 'setVisible'):
-            self.logger.debug("PROPERTIES DEBUG: Making properties panel visible")
-            self.panel.parent().setVisible(True)
-            self.panel.parent().raise_()
-            
-        # Update panel
-        self.logger.debug("PROPERTIES DEBUG: Updating properties panel for multiple items")
-        self.panel.show_multiple_devices(items)
+        """Handle when multiple items are selected."""
+        try:
+            if not items:
+                self.panel.clear()
+                return
+                
+            # Show mixed selection interface
+            self.panel.show_mixed_selection(items)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error handling multiple selection: {str(e)}")
+            self.panel.clear()  # Fallback to clear state
     
     def _on_selection_cleared(self):
         """Handle selection being cleared."""
@@ -276,8 +300,14 @@ class PropertiesController:
             
             # Use command pattern if undo_redo_manager available
             if self.undo_redo_manager:
-                from controllers.commands import DevicePropertyCommand
-                cmd = DevicePropertyCommand(device, key, old_value, value)
+                from controllers.commands import DevicePropertyCommand, ConnectionPropertyCommand
+                
+                # Choose the appropriate command class based on the item type
+                if isinstance(device, Device):
+                    cmd = DevicePropertyCommand(device, key, old_value, value)
+                else:
+                    cmd = ConnectionPropertyCommand(device, key, old_value, value)
+                    
                 self.undo_redo_manager.push_command(cmd)
             else:
                 device.properties[key] = value
@@ -314,44 +344,41 @@ class PropertiesController:
         if not self.selected_item or not isinstance(self.selected_item, Connection):
             return
             
-        if key == "line_style":
-            # Map UI text back to internal style names
-            style_map = {
-                "Straight": Connection.STYLE_STRAIGHT, 
-                "Orthogonal": Connection.STYLE_ORTHOGONAL, 
-                "Curved": Connection.STYLE_CURVED
-            }
-            internal_style = style_map.get(value, Connection.STYLE_STRAIGHT)
-            
-            if self.selected_item.routing_style != internal_style:
-                self.logger.info(f"Changing connection routing style from {self.selected_item.routing_style} to {internal_style}")
-                
-                # Capture the old routing style for undo
+        if key == 'line_style':
+            try:
+                # Convert string to RoutingStyle enum
+                from models.connection import RoutingStyle
+                if isinstance(value, str):
+                    new_style = RoutingStyle.from_string(value)
+                else:
+                    new_style = value
+                    
                 old_style = self.selected_item.routing_style
                 
-                # Create a command for the routing style change if using undo/redo
-                if self.undo_redo_manager:
-                    class ChangeConnectionStyleCommand(Command):
-                        def __init__(self, connection, old_style, new_style):
-                            super().__init__("Change Connection Style")
-                            self.connection = connection
-                            self.old_style = old_style
-                            self.new_style = new_style
-                        
-                        def execute(self):
-                            self.connection.set_routing_style(self.new_style)
-                        
-                        def undo(self):
-                            self.connection.set_routing_style(self.old_style)
+                if old_style != new_style:
+                    self.logger.info(f"Changing connection routing style from {old_style} to {new_style}")
                     
-                    cmd = ChangeConnectionStyleCommand(self.selected_item, old_style, internal_style)
-                    self.undo_redo_manager.push_command(cmd)
-                else:
-                    # Direct change without undo/redo
-                    self.selected_item.set_routing_style(internal_style)
-                    
-                # Notify via event bus
-                self.event_bus.emit("connection_style_changed", self.selected_item)
+                    if self.undo_redo_manager:
+                        class ChangeConnectionStyleCommand(Command):
+                            def __init__(self, connection, old_style, new_style):
+                                super().__init__("Change Connection Style")
+                                self.connection = connection
+                                self.old_style = old_style
+                                self.new_style = new_style
+                            
+                            def execute(self):
+                                self.connection.routing_style = self.new_style
+                            
+                            def undo(self):
+                                self.connection.routing_style = self.old_style
+                        
+                        cmd = ChangeConnectionStyleCommand(self.selected_item, old_style, new_style)
+                        self.undo_redo_manager.push_command(cmd)
+                    else:
+                        self.selected_item.routing_style = new_style
+            except Exception as e:
+                self.logger.error(f"Error changing connection style: {str(e)}")
+                self.logger.error(traceback.format_exc())
         
         # Handle standard properties that should be in the properties dictionary
         elif key in ["Bandwidth", "Latency", "Label"]:
@@ -631,6 +658,15 @@ class PropertiesController:
                 contained_devices.append(device)
                 
         return contained_devices
+
+    def handle_selection_changed(self, selected_items):
+        """Handle selection changes from the MainWindow.
+        
+        This is a wrapper around update_properties_panel to maintain compatibility
+        with the MainWindow's signal handling.
+        """
+        self.logger.debug(f"PROPERTIES DEBUG: Selection changed, handling {len(selected_items) if selected_items else 0} items")
+        self.update_properties_panel(selected_items)
 
 class TogglePropertyDisplayCommand(Command):
     """Command for toggling device property display."""

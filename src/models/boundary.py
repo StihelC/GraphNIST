@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
 from PyQt5.QtGui import QColor, QPen, QBrush, QFont
-from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal, QObject, QTimer
 import logging
 
 class BoundarySignals(QObject):
@@ -109,6 +109,12 @@ class Boundary(QGraphicsRectItem):
         
         self.logger = logging.getLogger(__name__)
         
+        # Add debounce timer for selection
+        self.selection_timer = QTimer()
+        self.selection_timer.setSingleShot(True)
+        self.selection_timer.timeout.connect(self._on_selection_timer)
+        self.pending_selection = None
+        
         # Check input parameters and provide defaults
         if name is None:
             name = "Boundary"
@@ -190,11 +196,17 @@ class Boundary(QGraphicsRectItem):
         self._apply_style()
     
     def itemChange(self, change, value):
-        """Handle changes in item state."""
-        if change == QGraphicsRectItem.ItemPositionHasChanged:
-            # No need to update label position when boundary moves
-            # since the label is a child item and moves automatically
-            pass
+        """Handle item changes, including selection state."""
+        if change == QGraphicsItem.ItemSelectedChange:
+            # Stop any pending timer
+            self.selection_timer.stop()
+            
+            # Store the new selection state
+            self.pending_selection = value
+            
+            # Start the debounce timer
+            self.selection_timer.start(100)  # 100ms debounce
+            
         return super().itemChange(change, value)
     
     def hoverEnterEvent(self, event):
@@ -583,4 +595,12 @@ class Boundary(QGraphicsRectItem):
             
         # Return the first view (should be the canvas)
         return views[0]
+
+    def _on_selection_timer(self):
+        """Handle selection after debounce delay."""
+        if self.pending_selection is not None:
+            is_selected = self.pending_selection
+            self.pending_selection = None
+            if hasattr(self.signals, 'selected'):
+                self.signals.selected.emit(self, is_selected)
 

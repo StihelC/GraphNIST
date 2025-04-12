@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsItem, QGraphicsEllipseItem, QMenu, QAction, QGraphicsScene
 from PyQt5.QtGui import QPainterPath, QPen, QColor, QPainterPathStroker
-from PyQt5.QtCore import Qt, QPointF, QRectF, QObject, pyqtSignal
+from PyQt5.QtCore import Qt, QPointF, QRectF, QObject, pyqtSignal, QTimer
 import uuid
 import logging
 from enum import Enum, auto
@@ -320,6 +320,12 @@ class Connection(QGraphicsPathItem):
         
         # Update the path initially
         self.update_path()
+        
+        # Add debounce timer for selection
+        self.selection_timer = QTimer()
+        self.selection_timer.setSingleShot(True)
+        self.selection_timer.timeout.connect(self._on_selection_timer)
+        self.pending_selection = None
     
     def register_theme_manager(self, theme_manager):
         """Register with a theme manager to receive theme updates.
@@ -502,7 +508,7 @@ class Connection(QGraphicsPathItem):
         self.setSelected(True)
         
         # Emit selected signal to show properties panel
-        self.signals.selected.emit(self)
+        self.signals.selected.emit(self, True)  # Emit with both connection and selection state
         
         super().mousePressEvent(event)
     
@@ -529,15 +535,17 @@ class Connection(QGraphicsPathItem):
         super().hoverLeaveEvent(event)
     
     def itemChange(self, change, value):
-        """Handle item changes like selection."""
+        """Handle item changes, including selection state."""
         if change == QGraphicsItem.ItemSelectedChange:
-            # Emit signal when selection changes
-            if value:
-                self.signals.selected.emit(self)
+            # Stop any pending timer
+            self.selection_timer.stop()
             
-            # Update appearance
-            self.renderer.apply_style(is_selected=bool(value))
-        
+            # Store the new selection state
+            self.pending_selection = value
+            
+            # Start the debounce timer
+            self.selection_timer.start(100)  # 100ms debounce
+            
         return super().itemChange(change, value)
     
     def contextMenuEvent(self, event):
@@ -681,4 +689,12 @@ class Connection(QGraphicsPathItem):
     @target_device.setter
     def target_device(self, device):
         """Set both dest_device and target_device to the same value."""
-        self.dest_device = device 
+        self.dest_device = device
+
+    def _on_selection_timer(self):
+        """Handle selection after debounce delay."""
+        if self.pending_selection is not None:
+            is_selected = self.pending_selection
+            self.pending_selection = None
+            if hasattr(self.signals, 'selected'):
+                self.signals.selected.emit(self, is_selected) 

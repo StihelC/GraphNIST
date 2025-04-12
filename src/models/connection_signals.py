@@ -5,7 +5,7 @@ class ConnectionSignals(QObject):
     
     created = pyqtSignal(object)     # Connection object
     deleted = pyqtSignal(object)     # Connection object
-    selected = pyqtSignal(object)    # Connection object
+    selected = pyqtSignal(object, bool)    # Connection object, is_selected
     modified = pyqtSignal(object)    # Connection object
     routing_changed = pyqtSignal(object, object)  # Connection, new_style
     source_updated = pyqtSignal(object)  # Connection object

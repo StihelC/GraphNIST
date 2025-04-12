@@ -11,7 +11,6 @@ import hashlib
 
 class DeviceSignals(QObject):
     """Signals emitted by devices."""
-    selected = pyqtSignal(object, bool)  # device, is_selected
     moved = pyqtSignal(object)  # device
     double_clicked = pyqtSignal(object)  # device
     deleted = pyqtSignal(object)  # device
@@ -99,6 +98,9 @@ class Device(QGraphicsPixmapItem):
         
         # Track connection points visibility
         self._show_connection_points = False
+
+        # Flag to track if device is being dragged (new)
+        self._is_dragging = False
         
         # List of connections attached to this device
         self.connections = []
@@ -593,6 +595,10 @@ class Device(QGraphicsPixmapItem):
             # Ensure text is visible
             self.text_item.setVisible(True)
         
+        # Skip drawing selection indicator and connection points when dragging to improve performance
+        if self._is_dragging:
+            return
+            
         # Most painting is handled by child items, but we draw connection points here
         
         # Check if we need to show connection points
@@ -611,11 +617,6 @@ class Device(QGraphicsPixmapItem):
                     if hasattr(mode_mgr, 'get_mode_instance'):
                         mode = mode_mgr.get_mode_instance()
                         is_hovered = hasattr(mode, 'hover_device') and mode.hover_device == self
-        
-        # Draw selection indicator
-        if self.isSelected():
-            painter.setPen(QPen(QColor(255, 140, 0), 2))  # Orange selection
-            painter.drawRect(-2, -2, self.width + 4, self.height + 4)
         
         # Draw connection points if needed
         if showing_points:
@@ -842,11 +843,14 @@ class Device(QGraphicsPixmapItem):
         elif change == QGraphicsItem.ItemPositionHasChanged and self.scene():
             # Item has moved
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' position changed")
+            
+            # Only emit the moved signal - avoid property label updates during drag
             if hasattr(self.signals, 'moved'):
                 self.signals.moved.emit(self)
             
-            # Ensure property labels are maintained in correct positions
-            self.update_property_labels()
+            # Only update property labels if not dragging
+            if not self._is_dragging:
+                self.update_property_labels()
             
         elif change == QGraphicsItem.ItemSelectedChange:
             # Selection state is about to change - store state
@@ -854,12 +858,11 @@ class Device(QGraphicsPixmapItem):
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' selection changing to {self.is_selected}")
             
         elif change == QGraphicsItem.ItemSelectedHasChanged:
-            # Selection state has changed - emit signal
+            # Selection state has changed - let the scene handle selection notifications
             self.logger.debug(f"CHANGE DEBUG: Device '{self.name}' selection state changed to {self.isSelected()}")
-            if hasattr(self.signals, 'selected') and self.signals.selected:
-                # Always emit the selected signal when selection state changes
-                self.signals.selected.emit(self, self.isSelected())
-                self.logger.debug(f"EMIT DEBUG: Emitted selected signal for device '{self.name}' with state {self.isSelected()}")
+            
+            # Let the scene handle selection change notification through scene().selectedItems()
+            # This ensures all selection follows a single path through the canvas scene
             
         return super().itemChange(change, value)
     
@@ -867,6 +870,15 @@ class Device(QGraphicsPixmapItem):
         """Handle mouse press events, ensuring single-click selection."""
         # Save the cursor position relative to item position for smoother dragging
         self.drag_offset = event.pos()
+        
+        # Set the dragging flag to true when a left mouse button press occurs
+        if event.button() == Qt.LeftButton:
+            self._is_dragging = True
+            # Store the initial position
+            self.initial_pos = self.pos()
+            
+            # Critical: Save the exact drag offset based on mouse position
+            self.logger.debug(f"Device {self.name}: Drag start at {event.pos().x()}, {event.pos().y()}")
         
         # Accept the event immediately to ensure it's processed
         event.accept()
@@ -878,17 +890,22 @@ class Device(QGraphicsPixmapItem):
         
         # Call parent implementation to ensure default handling
         super().mousePressEvent(event)
-        
+    
     def mouseReleaseEvent(self, event):
         """Handle mouse release events, ensuring selection state is updated."""
         # Accept the event immediately
         event.accept()
         
-        # Clear the drag offset
+        # Reset the dragging flag when mouse is released
+        self._is_dragging = False
+        
+        # Clear the drag offset and initial position
         if hasattr(self, 'drag_offset'):
             self.drag_offset = None
+        if hasattr(self, 'initial_pos'):
+            self.initial_pos = None
         
-        # Ensure selection state is updated and emit signal if changed
+        # Only emit selected signal if selection state actually changed
         if self.isSelected() != self.is_selected:
             self.is_selected = self.isSelected()
             self.logger.debug(f"Device {self.name}: Selection state changed on release to {self.is_selected}")
@@ -896,6 +913,11 @@ class Device(QGraphicsPixmapItem):
             # Emit selected signal to update properties panel
             if hasattr(self.signals, 'selected'):
                 self.signals.selected.emit(self, self.is_selected)
+        
+        # After drag finishes, do a full update of the device and its connections
+        self.update_connections()
+        self.update_property_labels()
+        self.update()
         
         # Call parent implementation
         super().mouseReleaseEvent(event)
@@ -907,6 +929,11 @@ class Device(QGraphicsPixmapItem):
         # Accept the event
         event.accept()
         
+        # Ensure the item is selected without emitting selection signals
+        if not self.isSelected():
+            self.setSelected(True)
+            self.is_selected = True
+        
         # Emit the double-clicked signal to notify listeners
         if hasattr(self.signals, 'double_clicked'):
             self.signals.double_clicked.emit(self)
@@ -915,118 +942,152 @@ class Device(QGraphicsPixmapItem):
         # Don't call parent implementation to prevent unwanted behaviors
     
     def mouseMoveEvent(self, event):
-        """Handle mouse move events, ensuring both single and multi-selection dragging work correctly."""
-        # Check if we're part of a multi-selection
-        if not self.scene():
+        """Handle mouse movement during device dragging."""
+        # Only handle left-button drag events
+        if not (event.buttons() & Qt.LeftButton):
+            super().mouseMoveEvent(event)
             return
         
-        selected_items = self.scene().selectedItems()
-        multi_selection = len(selected_items) > 1
-        
-        # When in multi-selection, check if group manager is handling it
-        if multi_selection and self.isSelected():
-            # Get the canvas
-            if self.scene() and self.scene().views():
-                canvas = self.scene().views()[0]
-                if (hasattr(canvas, 'group_selection_manager') and 
-                    canvas.group_selection_manager and 
-                    canvas.group_selection_manager.is_drag_active()):
-                    # Group selection manager is active, ignore this event
-                    self.logger.debug(f"MOVE-HANDLER: Ignoring move for '{self.name}', handled by GroupSelectionManager")
-                    event.ignore()
+        # Use the precise drag_offset to maintain position relative to mouse
+        if hasattr(self, 'drag_offset') and self.drag_offset:
+            # Calculate new position based on drag offset
+            new_pos = self.mapToParent(event.pos() - self.drag_offset)
+            
+            # Set the position directly instead of moving with delta
+            self.setPos(new_pos)
+            
+            # Minimize update frequency by using a smaller delta threshold
+            current_pos = self.pos()
+            if hasattr(self, '_last_drag_pos'):
+                # Calculate delta movement
+                delta_x = abs(current_pos.x() - self._last_drag_pos.x())
+                delta_y = abs(current_pos.y() - self._last_drag_pos.y())
+                
+                # Only update connections if moved at least 3 pixels in either direction
+                # This greatly reduces the number of updates
+                if delta_x < 3 and delta_y < 3:
+                    # Skip further processing for small movements
+                    event.accept()
                     return
             
-            # Multi-selection but not handled by group manager, ignore to prevent individual dragging
-            self.logger.debug(f"MOVE-HANDLER: Ignoring move for '{self.name}' in multi-selection")
-            event.ignore()
-            return
-        
-        # For single selection, use the drag offset for smoother movement
-        if hasattr(self, 'drag_offset'):
-            # Calculate the new position accounting for the drag offset
-            new_pos = self.mapToScene(event.pos() - self.drag_offset)
+            # Store position for next comparison
+            self._last_drag_pos = current_pos
             
-            # Set the position directly
-            if self.scene():
-                old_pos = self.pos()
-                self.setPos(new_pos)
+            # Emit the move signal for things that need to track position
+            if hasattr(self, 'signals') and hasattr(self.signals, 'moved'):
+                self.signals.moved.emit(self)
+            
+            # Use the more efficient connection update method during dragging
+            if hasattr(self, 'connections') and self.connections:
+                # Use minimal updates for better performance during drag
+                self._update_connections_minimal()
                 
-                # Update connections
-                self.update_connections()
-                
-                # Update text and property labels
-                self.update_label_positions()
-                
-                # Emit signal that device has moved
-                if hasattr(self, 'signals'):
-                    self.signals.moved.emit(self)
-                
-                # Don't call super implementation as we've handled the drag manually
-                return
+                # Force a minimal update of the device itself
+                self.update()
+        else:
+            # Fall back to parent implementation if no drag offset
+            super().mouseMoveEvent(event)
         
-        # If drag_offset is not set, fallback to default behavior
-        super().mouseMoveEvent(event)
-        
-        # Update text label position to stay centered under the device
-        if hasattr(self, 'text_item') and self.text_item:
-            text_width = self.text_item.boundingRect().width()
-            text_x = (self.width - text_width) / 2
-            self.text_item.setPos(text_x, self.height + 3)
-        
-        # Make sure all other child items stay aligned with the device
-        for child in self.childItems():
-            # Skip text_item and property labels
-            if child == self.text_item or child in self.property_labels.values():
-                continue
-            # All other children should be at 0,0 relative to device
-            elif child.pos() != QPointF(0, 0):
-                child.setPos(QPointF(0, 0))
-        
-        # Emit signal that device has moved
-        if hasattr(self, 'signals'):
-            self.signals.moved.emit(self)
-        
-        # Update connections
-        self.update_connections()
-        
-        # Make sure property labels are correctly positioned after movement
-        self.update_property_labels()
-
+        event.accept()
+    
     def update_connections(self):
         """Update all connections attached to this device with better error handling."""
         if not hasattr(self, 'connections') or not self.connections:
             return
         
-        for connection in list(self.connections):  # Use a copy to avoid modification issues during iteration
-            try:
-                # Skip invalid connections
-                if connection is None:
-                    continue
-                
-                # Use hasattr to safely check for the update_path method
-                if hasattr(connection, 'update_path'):
-                    connection.update_path()
-                # For compatibility with older code that might use different method names
-                elif hasattr(connection, '_update_path'):
-                    connection._update_path()
-                elif hasattr(connection, 'update'):
-                    connection.update()
-                
-                # Force the connection to repaint
-                if hasattr(connection, 'update'):
-                    connection.update()
-                
-            except Exception as e:
-                self.logger.error(f"Error updating connection: {str(e)}")
-                import traceback
-                self.logger.error(traceback.format_exc())
+        # Get the scene and prepare for batch updates
+        scene = self.scene()
+        if not scene:
+            return
+            
+        # Start batch update
+        scene.blockSignals(True)
         
-        # Force update in scene to ensure connections are properly drawn
-        if self.scene():
+        try:
+            # Use a set to track updated connections to avoid duplicates
+            updated_connections = set()
+            
+            for connection in list(self.connections):  # Use a copy to avoid modification issues during iteration
+                try:
+                    # Skip invalid connections or already updated ones
+                    if connection is None or connection in updated_connections:
+                        continue
+                    
+                    updated_connections.add(connection)
+                    
+                    # Use hasattr to safely check for the update_path method
+                    if hasattr(connection, 'update_path'):
+                        connection.update_path()
+                    # For compatibility with older code that might use different method names
+                    elif hasattr(connection, '_update_path'):
+                        connection._update_path()
+                    elif hasattr(connection, 'update'):
+                        connection.update()
+                    
+                except Exception as e:
+                    self.logger.error(f"Error updating connection: {str(e)}")
+                    import traceback
+                    self.logger.error(traceback.format_exc())
+            
             # Update area slightly larger than the device to include connections
-            update_rect = self.sceneBoundingRect().adjusted(-50, -50, 50, 50)
-            self.scene().update(update_rect)
-
+            # but only if we actually updated connections
+            if updated_connections:
+                update_rect = self.sceneBoundingRect().adjusted(-20, -20, 20, 20)
+                scene.update(update_rect)
+            
+        finally:
+            # End batch update
+            scene.blockSignals(False)
+    
+    def _update_connections_minimal(self):
+        """A minimal connection update that only updates paths without full redraws."""
+        if not hasattr(self, 'connections') or not self.connections:
+            return
+        
+        # Get the scene and prepare for batch updates
+        scene = self.scene()
+        if not scene:
+            return
+            
+        # Skip updates if we're not visible
+        if not self.isVisible():
+            return
+            
+        # Don't send signals during drag updates
+        scene.blockSignals(True)
+        
+        try:
+            # Use a set to track updated connections to avoid duplicates
+            updated_connections = set()
+            
+            for connection in list(self.connections):
+                try:
+                    # Skip invalid connections or already updated ones
+                    if connection is None or connection in updated_connections:
+                        continue
+                    
+                    updated_connections.add(connection)
+                    
+                    # Only update the path without triggering full redraws
+                    if hasattr(connection, 'update_path'):
+                        connection.update_path()
+                    elif hasattr(connection, '_update_path'):
+                        connection._update_path()
+                    
+                except Exception:
+                    # Silently fail during dragging - full error handling will be done on release
+                    pass
+            
+            # Update only the immediate area around the device
+            # but only if we actually updated connections
+            if updated_connections:
+                update_rect = self.sceneBoundingRect().adjusted(-10, -10, 10, 10)
+                scene.update(update_rect)
+            
+        finally:
+            # End batch update
+            scene.blockSignals(False)
+    
     def delete(self):
         """Clean up resources before deletion."""
         # Store scene and bounding rect before removal for later update

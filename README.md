@@ -7,7 +7,7 @@ GraphNIST is a sophisticated network infrastructure simulation tool that provide
 ## Key Features
 
 - **Interactive Canvas**: Drag-and-drop interface for creating network diagrams
-- **Multi-layered Visualization**: Boundaries (layer 0), connections (layer 5), and devices (layer 10)
+- **Multi-layered Visualization**: Boundaries (layer 0), connections (layer 7), and devices (layer 10)
 - **Device Management**: Add, configure, move, and delete various network devices
 - **Connection Management**: Create links between devices with multiple routing styles
 - **Boundary Management**: Group related devices into logical boundaries

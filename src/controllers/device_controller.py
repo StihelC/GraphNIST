@@ -134,9 +134,6 @@ class DeviceController:
                 device.signals.drag_started.connect(self.canvas.device_drag_started)
             if hasattr(self.canvas, 'device_drag_finished'):
                 device.signals.drag_finished.connect(self.canvas.device_drag_finished)
-            if hasattr(self.canvas, 'device_selected'):
-                device.signals.selected.connect(self.canvas.device_selected)
-                self.logger.debug(f"Connected device.signals.selected to canvas.device_selected for {device.name}")
             
             # Emit creation signal
             self.event_bus.emit("device_created", device)
@@ -679,8 +676,6 @@ class DeviceController:
                     device.signals.drag_started.connect(self.canvas.device_drag_started)
                 if hasattr(self.canvas, 'device_drag_finished'):
                     device.signals.drag_finished.connect(self.canvas.device_drag_finished)
-                if hasattr(self.canvas, 'device_selected'):
-                    device.signals.selected.connect(self.canvas.device_selected)
                 
                 # Emit creation signal
                 self.event_bus.emit("device_created", device)

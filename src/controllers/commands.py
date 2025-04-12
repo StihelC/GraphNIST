@@ -520,6 +520,37 @@ class DevicePropertyCommand(Command):
             
             self.device.update()
 
+class ConnectionPropertyCommand(Command):
+    """Command to change a connection property."""
+    
+    def __init__(self, connection, property_name, old_value, new_value, is_new=False):
+        action = "Add" if is_new else "Change"
+        super().__init__(f"{action} Connection {property_name}")
+        self.connection = connection
+        self.property_name = property_name
+        self.old_value = old_value
+        self.new_value = new_value
+        self.is_new = is_new
+    
+    def execute(self):
+        """Set the new property value."""
+        if hasattr(self.connection, 'properties'):
+            self.connection.properties[self.property_name] = self.new_value
+            self.connection.update()
+    
+    def undo(self):
+        """Restore the old property value or remove the property if it was newly added."""
+        if hasattr(self.connection, 'properties'):
+            if self.is_new:
+                # If this was a new property, remove it completely
+                if self.property_name in self.connection.properties:
+                    del self.connection.properties[self.property_name]
+            else:
+                # Otherwise restore the old value
+                self.connection.properties[self.property_name] = self.old_value
+            
+            self.connection.update()
+
 class DeletePropertyCommand(Command):
     """Command to delete a device property with undo/redo support."""
     

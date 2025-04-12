@@ -27,7 +27,7 @@ from utils.icon_manager import icon_manager
 from models.device import Device
 from models.connection import Connection
 from models.boundary import Boundary
-from views.properties import PropertiesPanel
+from views.properties_panel import PropertiesPanel
 from controllers.properties_controller import PropertiesController
 from views.alignment_toolbar import AlignmentToolbar
 from controllers.commands import AlignDevicesCommand
@@ -36,7 +36,6 @@ from dialogs.font_settings_dialog import FontSettingsDialog
 from dialogs.connection_type_dialog import ConnectionTypeDialog
 from dialogs.multi_connection_dialog import MultiConnectionDialog
 from utils import alignment_helper
-from controllers.selection_manager import SelectionManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -726,9 +725,8 @@ class MainWindow(QMainWindow):
 
     def setup_properties_controller(self):
         """Set up the properties controller after command_manager is initialized."""
-        try:
-            # Create properties controller if it doesn't exist
-            if self.properties_controller is None:
+        if self.properties_controller is None:
+            try:
                 self.properties_controller = PropertiesController(
                     self.canvas,
                     self.properties_panel,
@@ -744,54 +742,58 @@ class MainWindow(QMainWindow):
                     self.properties_dock.setVisible(True)
                     
                 self.logger.info("Properties controller initialized")
-            
-            # Create and set up selection manager with the event bus
-            self.selection_manager = SelectionManager(
+            except Exception as e:
+                self.logger.error(f"Failed to initialize properties controller: {str(e)}")
+                import traceback
+                traceback.print_exc()
+        
+        # Set up bulk controllers now that command_manager is available
+        if self.bulk_device_controller is None:
+            self.bulk_device_controller = BulkDeviceController(
                 self.canvas,
+                self.device_controller,
                 self.event_bus,
-                self.properties_controller
+                self.command_manager.undo_redo_manager if self.command_manager else None
+            )
+        
+        if self.bulk_property_controller is None:
+            self.bulk_property_controller = BulkPropertyController(
+                self.canvas,
+                self.device_controller,
+                self.event_bus,
+                self.command_manager.undo_redo_manager if self.command_manager else None
+            )
+        
+        # Initialize device alignment controller after undo_redo_manager is available
+        if not hasattr(self, 'device_alignment_controller') or self.device_alignment_controller is None:
+            self.undo_redo_manager = self.command_manager.undo_redo_manager if self.command_manager else None
+            self.device_alignment_controller = DeviceAlignmentController(
+                event_bus=self.event_bus,
+                undo_redo_manager=self.undo_redo_manager
             )
             
-            # Store reference to selection manager in properties controller
-            self.properties_controller.selection_manager = self.selection_manager
+            # Connect canvas alignment signal to controller
+            self.canvas.align_devices_requested.connect(self._on_align_devices_requested)
+        
+        # Update the undo/redo actions in the Edit menu if they exist
+        if self.command_manager and hasattr(self, 'undo_action') and hasattr(self, 'redo_action'):
+            # Disconnect any existing connections to avoid duplicates
+            if self.undo_action.receivers(self.undo_action.triggered) > 0:
+                self.undo_action.triggered.disconnect()
+            if self.redo_action.receivers(self.redo_action.triggered) > 0:
+                self.redo_action.triggered.disconnect()
             
-            # Register selection manager with event bus
-            self.event_bus.register_controller('selection_manager', self.selection_manager)
+            # Connect to command manager actions
+            self.undo_action.triggered.connect(self.command_manager.undo)
+            self.redo_action.triggered.connect(self.command_manager.redo)
             
-            self.logger.info("Selection manager initialized with event bus")
+            # Connect to stack changed signal if not already connected
+            if self.command_manager.undo_redo_manager.receivers(
+                self.command_manager.undo_redo_manager.stack_changed) == 0:
+                self.command_manager.undo_redo_manager.stack_changed.connect(self._update_undo_redo_actions)
             
-            # Set up bulk controllers now that command_manager is available
-            if self.bulk_device_controller is None:
-                self.bulk_device_controller = BulkDeviceController(
-                    self.canvas,
-                    self.device_controller,
-                    self.event_bus,
-                    self.command_manager.undo_redo_manager if self.command_manager else None
-                )
-            
-            if self.bulk_property_controller is None:
-                self.bulk_property_controller = BulkPropertyController(
-                    self.canvas,
-                    self.device_controller,
-                    self.event_bus,
-                    self.command_manager.undo_redo_manager if self.command_manager else None
-                )
-            
-            # Initialize device alignment controller after undo_redo_manager is available
-            if not hasattr(self, 'device_alignment_controller') or self.device_alignment_controller is None:
-                self.undo_redo_manager = self.command_manager.undo_redo_manager if self.command_manager else None
-                self.device_alignment_controller = DeviceAlignmentController(
-                    event_bus=self.event_bus,
-                    undo_redo_manager=self.undo_redo_manager
-                )
-                
-                # Connect canvas alignment signal to controller
-                self.canvas.align_devices_requested.connect(self._on_align_devices_requested)
-                
-        except Exception as e:
-            self.logger.error(f"Failed to initialize properties controller: {str(e)}")
-            import traceback
-            traceback.print_exc()
+            # Update initial state
+            self._update_undo_redo_actions()
 
     def setup_alignment_tools(self):
         """Set up the alignment controller."""
@@ -1337,63 +1339,81 @@ class MainWindow(QMainWindow):
         pass
 
     def connect_signals(self):
-        """Connect all signals and slots."""
+        """Connect signals between components."""
         # Connect canvas signals
-        self.canvas.add_device_requested.connect(self.device_controller.on_add_device_requested)
-        self.canvas.delete_device_requested.connect(self.device_controller.on_delete_device_requested)
-        self.canvas.add_connection_requested.connect(self.connection_controller.on_add_connection_requested)
-        self.canvas.delete_connection_requested.connect(self.connection_controller.on_delete_connection_requested)
-        self.canvas.add_boundary_requested.connect(self.boundary_controller.on_add_boundary_requested)
-        self.canvas.delete_boundary_requested.connect(self.boundary_controller.on_delete_boundary_requested)
-        self.canvas.delete_selected_requested.connect(self.on_delete_selected_requested)
         self.canvas.selection_changed.connect(self._on_selection_changed)
         
         # Connect device signals
-        self.event_bus.on("device_added", self._on_device_added)
-        self.event_bus.on("device_removed", self._on_device_removed)
-        self.event_bus.on("device_property_changed", self._on_device_property_changed)
-        self.event_bus.on("device_display_properties_changed", self._on_device_display_properties_changed)
+        for device in self.canvas.devices:
+            if hasattr(device, 'signals') and hasattr(device.signals, 'double_clicked'):
+                device.signals.double_clicked.connect(self._on_device_double_clicked)
         
-        # Connect connection signals
-        self.event_bus.on("connection_added", self._on_connection_added)
-        self.event_bus.on("connection_removed", self._on_connection_removed)
-        self.event_bus.on("connection_property_changed", self._on_connection_property_changed)
+        # Connect properties panel signals
+        self.properties_panel.name_changed.connect(
+            lambda name: self._on_property_changed(self.properties_panel.current_item, "name", name))
+        self.properties_panel.z_value_changed.connect(
+            lambda z_value: self._on_property_changed(self.properties_panel.current_item, "z_value", z_value))
+        self.properties_panel.device_property_changed.connect(self._on_device_property_changed)
+        self.properties_panel.connection_property_changed.connect(self._on_connection_property_changed)
+        self.properties_panel.boundary_property_changed.connect(self._on_boundary_property_changed)
+        self.properties_panel.change_icon_requested.connect(self._on_change_icon_requested)
+        self.properties_panel.property_display_toggled.connect(
+            lambda property_name, enabled: self._on_property_display_toggled(self.properties_panel.current_item, property_name, enabled))
+        self.properties_panel.property_delete_requested.connect(self._on_property_delete_requested)
+        self.properties_panel.device_selected.connect(self._on_device_selected)
         
-        # Connect boundary signals
-        self.event_bus.on("boundary_created", self._on_boundary_added)
-        self.event_bus.on("boundary_deleted", self._on_boundary_removed)
-        self.event_bus.on("boundary_property_changed", self._on_boundary_property_changed)
+        # Connect font settings signals
+        self.font_settings_manager.ui_font_changed.connect(self._apply_ui_font)
+        self.font_settings_manager.device_label_font_changed.connect(self._apply_device_label_font)
+        self.font_settings_manager.device_property_font_changed.connect(self._apply_device_property_font)
         
-        # Connect theme signals
-        self.event_bus.on("theme_changed", self._on_theme_changed)
+        # Connect device controller signals
+        self.canvas.add_device_requested.connect(self.device_controller.on_add_device_requested)
+        self.canvas.delete_device_requested.connect(self.device_controller.on_delete_device_requested)
         
-        # Connect bulk operation signals
-        self.event_bus.on("bulk_devices_added", self._on_bulk_devices_added)
-        self.event_bus.on("bulk_properties_changed", self._on_bulk_properties_changed)
+        # Connect connection controller signals
+        self.canvas.add_connection_requested.connect(self.connection_controller.on_add_connection_requested)
+        self.canvas.delete_connection_requested.connect(self.connection_controller.on_delete_connection_requested)
         
-        # Connect alignment signals
-        self.event_bus.on("devices_aligned", self.on_devices_aligned)
+        # Connect boundary controller signals
+        self.canvas.add_boundary_requested.connect(self.boundary_controller.on_add_boundary_requested)
+        self.canvas.delete_boundary_requested.connect(self.boundary_controller.on_delete_boundary_requested)
         
-        # Connect double-click signal for device editing
-        self.event_bus.on("device_double_clicked", self._on_device_double_clicked)
+        # Connect delete item signal
+        self.canvas.delete_item_requested.connect(self.on_delete_item_requested)
+        
+        # Connect delete selected signal
+        self.canvas.delete_selected_requested.connect(self.on_delete_selected_requested)
+        
+        # Connect alignment signal
+        self.canvas.align_devices_requested.connect(self.alignment_controller.align_devices)
+        
+        # Connect the multiple devices connection signal to the connection controller
+        self.canvas.connect_multiple_devices_requested.connect(self.connection_controller.on_connect_multiple_devices_requested)
+        
+        # Connect devices' double click signals to show properties panel
+        self.event_bus.on("device_created", self._connect_device_double_click)
+        
+        # Connect selection changed signal to show properties panel
+        self.canvas.selection_changed.connect(self._on_selection_changed)
     
-    def _on_boundary_added(self, boundary):
-        """Handle when a boundary is added."""
-        self.logger.info(f"Boundary added: {boundary.name}")
-        # Register with theme manager if not already registered
-        if self.theme_manager and not hasattr(boundary, 'theme_manager'):
-            self.theme_manager.register_theme_observer(boundary)
-            
-        # Update status bar
-        self.statusBar().showMessage(f"Added boundary: {boundary.name}", 3000)
+    def _on_selection_changed(self, selected_items):
+        """Handle selection changes in the canvas by showing the properties panel."""
+        self.logger.debug(f"MAINWINDOW DEBUG: Selection changed. Items: {[type(item).__name__ for item in selected_items]}")
+        
+        if selected_items and len(selected_items) > 0:
+            # Show properties panel when objects are selected
+            if hasattr(self, 'properties_dock'):
+                self.logger.debug("MAINWINDOW DEBUG: Making properties dock visible")
+                self.properties_dock.setVisible(True)
+                self.properties_dock.raise_()
     
-    def _on_boundary_removed(self, boundary):
-        """Handle when a boundary is removed."""
-        self.logger.info(f"Boundary removed: {boundary.name}")
-        if boundary in self.canvas.boundaries:
-            self.canvas.boundaries.remove(boundary)
-            self.canvas.scene().removeItem(boundary)
-
+    def _connect_device_double_click(self, device):
+        """Connect a device's double-clicked signal to show properties panel."""
+        self.logger.debug(f"MAINWINDOW DEBUG: Connecting double-click for device: {device.name}")
+        if hasattr(device, 'signals') and hasattr(device.signals, 'double_clicked'):
+            device.signals.double_clicked.connect(self._on_device_double_clicked)
+    
     def _on_device_double_clicked(self, device):
         """Handle device double-click by showing properties panel and selecting the device."""
         self.logger.debug(f"MAINWINDOW DEBUG: Device double-clicked: {device.name}")
@@ -1407,24 +1427,6 @@ class MainWindow(QMainWindow):
                 self.logger.debug("MAINWINDOW DEBUG: Making properties dock visible after double-click")
                 self.properties_dock.setVisible(True)
                 self.properties_dock.raise_()
-
-    def _on_selection_changed(self, selected_items):
-        """Handle selection changes in the canvas by showing the properties panel."""
-        # Minimal logging
-        self.logger.debug(f"MainWindow: Selection changed ({len(selected_items)} items)")
-        
-        if selected_items and len(selected_items) > 0:
-            # Show properties panel when objects are selected
-            if hasattr(self, 'properties_dock'):
-                self.properties_dock.setVisible(True)
-                self.properties_dock.raise_()
-        else:
-            # Hide properties panel when nothing is selected
-            if hasattr(self, 'properties_dock'):
-                self.properties_dock.setVisible(False)
-            
-        # No longer need to update the properties panel here as it
-        # will be updated through the event bus
 
     def set_mode(self, mode):
         """Set the current interaction mode."""

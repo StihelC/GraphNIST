@@ -94,6 +94,24 @@ class GroupSelectionManager(QObject):
         delta_x = scene_pos.x() - self._multi_drag_start_pos.x()
         delta_y = scene_pos.y() - self._multi_drag_start_pos.y()
         
+        # Store last processed position to reduce update frequency
+        if hasattr(self, '_last_processed_pos'):
+            # Calculate delta since last processed position
+            last_delta_x = abs(scene_pos.x() - self._last_processed_pos.x())
+            last_delta_y = abs(scene_pos.y() - self._last_processed_pos.y())
+            
+            # Only process if moved at least 3 pixels since last update
+            if last_delta_x < 3 and last_delta_y < 3:
+                return True  # Still report as handled but skip processing
+        
+        # Update last processed position
+        self._last_processed_pos = scene_pos
+        
+        # Optimize by only moving items if delta is significant enough
+        # (reduces unnecessary redraws for small mouse movements)
+        if abs(delta_x) < 1 and abs(delta_y) < 1:
+            return True  # Still report as handled but don't redraw
+        
         # Move all items in the selection by the same delta
         moved_count = 0
         for item, start_pos in self._multi_drag_items.items():
@@ -103,22 +121,35 @@ class GroupSelectionManager(QObject):
                 # Set the position directly
                 item.setPos(new_pos)
                 moved_count += 1
-                
-                # Update connections for devices
-                if isinstance(item, Device) and hasattr(item, 'update_connections'):
-                    item.update_connections()
         
-        # Force viewport update if items were moved
+        # Update connections only after all devices have been moved
+        # This is a significant performance optimization
         if moved_count > 0:
-            self.canvas.viewport().update()
-            self.logger.debug(f"GROUP-DRAG: Moved {moved_count} items by delta ({delta_x:.1f}, {delta_y:.1f})")
+            # Batch connection updates
+            connection_updates = set()
+            for item in self._multi_drag_items:
+                if isinstance(item, Device) and hasattr(item, 'connections'):
+                    for conn in item.connections:
+                        if conn is not None and conn not in connection_updates:
+                            connection_updates.add(conn)
+                            if hasattr(conn, 'update_path'):
+                                conn.update_path()
+                            elif hasattr(conn, '_update_path'):
+                                conn._update_path()
+        
+        # Force viewport update if items were moved, but limit logging
+        if moved_count > 0 and moved_count > 10:  # Only log for large selections
+            self.logger.debug(f"GROUP-DRAG: Moved {moved_count} items")
             
         return moved_count > 0
     
-    def end_drag(self):
+    def end_drag(self, scene_pos=None):
         """
         End a drag operation for multiple selected items.
         
+        Args:
+            scene_pos: The final scene position of the mouse (optional)
+            
         Returns:
             bool: True if a multi-selection drag was ended, False otherwise
         """
@@ -129,21 +160,26 @@ class GroupSelectionManager(QObject):
         
         # Record moves to event bus for undo/redo
         if hasattr(self.canvas, 'event_bus') and self.canvas.event_bus:
+            # Create a batch move event to improve undo/redo performance
+            moved_items = []
+            start_positions = []
+            end_positions = []
+            
             for item, start_pos in self._multi_drag_items.items():
                 if item.scene():
                     end_pos = item.scenePos()
                     if start_pos != end_pos:
-                        self.canvas.event_bus.emit('item.moved',
-                            item=item,
-                            old_pos=start_pos,
-                            new_pos=end_pos
-                        )
-                        
-                        # Log the moved items
-                        if hasattr(item, 'name'):
-                            self.logger.debug(f"GROUP-DRAG: Moved {item.name} from {start_pos} to {end_pos}")
-                        else:
-                            self.logger.debug(f"GROUP-DRAG: Moved {type(item).__name__} from {start_pos} to {end_pos}")
+                        moved_items.append(item)
+                        start_positions.append(start_pos)
+                        end_positions.append(end_pos)
+            
+            # Only emit a single event for all moves
+            if moved_items:
+                self.canvas.event_bus.emit('items.moved.batch',
+                    items=moved_items,
+                    old_positions=start_positions,
+                    new_positions=end_positions
+                )
         
         # Reset state
         self._multi_drag_active = False
