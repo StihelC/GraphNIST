@@ -284,16 +284,22 @@ class PropertiesController:
         # Try to convert value to appropriate type
         if isinstance(old_value, int):
             try:
-                value = int(value)
+                # Skip conversion if the value is a dictionary or complex type
+                if not isinstance(value, (dict, list, tuple)):
+                    value = int(value)
             except ValueError:
                 pass
         elif isinstance(old_value, float):
             try:
-                value = float(value)
+                # Skip conversion if the value is a dictionary or complex type
+                if not isinstance(value, (dict, list, tuple)):
+                    value = float(value)
             except ValueError:
                 pass
         elif isinstance(old_value, bool):
-            value = value.lower() in ('true', 'yes', '1')
+            # Only convert string values to boolean
+            if isinstance(value, str):
+                value = value.lower() in ('true', 'yes', '1')
         
         if old_value != value:
             self.logger.info(f"Changing device property {key} from '{old_value}' to '{value}'")
@@ -346,6 +352,9 @@ class PropertiesController:
             
         if key == 'line_style':
             try:
+                # This is triggered when the user explicitly selects a different style
+                # from the line style dropdown in the properties panel
+                
                 # Convert string to RoutingStyle enum
                 if isinstance(value, str):
                     new_style = RoutingStyle.from_string(value)
@@ -354,6 +363,7 @@ class PropertiesController:
                     
                 old_style = self.selected_item.routing_style
                 
+                # Only apply if the style actually changed
                 if old_style != new_style:
                     self.logger.info(f"Changing connection routing style from {old_style} to {new_style}")
                     
@@ -376,7 +386,8 @@ class PropertiesController:
                     else:
                         self.selected_item.routing_style = new_style
             except Exception as e:
-                self.logger.error(f"Error changing connection style: {str(e)}")
+                self.logger.error(f"Error changing connection style: {e}")
+                import traceback
                 self.logger.error(traceback.format_exc())
         
         # Handle standard properties that should be in the properties dictionary
@@ -523,8 +534,18 @@ class PropertiesController:
         original_values = {}
         
         for device in self.selected_items:
-            if hasattr(device, 'properties') and property_name in device.properties:
+            if hasattr(device, 'properties'):
                 original_values[device] = device.properties.get(property_name)
+        
+        # Extract actual value and display state
+        actual_value = value
+        display_state = None
+        
+        if isinstance(value, dict) and 'value' in value:
+            actual_value = value['value']
+            # Update display state if specified
+            if 'display' in value:
+                display_state = value['display']
         
         # If using command pattern
         if self.undo_redo_manager:
@@ -533,7 +554,7 @@ class PropertiesController:
             cmd = BulkChangePropertyCommand(
                 self.selected_items,
                 property_name,
-                value,
+                actual_value,
                 original_values,
                 self.event_bus  # Pass event bus to the command
             )
@@ -543,7 +564,16 @@ class PropertiesController:
             # Apply changes directly
             for device in self.selected_items:
                 if hasattr(device, 'properties'):
-                    device.properties[property_name] = value
+                    device.properties[property_name] = actual_value
+                    
+                    # Update display state if needed
+                    if display_state is not None:
+                        device.toggle_property_display(property_name, display_state)
+                    
+                    # Update property labels if this property is displayed
+                    if device.get_property_display_state(property_name):
+                        device.update_property_labels()
+                    
                     # Notify about property change
                     if self.event_bus:
                         self.event_bus.emit('device_property_changed', device, property_name)
@@ -557,36 +587,61 @@ class PropertiesController:
         if not self.selected_item or not isinstance(self.selected_item, Device):
             return
             
-        if hasattr(self.selected_item, 'properties') and property_name in self.selected_item.properties:
-            old_value = self.selected_item.properties[property_name]
+        if hasattr(self.selected_item, 'properties'):
+            # Check if property exists
+            old_value = self.selected_item.properties.get(property_name)
             
-            # Try to convert value to appropriate type
-            if isinstance(old_value, int):
-                try:
-                    value = int(value)
-                except ValueError:
-                    pass
-            elif isinstance(old_value, float):
-                try:
-                    value = float(value)
-                except ValueError:
-                    pass
-            elif isinstance(old_value, bool):
-                value = value.lower() in ('true', 'yes', '1')
-            
-            if old_value != value:
-                self.logger.info(f"Changing device property '{property_name}' from '{old_value}' to '{value}'")
-                self.selected_item.properties[property_name] = value
-                
-                # Update property labels if this property is set to be displayed
-                if (hasattr(self.selected_item, 'display_properties') and 
-                    property_name in self.selected_item.display_properties and 
-                    self.selected_item.display_properties[property_name]):
-                    self.selected_item.update_property_labels()
-                
+            # Handle property deletion
+            if value is None and property_name in self.selected_item.properties:
+                del self.selected_item.properties[property_name]
+                # Update property display if needed
+                self.selected_item.update_property_labels()
                 # Notify via event bus
                 if self.event_bus:
-                    self.event_bus.emit("device_property_changed", self.selected_item, property_name, value)
+                    self.event_bus.emit("device_property_deleted", self.selected_item, property_name)
+                return
+                
+            # Handle property value change or new property
+            # Check if the value is in the form of {'value': X, 'display': Y}
+            actual_value = value
+            display_state = None
+            
+            if isinstance(value, dict) and 'value' in value:
+                actual_value = value['value']
+                # Update display state if specified
+                if 'display' in value:
+                    display_state = value['display']
+            
+            # Try to convert value to appropriate type based on old value
+            if old_value is not None:
+                if isinstance(old_value, int):
+                    try:
+                        actual_value = int(actual_value)
+                    except ValueError:
+                        pass
+                elif isinstance(old_value, float):
+                    try:
+                        actual_value = float(actual_value)
+                    except ValueError:
+                        pass
+                elif isinstance(old_value, bool):
+                    actual_value = str(actual_value).lower() in ('true', 'yes', '1')
+            
+            # Update the property value
+            self.logger.info(f"Changing device property '{property_name}' from '{old_value}' to '{actual_value}'")
+            self.selected_item.properties[property_name] = actual_value
+            
+            # Update display state if needed
+            if display_state is not None:
+                self.selected_item.toggle_property_display(property_name, display_state)
+            
+            # Update property labels if this property is displayed
+            if self.selected_item.get_property_display_state(property_name):
+                self.selected_item.update_property_labels()
+            
+            # Notify via event bus
+            if self.event_bus:
+                self.event_bus.emit("device_property_changed", self.selected_item, property_name, actual_value)
     
     def _on_property_delete_requested(self, property_name):
         """Handle property deletion requests."""

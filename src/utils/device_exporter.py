@@ -1,7 +1,16 @@
 import csv
 import logging
 import os
+import traceback
 from datetime import datetime
+
+# Import openpyxl at the module level with try/except
+try:
+    import openpyxl  # type: ignore
+    from openpyxl.styles import Font, PatternFill, Alignment  # type: ignore
+    OPENPYXL_AVAILABLE = True
+except ImportError:
+    OPENPYXL_AVAILABLE = False
 
 class DeviceExporter:
     """Utility class for exporting devices to various formats."""
@@ -98,7 +107,6 @@ class DeviceExporter:
             return None
         except Exception as e:
             self.logger.error(f"Error exporting devices to CSV: {str(e)}")
-            import traceback
             self.logger.error(traceback.format_exc())
             return None
     
@@ -114,10 +122,7 @@ class DeviceExporter:
             str: Path to the saved Excel file
         """
         # Check if openpyxl is available
-        try:
-            import openpyxl
-            from openpyxl.styles import Font, PatternFill, Alignment
-        except ImportError:
+        if not OPENPYXL_AVAILABLE:
             self.logger.error("openpyxl library not found. Install it with 'pip install openpyxl'")
             return None
             
@@ -234,6 +239,5 @@ class DeviceExporter:
             
         except Exception as e:
             self.logger.error(f"Error exporting devices to Excel: {str(e)}")
-            import traceback
             self.logger.error(traceback.format_exc())
             return None 

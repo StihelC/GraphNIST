@@ -212,6 +212,10 @@ class DeviceSection(BaseSection):
         else:
             value_text = str(value) if value is not None else ''
             is_displayed = False
+
+        # Check display state if we have a single device
+        if hasattr(self, 'device') and self.device and hasattr(self.device, 'get_property_display_state'):
+            is_displayed = self.device.get_property_display_state(key)
             
         value_item = QTableWidgetItem(value_text)
         value_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
@@ -228,6 +232,31 @@ class DeviceSection(BaseSection):
         
         display_checkbox = QCheckBox()
         display_checkbox.setChecked(is_displayed)
+        
+        # For multiple devices, check if display state is consistent
+        if hasattr(self, 'devices') and self.devices:
+            # Disable checkbox when multiple devices are selected with different display states
+            all_displayed = True
+            none_displayed = True
+            
+            for device in self.devices:
+                if hasattr(device, 'get_property_display_state'):
+                    display_state = device.get_property_display_state(key)
+                    if display_state:
+                        none_displayed = False
+                    else:
+                        all_displayed = False
+            
+            # Set checkbox state based on consensus
+            if all_displayed:
+                display_checkbox.setChecked(True)
+            elif none_displayed:
+                display_checkbox.setChecked(False)
+            else:
+                # Mixed state - partially checked
+                display_checkbox.setTristate(True)
+                display_checkbox.setCheckState(Qt.PartiallyChecked)
+        
         display_checkbox.stateChanged.connect(
             lambda state, k=key: self.display_toggled.emit(k, state == Qt.Checked)
         )

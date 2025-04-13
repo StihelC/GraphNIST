@@ -344,9 +344,18 @@ class Connection(QGraphicsPathItem):
     @routing_style.setter
     def routing_style(self, style):
         """Set the routing style and update the router."""
+        # Only update if style actually changed
         if style != self._routing_style:
+            # Store old selection state
+            was_selected = self.isSelected()
+            
+            # Update routing style
             self._routing_style = style
+            
+            # Create the appropriate router
             self.router = self._create_router(style)
+            
+            # Update the path with the new router
             self.update_path()
     
     @property
@@ -438,10 +447,23 @@ class Connection(QGraphicsPathItem):
             # Notify Qt that our geometry will change
             self.prepareGeometryChange()
             
+            # Ensure we have a valid router
+            if not self.router:
+                self.logger.debug("Router was None, recreating with current style")
+                self.router = self._create_router(self._routing_style)
+            
             # Calculate the new path using the router
             if self.router:
+                # Debug log to help diagnose straight line issue
+                self.logger.debug(f"Updating path with {type(self.router).__name__}, style={self._routing_style.name}")
+                
                 # Clear any existing path before setting the new one
-                new_path = self.router.calculate_path()
+                try:
+                    # First try with source_pos and target_pos arguments (connection_router.py style)
+                    new_path = self.router.calculate_path(self.source_pos, self.target_pos)
+                except TypeError:
+                    # Fall back to no-argument version (connection.py style)
+                    new_path = self.router.calculate_path()
                 
                 # Set the new path
                 self.setPath(new_path)
@@ -479,8 +501,16 @@ class Connection(QGraphicsPathItem):
         """Draw the connection and control points when selected."""
         # Make sure our style is always correctly applied
         if self.isSelected() != self._was_selected:
+            # Selection state changed
             self._was_selected = self.isSelected()
+            self.logger.debug(f"Connection selection changed to {self.isSelected()}, style: {self.routing_style.name}")
+            
+            # Apply style for visual appearance (color, etc.), but don't change the path
             self.renderer.apply_style()
+            
+            # Log router type to help diagnose issues
+            if self.router:
+                self.logger.debug(f"Current router: {type(self.router).__name__}, has_draggable: {self.router.has_draggable_points()}")
         
         # Draw the connection path
         super().paint(painter, option, widget)
@@ -510,6 +540,7 @@ class Connection(QGraphicsPathItem):
         # Emit selected signal to show properties panel
         self.signals.selected.emit(self, True)  # Emit with both connection and selection state
         
+        # Pass the event to the parent class
         super().mousePressEvent(event)
     
     def mouseMoveEvent(self, event):
@@ -542,6 +573,12 @@ class Connection(QGraphicsPathItem):
             
             # Store the new selection state
             self.pending_selection = value
+            
+            # Keep track of current style to ensure it doesn't change
+            current_style = self._routing_style
+            
+            # Log selection change 
+            self.logger.debug(f"Selection change: {value}, current style: {current_style.name if current_style else 'None'}")
             
             # Start the debounce timer
             self.selection_timer.start(100)  # 100ms debounce

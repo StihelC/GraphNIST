@@ -33,6 +33,12 @@ class FontSettingsManager(QObject):
         self.ui_font = QFont("Arial", self.get_ui_font_size())
         self.device_label_font = QFont("Arial", self.get_device_label_font_size())
         self.device_property_font = QFont("Arial", self.get_device_property_font_size())
+        
+        # Set default bold/italic states
+        self.device_label_font.setBold(True)
+        self.device_label_font.setItalic(False)
+        self.device_property_font.setBold(False)
+        self.device_property_font.setItalic(False)
     
     def get_ui_font_size(self):
         """Get UI font size from settings."""
@@ -77,4 +83,52 @@ class FontSettingsManager(QObject):
     
     def get_device_property_font(self):
         """Get the device property label font object."""
-        return self.device_property_font 
+        return self.device_property_font
+        
+    def get_font_size(self, font_type):
+        """Get font size for the specified font type.
+        
+        Args:
+            font_type: Type of font ('device_name', 'property', etc.)
+            
+        Returns:
+            Font size as integer
+        """
+        if font_type == 'device_name':
+            return self.get_device_label_font_size()
+        elif font_type == 'property':
+            return self.get_device_property_font_size()
+        else:
+            return self.get_ui_font_size()
+            
+    def get_font_bold(self, font_type):
+        """Get font bold setting for the specified font type.
+        
+        Args:
+            font_type: Type of font ('device_name', 'property', etc.)
+            
+        Returns:
+            Boolean indicating if the font should be bold
+        """
+        if font_type == 'device_name':
+            return self.device_label_font.bold()
+        elif font_type == 'property':
+            return self.device_property_font.bold()
+        else:
+            return self.ui_font.bold()
+            
+    def get_font_italic(self, font_type):
+        """Get font italic setting for the specified font type.
+        
+        Args:
+            font_type: Type of font ('device_name', 'property', etc.)
+            
+        Returns:
+            Boolean indicating if the font should be italic
+        """
+        if font_type == 'device_name':
+            return self.device_label_font.italic()
+        elif font_type == 'property':
+            return self.device_property_font.italic()
+        else:
+            return self.ui_font.italic() 

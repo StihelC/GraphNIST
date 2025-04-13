@@ -99,49 +99,30 @@ class DeviceController:
             properties = device_data.get('properties') if device_data else properties
             custom_icon = device_data.get('custom_icon_path') if device_data else custom_icon_path
             
-            # Create device object
-            device = Device(name, device_type, properties, custom_icon)
-            self.logger.info(f"Created device object: {device.name}, type: {device.device_type}")
-            
-            # Set position
-            device.setPos(pos)
-            
-            # Apply font settings if available
-            if self.font_settings_manager:
-                device.update_font_settings(self.font_settings_manager)
-            
-            # Register device as theme observer if theme manager is available
-            if self.theme_manager:
-                self.theme_manager.register_theme_observer(device)
-                # Apply current theme immediately
-                device.update_theme(self.theme_manager.get_theme())
-            
-            # Increment counter for next device
-            self.device_counter += 1
-            
             # Create and execute command if using command pattern
             if use_command and self.undo_redo_manager:
                 self.logger.info("Using command pattern to add device")
-                cmd = AddDeviceCommand(self.canvas, device)
+                cmd = AddDeviceCommand(
+                    self, 
+                    device_type, 
+                    pos, 
+                    name,
+                    properties,
+                    custom_icon
+                )
                 self.undo_redo_manager.execute_command(cmd)
+                return cmd.created_device
             else:
-                # Otherwise add directly to canvas
-                self.logger.info("Adding device directly to canvas")
-                self.canvas.scene().addItem(device)
-                self.canvas.devices.append(device)
-            
-            # Connect signals
-            if hasattr(self.canvas, 'device_drag_started'):
-                device.signals.drag_started.connect(self.canvas.device_drag_started)
-            if hasattr(self.canvas, 'device_drag_finished'):
-                device.signals.drag_finished.connect(self.canvas.device_drag_finished)
-            
-            # Emit creation signal
-            self.event_bus.emit("device_created", device)
-            
-            # Log success
-            self.logger.info(f"Successfully created device: {device.name}")
-            return device
+                # Otherwise create the device directly
+                self.logger.info("Creating device directly without command")
+                device = self._create_device(
+                    name,
+                    device_type,
+                    pos,
+                    properties,
+                    custom_icon
+                )
+                return device
             
         except Exception as e:
             self.logger.error(f"Error creating device: {str(e)}")

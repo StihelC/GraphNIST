@@ -23,42 +23,67 @@ class AddDeviceCommand(Command):
     
     def execute(self):
         """Create and add the device."""
-        # Check if we're in a bulk creation process
-        in_bulk = hasattr(self.device_controller, '_in_bulk_creation') and self.device_controller._in_bulk_creation
-        self.logger.debug(f"CMD: AddDeviceCommand execute for {self.name}, in_bulk_creation={in_bulk}")
-        
-        if in_bulk:
-            # In bulk creation, the device was already created directly
-            self.logger.debug(f"CMD: Skipping device creation for {self.name} (already created in bulk)")
+        try:
+            # Check if we already created this device (to prevent duplicates)
+            if self.created_device:
+                self.logger.warning(f"Device {self.name} was already created, not creating again")
+                return self.created_device
+                
+            # Create the device through the controller
+            self.logger.debug(f"Creating device {self.name} of type {self.device_type}")
+            self.created_device = self.device_controller._create_device(
+                self.name, 
+                self.device_type, 
+                self.position,
+                self.properties,
+                self.custom_icon_path
+            )
+            
+            if not self.created_device:
+                self.logger.error(f"Failed to create device {self.name}!")
+                return None
+                
+            self.logger.debug(f"Device {self.name} created successfully through command execution")
+            return self.created_device
+            
+        except Exception as e:
+            self.logger.error(f"Error executing AddDeviceCommand: {str(e)}")
+            import traceback
+            self.logger.error(traceback.format_exc())
             return None
-        
-        self.created_device = self.device_controller._create_device(
-            self.name, 
-            self.device_type, 
-            self.position,
-            self.properties,
-            self.custom_icon_path
-        )
-        self.logger.debug(f"CMD: Created device {self.name} through command execution")
-        return self.created_device
     
     def undo(self):
         """Remove the device."""
         if self.created_device:
-            # Set flag to prevent recursive command creation
-            if hasattr(self.device_controller, 'undo_redo_manager') and self.device_controller.undo_redo_manager:
-                self.device_controller.undo_redo_manager.is_executing_command = True
-            
-            # Delete the device
-            self.device_controller.on_delete_device_requested(self.created_device)
-            
-            # Reset flag
-            if hasattr(self.device_controller, 'undo_redo_manager') and self.device_controller.undo_redo_manager:
-                self.device_controller.undo_redo_manager.is_executing_command = False
+            try:
+                # Set flag to prevent recursive command creation
+                if hasattr(self.device_controller, 'undo_redo_manager') and self.device_controller.undo_redo_manager:
+                    self.device_controller.undo_redo_manager.is_executing_command = True
                 
-            # Force canvas update
-            if hasattr(self.device_controller, 'canvas') and self.device_controller.canvas:
-                self.device_controller.canvas.viewport().update()
+                # Delete the device
+                result = self.device_controller._delete_device(self.created_device)
+                
+                # Reset flag
+                if hasattr(self.device_controller, 'undo_redo_manager') and self.device_controller.undo_redo_manager:
+                    self.device_controller.undo_redo_manager.is_executing_command = False
+                    
+                # Force canvas update
+                if hasattr(self.device_controller, 'canvas') and self.device_controller.canvas:
+                    self.device_controller.canvas.viewport().update()
+                    
+                # Log undo result    
+                if result:
+                    self.logger.debug(f"Successfully undid AddDeviceCommand for {self.name}")
+                else:
+                    self.logger.warning(f"Failed to undo AddDeviceCommand for {self.name}")
+                    
+                return result
+            except Exception as e:
+                self.logger.error(f"Error undoing AddDeviceCommand: {str(e)}")
+                import traceback
+                self.logger.error(traceback.format_exc())
+                return False
+        return True
 
 
 class DeleteDeviceCommand(Command):

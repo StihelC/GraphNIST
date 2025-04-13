@@ -275,7 +275,14 @@ class ConnectionController:
             # Get connection data from dialog
             connection_data = dialog.get_connection_data()
             strategy = connection_data.get('strategy', 'chain')
-            properties = connection_data.get('properties', {})
+            
+            # Prepare properties with connection data
+            properties = {
+                'type': connection_data.get('type', ConnectionTypes.ETHERNET),
+                'label_text': connection_data.get('label', 'Link'),
+                'Bandwidth': connection_data.get('bandwidth', '1G'),
+                'Latency': connection_data.get('latency', '0ms')
+            }
             
             if connection_data.get('bidirectional', False):
                 properties['bidirectional'] = True

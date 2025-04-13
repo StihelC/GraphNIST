@@ -49,9 +49,13 @@ class ConnectionSection(BaseSection):
             # Line style
             self.line_style_combo = QComboBox()
             self.line_style_combo.addItems(["Straight", "Orthogonal", "Curved"])
-            self.line_style_combo.currentTextChanged.connect(
-                lambda text: self.property_changed.emit('line_style', text)
-            )
+            
+            # Important: Use a flag to distinguish between programmatic updates and user changes
+            self._style_combo_updating = False
+            
+            # Connect to a custom handler instead of directly emitting the signal
+            self.line_style_combo.currentTextChanged.connect(self._on_line_style_changed)
+            
             form_layout.addRow("Line Style:", self.line_style_combo)
             
             # Properties table
@@ -68,6 +72,12 @@ class ConnectionSection(BaseSection):
             
         except Exception as e:
             self._handle_error("_init_ui", e)
+    
+    def _on_line_style_changed(self, text):
+        """Handle line style combo box changes, distinguishing user actions from programmatic updates."""
+        # Only emit the signal if this was a user action, not a programmatic update
+        if not self._style_combo_updating:
+            self.property_changed.emit('line_style', text)
     
     def reset(self):
         """Reset all fields to their default state."""
@@ -94,14 +104,18 @@ class ConnectionSection(BaseSection):
     def set_connection(self, connection):
         """Set the connection to display properties for."""
         try:
-            # Store reference to connection
+            if connection is None:
+                self.clear()
+                return
+            
+            # Store reference
             self.current_connection = connection
-            self.multiple_connections = []
+            self.multiple_connections = None
             
             # Ensure UI components are initialized
             if self.connection_type_combo is None or self.line_style_combo is None or self.connection_props_table is None:
                 self._init_ui()  # Re-initialize UI if components are missing
-                
+            
             # Check if UI components still haven't been initialized
             if self.connection_props_table is None:
                 self.logger.error("UI components not properly initialized in ConnectionSection")
@@ -115,20 +129,11 @@ class ConnectionSection(BaseSection):
                     # Signal might not be connected
                     pass
             
-            # Clear previous properties
+            # Clear the properties table
             if self.connection_props_table:
                 self.connection_props_table.setRowCount(0)
             
-            # Set routing style in combo box
-            if hasattr(connection, 'routing_style') and self.line_style_combo:
-                style_index = {
-                    Connection.STYLE_STRAIGHT: 0,
-                    Connection.STYLE_ORTHOGONAL: 1,
-                    Connection.STYLE_CURVED: 2
-                }.get(connection.routing_style, 0)
-                self.line_style_combo.setCurrentIndex(style_index)
-            
-            # Set connection type
+            # Set the connection type in combo box
             if hasattr(connection, 'connection_type') and self.connection_type_combo:
                 type_index = {
                     "ethernet": 0,
@@ -137,6 +142,20 @@ class ConnectionSection(BaseSection):
                     "serial": 3
                 }.get(connection.connection_type.lower(), 0)
                 self.connection_type_combo.setCurrentIndex(type_index)
+                self.connection_type_combo.setEnabled(True)  # Enable editing for single connection
+            
+            # Set the line style in combo box
+            if hasattr(connection, 'routing_style') and self.line_style_combo:
+                style_index = {
+                    Connection.STYLE_STRAIGHT: 0,
+                    Connection.STYLE_ORTHOGONAL: 1,
+                    Connection.STYLE_CURVED: 2
+                }.get(connection.routing_style, 0)
+                
+                # Set flag to prevent triggering style change signal
+                self._style_combo_updating = True
+                self.line_style_combo.setCurrentIndex(style_index)
+                self._style_combo_updating = False
             
             # Display core connection properties
             properties = []
@@ -200,53 +219,11 @@ class ConnectionSection(BaseSection):
             # Ensure UI components are initialized
             if self.connection_type_combo is None or self.line_style_combo is None or self.connection_props_table is None:
                 self._init_ui()  # Re-initialize UI if components are missing
-                
+            
             # Check if UI components still haven't been initialized
-            if self.connection_type_combo is None or self.connection_props_table is None:
+            if self.connection_props_table is None:
                 self.logger.error("UI components not properly initialized in ConnectionSection")
                 return
-            
-            # Get the most common connection type
-            connection_types = {}
-            for conn in connections:
-                if hasattr(conn, 'connection_type'):
-                    conn_type = conn.connection_type
-                    if conn_type in connection_types:
-                        connection_types[conn_type] += 1
-                    else:
-                        connection_types[conn_type] = 1
-            
-            # Display the most common connection type
-            if connection_types and self.connection_type_combo:
-                most_common_type = max(connection_types.items(), key=lambda x: x[1])[0]
-                type_index = {
-                    "ethernet": 0,
-                    "fiber": 1,
-                    "wireless": 2,
-                    "serial": 3
-                }.get(most_common_type.lower(), 0)
-                self.connection_type_combo.setCurrentIndex(type_index)
-                self.connection_type_combo.setEnabled(False)  # Disable type editing for multiple connections
-            
-            # Get the most common line style
-            line_styles = {}
-            for conn in connections:
-                if hasattr(conn, 'routing_style'):
-                    style = conn.routing_style
-                    if style in line_styles:
-                        line_styles[style] += 1
-                    else:
-                        line_styles[style] = 1
-            
-            # Display the most common line style
-            if line_styles and self.line_style_combo:
-                most_common_style = max(line_styles.items(), key=lambda x: x[1])[0]
-                style_index = {
-                    Connection.STYLE_STRAIGHT: 0,
-                    Connection.STYLE_ORTHOGONAL: 1,
-                    Connection.STYLE_CURVED: 2
-                }.get(most_common_style, 0)
-                self.line_style_combo.setCurrentIndex(style_index)
             
             # Disconnect signal to prevent firing while updating
             if self.connection_props_table:
@@ -256,9 +233,41 @@ class ConnectionSection(BaseSection):
                     # Signal might not be connected
                     pass
             
-            # Clear the properties table
+            # Clear previous properties
             if self.connection_props_table:
                 self.connection_props_table.setRowCount(0)
+            
+            # Set routing style in combo box - find most common style
+            style_counts = {}
+            for connection in connections:
+                if hasattr(connection, 'routing_style'):
+                    style = connection.routing_style
+                    style_counts[style] = style_counts.get(style, 0) + 1
+            
+            # Set to most common style if one exists
+            if style_counts:
+                most_common_style = max(style_counts.items(), key=lambda x: x[1])[0]
+                style_index = {
+                    Connection.STYLE_STRAIGHT: 0,
+                    Connection.STYLE_ORTHOGONAL: 1,
+                    Connection.STYLE_CURVED: 2
+                }.get(most_common_style, 0)
+                
+                # Set flag to prevent triggering style change signal
+                self._style_combo_updating = True
+                self.line_style_combo.setCurrentIndex(style_index)
+                self._style_combo_updating = False
+            
+            # Set connection type
+            if hasattr(connections[0], 'connection_type') and self.connection_type_combo:
+                type_index = {
+                    "ethernet": 0,
+                    "fiber": 1,
+                    "wireless": 2,
+                    "serial": 3
+                }.get(connections[0].connection_type.lower(), 0)
+                self.connection_type_combo.setCurrentIndex(type_index)
+                self.connection_type_combo.setEnabled(False)  # Disable type editing for multiple connections
             
             # Collect all properties from all connections
             all_properties = set()

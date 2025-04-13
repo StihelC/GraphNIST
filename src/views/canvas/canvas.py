@@ -818,7 +818,7 @@ class Canvas(QGraphicsView):
             if devices:
                 menu.addAction("Edit Selected Devices", lambda: self.edit_selected_devices(devices))
                 menu.addAction("Delete Selected Devices", lambda: self.delete_selected_devices(devices))
-                menu.addAction("Connect All Devices", lambda: self.connect_selected_devices(devices))
+                menu.addAction("Connect All Devices", lambda: self.connect_all_selected_devices())
             
             # Add option to delete all selected items (devices, connections, boundaries)
             menu.addAction("Delete All Selected", lambda: self.delete_selected_requested.emit())
@@ -874,8 +874,8 @@ class Canvas(QGraphicsView):
     def connect_selected_devices(self, devices):
         """Connect multiple selected devices."""
         self.logger.debug(f"CANVAS DEBUG: Connecting {len(devices)} selected devices")
-        # Emit signal to connect devices
-        self.connect_multiple_devices_requested.emit(devices)
+        # Call the connect_all_selected_devices method which has the actual implementation
+        self.connect_all_selected_devices()
 
     def drawBackground(self, painter, rect):
         """Draw the background with an optional grid."""

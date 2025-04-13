@@ -366,7 +366,8 @@ class Boundary(QGraphicsRectItem):
             if canvas and hasattr(canvas, 'group_selection_manager') and canvas.group_selection_manager:
                 if self.isSelected():
                     # Start group drag if this is a selected item
-                    canvas.group_selection_manager.start_drag()
+                    scene_pos = self.mapToScene(event.pos())
+                    canvas.group_selection_manager.start_drag(scene_pos, self)
                 
     def mouseMoveEvent(self, event):
         """Handle mouse move for resizing or dragging."""
