@@ -1343,6 +1343,7 @@ class MainWindow(QMainWindow):
         self.canvas.delete_device_requested.connect(self.device_controller.on_delete_device_requested)
         self.canvas.add_connection_requested.connect(self.connection_controller.on_add_connection_requested)
         self.canvas.delete_connection_requested.connect(self.connection_controller.on_delete_connection_requested)
+        self.canvas.connect_multiple_devices_requested.connect(self.connection_controller.on_connect_multiple_devices_requested)
         
         # Add debug logging for boundary signal connections
         self.logger.debug("MainWindow: Connecting add_boundary_requested signal to boundary_controller")

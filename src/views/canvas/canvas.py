@@ -727,30 +727,21 @@ class Canvas(QGraphicsView):
         self.align_devices_requested.emit(alignment_type, selected_devices)
     
     def connect_all_selected_devices(self):
-        """Emit signal to connect all selected devices together."""
-        # Static flag to prevent re-entry during event processing
-        if hasattr(self, '_connecting_in_progress') and self._connecting_in_progress:
-            self.logger.debug("Ignoring re-entrant call to connect_all_selected_devices")
-            return
-        
-        try:
-            # Set flag to prevent re-entry
-            self._connecting_in_progress = True
+        """Connect all selected devices together."""
+        # Get selected devices
+        selected_devices = [i for i in self.scene().selectedItems() if i in self.devices]
+        if len(selected_devices) > 1:
+            self.logger.debug(f"Connecting {len(selected_devices)} selected devices")
+            # Emit signal to connect devices
+            self.connect_multiple_devices_requested.emit(selected_devices)
             
-            # Get selected devices
-            selected_devices = [i for i in self.scene().selectedItems() if i in self.devices]
-            if len(selected_devices) > 1:
-                # Emit the signal only once with all needed information
-                self.logger.debug(f"Emitting connect_multiple_devices_requested for {len(selected_devices)} devices")
-                self.connect_multiple_devices_requested.emit(selected_devices)
-                
-                # Schedule a return to SELECT mode after connection is created
-                from PyQt5.QtCore import QTimer
-                from constants import Modes
-                QTimer.singleShot(200, lambda: self.set_mode(Modes.SELECT))
-        finally:
-            # Always clean up the flag when done
-            self._connecting_in_progress = False
+            # Schedule a return to SELECT mode after connection is created
+            QTimer.singleShot(200, lambda: self.set_mode(Modes.SELECT))
+            
+            # Update status message
+            self.statusMessage.emit(f"Connected {len(selected_devices)} devices")
+        else:
+            self.statusMessage.emit("Select at least two devices to connect")
     
     def select_all_devices(self):
         """Select all devices on the canvas."""
@@ -805,9 +796,9 @@ class Canvas(QGraphicsView):
         if len(selected_items) == 1:
             # Single item selected
             if isinstance(selected_items[0], Device):
-                menu.addAction("Edit Device", lambda: self.edit_device(selected_items[0]))
-                menu.addAction("Delete Device", lambda: self.delete_device(selected_items[0]))
-                menu.addAction("Show Properties", lambda: self.show_properties(selected_items[0]))
+                menu.addAction("Edit Device", lambda: self.device_edit_requested.emit(selected_items[0]))
+                menu.addAction("Delete Device", lambda: self.delete_device_requested.emit(selected_items[0]))
+                menu.addAction("Show Properties", lambda: self.device_properties_requested.emit(selected_items[0]))
             elif isinstance(selected_items[0], Connection):
                 menu.addAction("Delete Connection", lambda: self.delete_connection_requested.emit(selected_items[0]))
             elif isinstance(selected_items[0], Boundary):
@@ -816,9 +807,20 @@ class Canvas(QGraphicsView):
             # Multiple items selected
             devices = [item for item in selected_items if isinstance(item, Device)]
             if devices:
-                menu.addAction("Edit Selected Devices", lambda: self.edit_selected_devices(devices))
-                menu.addAction("Delete Selected Devices", lambda: self.delete_selected_devices(devices))
-                menu.addAction("Connect All Devices", lambda: self.connect_all_selected_devices())
+                # Add device-specific actions
+                device_menu = menu.addMenu("Device Actions")
+                device_menu.addAction("Edit Selected Devices", lambda: self.multi_device_edit_requested.emit(devices))
+                device_menu.addAction("Delete Selected Devices", lambda: self.multi_device_delete_requested.emit(devices))
+                device_menu.addAction("Connect All Selected", lambda: self.connect_all_selected_devices())
+                
+                # Add alignment submenu
+                align_menu = device_menu.addMenu("Align Devices")
+                align_menu.addAction("Align Left", lambda: self.align_devices_requested.emit("left", devices))
+                align_menu.addAction("Align Right", lambda: self.align_devices_requested.emit("right", devices))
+                align_menu.addAction("Align Top", lambda: self.align_devices_requested.emit("top", devices))
+                align_menu.addAction("Align Bottom", lambda: self.align_devices_requested.emit("bottom", devices))
+                align_menu.addAction("Align Center Horizontal", lambda: self.align_devices_requested.emit("center_h", devices))
+                align_menu.addAction("Align Center Vertical", lambda: self.align_devices_requested.emit("center_v", devices))
             
             # Add option to delete all selected items (devices, connections, boundaries)
             menu.addAction("Delete All Selected", lambda: self.delete_selected_requested.emit())

@@ -46,9 +46,12 @@ class DeviceInteraction:
             return False
             
         elif event.button() == Qt.RightButton:
-            # Context menu is typically handled by the canvas or controller
-            # Just accept the right click
-            return True
+            # Let the right-click event propagate to the canvas for context menu
+            # Make sure the device is selected before showing context menu
+            if not self.device.isSelected():
+                self.device.scene().clearSelection()
+                self.device.setSelected(True)
+            return False
             
         return False
     
@@ -136,7 +139,7 @@ class DeviceInteraction:
         return top_z
         
     def get_connection_points(self):
-        """Get connection points for the device (default: 4 cardinal points)."""
+        """Get connection points for the device with an expanded detection area."""
         # Calculate the device center
         rect = self.device.boundingRect()
         center_x = rect.width() / 2
@@ -146,12 +149,26 @@ class DeviceInteraction:
         w = rect.width()
         h = rect.height()
         
-        # Define connection points at cardinal directions
+        # Define more connection points for better detection
+        # Include the four cardinal points and four diagonal points
         points = [
+            # Cardinal points
             QPointF(center_x, 0),             # North
             QPointF(w, center_y),             # East
             QPointF(center_x, h),             # South
             QPointF(0, center_y),             # West
+            
+            # Diagonal points
+            QPointF(w * 0.25, h * 0.25),      # Northwest
+            QPointF(w * 0.75, h * 0.25),      # Northeast
+            QPointF(w * 0.75, h * 0.75),      # Southeast
+            QPointF(w * 0.25, h * 0.75),      # Southwest
+            
+            # Additional midpoints for even better detection
+            QPointF(center_x, h * 0.25),      # North-middle
+            QPointF(center_x, h * 0.75),      # South-middle
+            QPointF(w * 0.25, center_y),      # West-middle
+            QPointF(w * 0.75, center_y),      # East-middle
         ]
         
         return points
@@ -168,13 +185,26 @@ class DeviceInteraction:
         nearest_point = None
         min_distance = float('inf')
         
+        # Increase tolerance for port detection (pixels)
+        # This effectively enlarges the clickable area
+        tolerance_radius = 30
+        
         for point in ports:
             distance = self._calc_distance(point, local_pos)
+            
+            # Apply tolerance: if point is within tolerance radius,
+            # consider it a direct hit with zero distance
+            if distance < tolerance_radius:
+                # If very close, prioritize this point
+                min_distance = 0
+                nearest_point = point
+                break
+            
             if distance < min_distance:
                 min_distance = distance
                 nearest_point = point
-                
-        # Convert the local point back to scene coordinates
+        
+        # If we have a nearest point, convert back to scene coordinates
         if nearest_point:
             return self.device.mapToScene(nearest_point)
             
