@@ -1052,8 +1052,11 @@ class MainWindow(QMainWindow):
             return
             
         # Update the connection's appearance based on the changed property
-        if hasattr(connection, 'update_appearance'):
+        if property_name == 'opacity':
+            connection.set_opacity(value)
+        elif hasattr(connection, 'update_appearance'):
             connection.update_appearance()
+            
         # Force a visual update
         if hasattr(connection, 'update'):
             connection.update()
@@ -1070,8 +1073,11 @@ class MainWindow(QMainWindow):
             return
             
         # Update the boundary's appearance based on the changed property
-        if hasattr(boundary, 'update_appearance'):
+        if property_name == 'opacity':
+            boundary.set_opacity(value)
+        elif hasattr(boundary, 'update_appearance'):
             boundary.update_appearance()
+            
         # Force a visual update
         if hasattr(boundary, 'update'):
             boundary.update()

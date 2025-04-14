@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QFormLayout, QLineEdit, QHBoxLayout, QPushButton, 
-    QSpinBox, QTableWidget, QTableWidgetItem, QHeaderView, QColorDialog
+    QSpinBox, QTableWidget, QTableWidgetItem, QHeaderView, QColorDialog,
+    QSlider, QLabel
 )
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QColor
@@ -26,6 +27,8 @@ class BoundarySection(BaseSection):
         self.color_button = None
         self.boundary_font_size_spin = None
         self.boundary_devices_table = None
+        self.opacity_slider = None
+        self.opacity_label = None
         
         # Call parent constructor
         super().__init__("Boundary Properties", parent)
@@ -55,6 +58,17 @@ class BoundarySection(BaseSection):
             color_layout.addStretch()
             form_layout.addRow("Color:", color_layout)
             
+            # Opacity slider
+            opacity_layout = QHBoxLayout()
+            self.opacity_slider = QSlider(Qt.Horizontal)
+            self.opacity_slider.setRange(0, 100)
+            self.opacity_slider.setValue(100)
+            self.opacity_slider.valueChanged.connect(self._on_opacity_changed)
+            self.opacity_label = QLabel("100%")
+            opacity_layout.addWidget(self.opacity_slider)
+            opacity_layout.addWidget(self.opacity_label)
+            form_layout.addRow("Opacity:", opacity_layout)
+            
             # Font size
             self.boundary_font_size_spin = QSpinBox()
             self.boundary_font_size_spin.setRange(8, 50)
@@ -81,6 +95,25 @@ class BoundarySection(BaseSection):
         except Exception as e:
             self._handle_error("_init_ui", e)
     
+    def _on_opacity_changed(self, value):
+        """Handle opacity slider value change."""
+        try:
+            # Update the label
+            self.opacity_label.setText(f"{value}%")
+            
+            # Convert to 0-1 range and emit signal
+            opacity = value / 100.0
+            
+            # Update the current boundary if it exists
+            if self.current_boundary:
+                self.current_boundary.opacity = opacity
+            
+            # Emit the property change signal
+            self.property_changed.emit('opacity', opacity)
+            
+        except Exception as e:
+            self._handle_error("_on_opacity_changed", e)
+    
     def reset(self):
         """Reset all fields to their default state."""
         try:
@@ -95,6 +128,10 @@ class BoundarySection(BaseSection):
             
             if self.boundary_font_size_spin:
                 self.boundary_font_size_spin.setValue(12)  # Default font size
+            
+            if self.opacity_slider:
+                self.opacity_slider.setValue(100)
+                self.opacity_label.setText("100%")
             
             # Reset the color button
             self._update_color_button(QColor(0, 114, 178))  # Default color
@@ -125,6 +162,12 @@ class BoundarySection(BaseSection):
             # Update color button appearance based on boundary color
             if hasattr(boundary, 'color'):
                 self._update_color_button(boundary.color)
+            
+            # Update opacity slider based on boundary's opacity
+            if hasattr(boundary, 'opacity') and self.opacity_slider:
+                opacity = boundary.opacity
+                self.opacity_slider.setValue(int(opacity * 100))
+                self.opacity_label.setText(f"{int(opacity * 100)}%")
             
             # Update font size spinner value based on boundary's label font size
             if hasattr(boundary, 'get_font_size') and self.boundary_font_size_spin:
@@ -216,6 +259,22 @@ class BoundarySection(BaseSection):
                 most_common_color = max(colors.items(), key=lambda x: x[1])[0]
                 r, g, b = map(int, most_common_color.split(','))
                 self._update_color_button(QColor(r, g, b))
+            
+            # Get the most common opacity
+            opacities = {}
+            for boundary in boundaries:
+                if hasattr(boundary, 'opacity'):
+                    opacity = boundary.opacity()
+                    if opacity in opacities:
+                        opacities[opacity] += 1
+                    else:
+                        opacities[opacity] = 1
+            
+            # Display the most common opacity
+            if opacities and self.opacity_slider:
+                most_common_opacity = max(opacities.items(), key=lambda x: x[1])[0]
+                self.opacity_slider.setValue(int(most_common_opacity * 100))
+                self.opacity_label.setText(f"{int(most_common_opacity * 100)}%")
             
             # Get the most common font size
             font_sizes = {}

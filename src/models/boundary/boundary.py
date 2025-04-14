@@ -73,11 +73,8 @@ class Boundary(QGraphicsRectItem):
         border_color = QColor(self.color.red(), self.color.green(), self.color.blue(), 200)
         self.setPen(QPen(border_color, 2, Qt.SolidLine))
         
-        # Make the fill slightly more opaque but still see-through
+        # Make the fill use the current color with its alpha
         fill_color = QColor(self.color)
-        if fill_color.alpha() < 100:  # If too transparent
-            fill_color.setAlpha(100)  # Set to more visible value
-        
         self.setBrush(QBrush(fill_color))
         
         # Force a redraw
@@ -92,6 +89,11 @@ class Boundary(QGraphicsRectItem):
         # Create editable text item as a child of this boundary
         self.label = EditableTextItem(self.name, self)
         
+        # Set label properties
+        self.label.setZValue(self.zValue() + 1)  # Ensure label is above boundary
+        self.label.setVisible(True)
+        self.label.setOpacity(1.0)  # Always fully opaque
+        
         # Position at bottom left outside the boundary
         self._update_label_position()
     
@@ -102,6 +104,10 @@ class Boundary(QGraphicsRectItem):
             rect = self.rect()
             # Use local coordinates since the label is a child item
             self.label.setPos(rect.left(), rect.bottom() + 5)
+            
+            # Ensure label is visible and fully opaque
+            self.label.setVisible(True)
+            self.label.setOpacity(1.0)
     
     def text_edited(self, new_text):
         """Handle when the label text has been edited."""
@@ -150,6 +156,11 @@ class Boundary(QGraphicsRectItem):
         """Update the boundary geometry."""
         super().setRect(rect)
         self._update_label_position()
+        
+        # Force a redraw of both the boundary and label
+        self.update()
+        if hasattr(self, 'label') and self.label:
+            self.label.update()
     
     def delete(self):
         """Delete the boundary and clean up resources."""
@@ -329,7 +340,7 @@ class Boundary(QGraphicsRectItem):
         super().hoverMoveEvent(event)
     
     def setRect(self, rect):
-        """Override setRect to update the label position."""
+        """Set the boundary rectangle and update label position."""
         super().setRect(rect)
         self._update_label_position()
     
@@ -352,11 +363,16 @@ class Boundary(QGraphicsRectItem):
             self.logger.debug(f"Boundary resize start with handle: {handle}")
             return
             
-        # If not a resize handle, pass to default handler for moving
-        super().mousePressEvent(event)
-        
-        # Track whether this is a move operation
+        # If not a resize handle, handle dragging
         if event.button() == Qt.LeftButton and not handle:
+            # Ensure the boundary is selected
+            if not self.isSelected():
+                self.setSelected(True)
+            
+            # Save the cursor position relative to the item's top-left corner
+            # This will keep the drag point consistent relative to where the user clicked
+            self._drag_offset = event.pos()
+            
             # Track drag start for signals
             if hasattr(self, 'signals') and hasattr(self.signals, 'drag_started'):
                 self.signals.drag_started.emit(self)
@@ -368,7 +384,14 @@ class Boundary(QGraphicsRectItem):
                     # Start group drag if this is a selected item
                     scene_pos = self.mapToScene(event.pos())
                     canvas.group_selection_manager.start_drag(scene_pos, self)
-                
+            
+            # Accept the event
+            event.accept()
+            return
+            
+        # Pass to parent for other cases
+        super().mousePressEvent(event)
+        
     def mouseMoveEvent(self, event):
         """Handle mouse move for resizing or dragging."""
         if self.active_handle and self.resize_start_rect and self.resize_start_pos:
@@ -406,10 +429,16 @@ class Boundary(QGraphicsRectItem):
             event.accept()
         else:
             # Regular drag operation
-            super().mouseMoveEvent(event)
+            # Apply the offset correction during drag to maintain relative position
+            if event.buttons() & Qt.LeftButton and hasattr(self, '_drag_offset'):
+                current_pos = self.mapToScene(event.pos())
+                target_pos = current_pos - self.mapToScene(self._drag_offset) + self.mapToScene(QPointF(0, 0))
+                self.setPos(target_pos)
+                event.accept()
+                return
             
-            # Update associated connections if this is a device
-            # Note: For device drag movement, see the Device class
+            # Pass to parent for other cases
+            super().mouseMoveEvent(event)
             
     def mouseReleaseEvent(self, event):
         """Handle mouse release after resize or drag."""
@@ -422,6 +451,10 @@ class Boundary(QGraphicsRectItem):
             # Accept the event to prevent further processing
             event.accept()
             return
+            
+        # Clean up drag offset
+        if event.button() == Qt.LeftButton and hasattr(self, '_drag_offset'):
+            delattr(self, '_drag_offset')
             
         # Pass to parent for regular release handling
         super().mouseReleaseEvent(event)
@@ -473,3 +506,33 @@ class Boundary(QGraphicsRectItem):
             if hasattr(self, 'signals') and hasattr(self.signals, 'selected'):
                 self.signals.selected.emit(self, bool(self.pending_selection))
             self.pending_selection = None 
+
+    @property
+    def opacity(self):
+        """Get the current opacity value."""
+        return self.opacity_value if hasattr(self, 'opacity_value') else 1.0
+        
+    @opacity.setter
+    def opacity(self, value):
+        """Set the opacity value and update the visual appearance.
+        
+        Args:
+            value: Float between 0.0 (transparent) and 1.0 (opaque)
+        """
+        try:
+            # Clamp opacity between 0 and 1
+            value = max(0.0, min(1.0, value))
+            
+            # Store the opacity value
+            self.opacity_value = value
+            
+            # Update the color's alpha channel to match
+            if hasattr(self, 'color'):
+                self.color.setAlpha(int(value * 255))
+                self._apply_style()
+            
+            # Force a redraw
+            self.update()
+            
+        except Exception as e:
+            self.logger.error(f"Error setting boundary opacity: {str(e)}") 

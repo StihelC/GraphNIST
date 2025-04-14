@@ -256,10 +256,16 @@ class DeviceSection(BaseSection):
                 # Mixed state - partially checked
                 display_checkbox.setTristate(True)
                 display_checkbox.setCheckState(Qt.PartiallyChecked)
-        
-        display_checkbox.stateChanged.connect(
-            lambda state, k=key: self.display_toggled.emit(k, state == Qt.Checked)
-        )
+                
+            # Connect state changed signal with proper handling for multiple devices
+            display_checkbox.stateChanged.connect(
+                lambda state, k=key: self._handle_display_state_change(k, state)
+            )
+        else:
+            # Single device case
+            display_checkbox.stateChanged.connect(
+                lambda state, k=key: self.display_toggled.emit(k, state == Qt.Checked)
+            )
         
         delete_button = QPushButton("×")  # Using × character as delete icon
         delete_button.setMaximumWidth(25)
@@ -310,21 +316,75 @@ class DeviceSection(BaseSection):
                 if hasattr(self, 'devices') and self.devices:
                     # Bulk edit mode - apply to all selected devices
                     for device in self.devices:
-                        if col == 0:
-                            # Key changed - handle renaming for all devices
-                            old_key = list(device.properties.keys())[row] if row < len(device.properties) else ""
-                            if old_key != new_key:
-                                # Get display state
-                                display_widget = self.property_table.cellWidget(row, 2)
-                                display_checkbox = display_widget.layout().itemAt(0).widget()
-                                display_value = display_checkbox.isChecked()
+                        try:
+                            if col == 0:
+                                # Key changed - handle renaming for all devices
+                                old_key = list(device.properties.keys())[row] if row < len(device.properties) else ""
+                                if old_key != new_key:
+                                    # Get display state
+                                    display_widget = self.property_table.cellWidget(row, 2)
+                                    display_checkbox = display_widget.layout().itemAt(0).widget()
+                                    display_value = display_checkbox.isChecked()
+                                    
+                                    # Update property for each device
+                                    if old_key in device.properties:
+                                        # Preserve the existing value and display state
+                                        old_value = device.properties[old_key]
+                                        if isinstance(old_value, dict):
+                                            old_display = old_value.get('display', False)
+                                        else:
+                                            old_display = False
+                                        
+                                        # Delete old key
+                                        del device.properties[old_key]
+                                        
+                                        # Set new key with preserved values
+                                        device.properties[new_key] = {
+                                            'value': value,
+                                            'display': old_display
+                                        }
+                                        
+                                        # Update property display if needed
+                                        if hasattr(device, 'toggle_property_display'):
+                                            device.toggle_property_display(new_key, old_display)
+                                        
+                                        # Emit property changed signal
+                                        if hasattr(device.signals, 'property_changed'):
+                                            device.signals.property_changed.emit(device, new_key, {
+                                                'value': value,
+                                                'display': old_display
+                                            })
+                            else:
+                                # Value changed - update value for all devices
+                                if new_key in device.properties:
+                                    # Preserve display state
+                                    old_value = device.properties[new_key]
+                                    if isinstance(old_value, dict):
+                                        old_display = old_value.get('display', False)
+                                    else:
+                                        old_display = False
+                                    
+                                    # Update value while preserving display state
+                                    device.properties[new_key] = {
+                                        'value': value,
+                                        'display': old_display
+                                    }
+                                    
+                                    # Emit property changed signal
+                                    if hasattr(device.signals, 'property_changed'):
+                                        device.signals.property_changed.emit(device, new_key, {
+                                            'value': value,
+                                            'display': old_display
+                                        })
+                            
+                            # Force update of property labels for this device
+                            if hasattr(device, 'update_property_labels'):
+                                device.update_property_labels()
                                 
-                                # Update property for each device
-                                self.property_changed.emit(old_key, None)  # Delete old
-                                self.property_changed.emit(new_key, {'value': value, 'display': display_value})
-                        else:
-                            # Value changed - update value for all devices
-                            self.property_changed.emit(new_key, {'value': value})
+                        except Exception as e:
+                            self.logger.error(f"Error updating property for device {device.name}: {str(e)}")
+                            continue
+                            
                 elif self.device:
                     # Single device mode - original behavior
                     old_key = list(self.device.properties.keys())[row] if row < len(self.device.properties) else ""
@@ -334,14 +394,39 @@ class DeviceSection(BaseSection):
                         display_checkbox = display_widget.layout().itemAt(0).widget()
                         display_value = display_checkbox.isChecked()
                         
-                        self.property_changed.emit(old_key, None)  # Delete old
-                        self.property_changed.emit(new_key, {'value': value, 'display': display_value})
+                        if old_key in self.device.properties:
+                            del self.device.properties[old_key]
+                        self.device.properties[new_key] = {'value': value, 'display': display_value}
+                        
+                        # Update property display if needed
+                        if hasattr(self.device, 'toggle_property_display'):
+                            self.device.toggle_property_display(new_key, display_value)
+                            
+                        # Emit property changed signal
+                        if hasattr(self.device.signals, 'property_changed'):
+                            self.device.signals.property_changed.emit(self.device, new_key, {'value': value, 'display': display_value})
                     else:
                         # Handle value change
-                        self.property_changed.emit(new_key, {'value': value})
+                        if new_key in self.device.properties:
+                            # Preserve display state
+                            display_state = self.device.properties[new_key].get('display', False)
+                            self.device.properties[new_key] = {'value': value, 'display': display_state}
+                            
+                            # Emit property changed signal
+                            if hasattr(self.device.signals, 'property_changed'):
+                                self.device.signals.property_changed.emit(self.device, new_key, {'value': value, 'display': display_state})
                 
                 # Reconnect signal
                 self.property_table.itemChanged.connect(self._property_changed)
+                
+                # Force update of all property labels
+                if hasattr(self, 'devices') and self.devices:
+                    for device in self.devices:
+                        if hasattr(device, 'update_property_labels'):
+                            device.update_property_labels()
+                elif self.device and hasattr(self.device, 'update_property_labels'):
+                    self.device.update_property_labels()
+                    
         except Exception as e:
             self._handle_error("_property_changed", e)
     
@@ -381,4 +466,21 @@ class DeviceSection(BaseSection):
     def _request_icon_change(self):
         """Request a change of icon for the device."""
         if self.device:
-            self.change_icon_requested.emit(self.device) 
+            self.change_icon_requested.emit(self.device)
+    
+    def _handle_display_state_change(self, key, state):
+        """Handle display state changes for multiple devices."""
+        if not hasattr(self, 'devices') or not self.devices:
+            return
+            
+        # If in mixed state (PartiallyChecked), set all to checked
+        if state == Qt.PartiallyChecked:
+            state = Qt.Checked
+            
+        # Apply the new state to all devices
+        for device in self.devices:
+            if hasattr(device, 'toggle_property_display'):
+                device.toggle_property_display(key, state == Qt.Checked)
+                
+        # Emit signal for the change
+        self.display_toggled.emit(key, state == Qt.Checked) 
