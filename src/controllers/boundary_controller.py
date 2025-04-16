@@ -172,3 +172,32 @@ class BoundaryController:
             # Update theme
             if hasattr(boundary, 'update_theme'):
                 boundary.update_theme(theme_name)
+
+    def delete_boundary(self, boundary):
+        """Delete a boundary from the canvas."""
+        try:
+            if boundary in self.canvas.boundaries:
+                # Remove from canvas
+                self.canvas.boundaries.remove(boundary)
+                
+                # Remove from scene if it's in a scene
+                if boundary.scene():
+                    # Remove all child items first
+                    for child in boundary.childItems():
+                        if child.scene():
+                            child.scene().removeItem(child)
+                    
+                    # Remove the boundary itself
+                    boundary.scene().removeItem(boundary)
+                
+                # Emit signal
+                self.event_bus.emit("boundary_deleted", boundary)
+                
+                self.logger.info(f"Deleting boundary '{boundary.name}'")
+                return True
+                
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"Error deleting boundary: {str(e)}")
+            return False

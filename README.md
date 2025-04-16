@@ -16,6 +16,10 @@ GraphNIST is a sophisticated network infrastructure simulation tool that provide
 - **Multiple Connection Strategies**: Mesh, chain, closest device, and type-specific connections
 - **Property Management**: Customizable device and connection properties
 - **Undo/Redo Support**: Comprehensive operation history tracking
+- **Export Capabilities**: Save diagrams in various formats (PNG, SVG)
+- **Custom Device Types**: Create and manage custom device templates
+- **Real-time Validation**: Automatic validation of network configurations
+- **Keyboard Shortcuts**: Comprehensive keyboard shortcuts for efficient workflow
 
 ## Architecture
 
@@ -26,12 +30,15 @@ GraphNIST is built using a Model-View-Controller (MVC) architecture:
 - **Connection**: Links between devices with properties like bandwidth, latency
 - **Boundary**: Logical groupings of devices
 - **ConnectionRenderer**: Handles visual appearance of connections
+- **ThemeManager**: Manages application-wide theme switching
+- **UndoRedoManager**: Tracks operations for undo/redo functionality
 
 ### Views
 - **Canvas**: Main workspace for topology display and manipulation
 - **MainWindow**: Application frame with menus, toolbars, and status bar
 - **PropertyPanel**: Dynamic panel for editing object properties
 - **Dialogs**: Various configuration dialogs
+- **ThemeSwitcher**: Interface for theme management
 
 ### Controllers
 - **DeviceController**: Handles device operations
@@ -42,6 +49,13 @@ GraphNIST is built using a Model-View-Controller (MVC) architecture:
 - **ThemeManager**: Manages application-wide theme switching
 
 ## Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package manager)
+- Git (for version control)
+
+### Installation Steps
 
 1. Clone the repository:
    ```bash
@@ -68,6 +82,24 @@ GraphNIST is built using a Model-View-Controller (MVC) architecture:
    python src/main.py
    ```
 
+### Development Setup
+
+1. Install development dependencies:
+   ```bash
+   pip install -r requirements.txt
+   pip install -r requirements-dev.txt
+   ```
+
+2. Set up pre-commit hooks:
+   ```bash
+   pre-commit install
+   ```
+
+3. Run tests:
+   ```bash
+   pytest
+   ```
+
 ## Documentation
 
 For detailed usage instructions and tutorials, please refer to the [USER_GUIDE.md](USER_GUIDE.md) file.
@@ -86,10 +118,39 @@ GraphNIST/
 │   ├── utils/              # Utility classes
 │   └── tests/              # Test suite
 ├── resources/              # Application resources
+│   ├── icons/             # Icon assets
+│   ├── themes/            # Theme definitions
+│   └── templates/         # Device templates
 ├── logs/                   # Application logs
+├── docs/                   # Documentation
 ├── README.md               # Project overview
-└── USER_GUIDE.md           # User documentation
+├── USER_GUIDE.md           # User documentation
+├── requirements.txt        # Core dependencies
+└── requirements-dev.txt    # Development dependencies
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Theme not loading properly**
+   - Ensure pyqtdarktheme is installed
+   - Check if the theme files are in the correct location
+
+2. **Device icons not displaying**
+   - Verify the resources/icons directory exists
+   - Check file permissions
+
+3. **Application crashes on startup**
+   - Verify all dependencies are installed
+   - Check Python version compatibility
+   - Review logs in the logs directory
+
+### Getting Help
+
+- Check the [USER_GUIDE.md](USER_GUIDE.md) for detailed documentation
+- Open an issue on GitHub for bug reports
+- Contact the development team for support
 
 ## Contributing
 
@@ -99,6 +160,19 @@ GraphNIST/
 4. Push to the branch
 5. Create a Pull Request
 
+### Development Guidelines
+
+- Follow PEP 8 style guide
+- Write tests for new features
+- Update documentation as needed
+- Use meaningful commit messages
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- PyQt5 team for the excellent GUI framework
+- Contributors and maintainers
+- Users for their feedback and suggestions

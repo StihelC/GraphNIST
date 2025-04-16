@@ -395,26 +395,54 @@ class DeviceSection(BaseSection):
                         display_value = display_checkbox.isChecked()
                         
                         if old_key in self.device.properties:
-                            del self.device.properties[old_key]
-                        self.device.properties[new_key] = {'value': value, 'display': display_value}
-                        
-                        # Update property display if needed
-                        if hasattr(self.device, 'toggle_property_display'):
-                            self.device.toggle_property_display(new_key, display_value)
+                            # Preserve the existing value and display state
+                            old_value = self.device.properties[old_key]
+                            if isinstance(old_value, dict):
+                                old_display = old_value.get('display', False)
+                            else:
+                                old_display = False
                             
-                        # Emit property changed signal
-                        if hasattr(self.device.signals, 'property_changed'):
-                            self.device.signals.property_changed.emit(self.device, new_key, {'value': value, 'display': display_value})
+                            # Delete old key
+                            del self.device.properties[old_key]
+                            
+                            # Set new key with preserved values
+                            self.device.properties[new_key] = {
+                                'value': value,
+                                'display': old_display
+                            }
+                            
+                            # Update property display if needed
+                            if hasattr(self.device, 'toggle_property_display'):
+                                self.device.toggle_property_display(new_key, old_display)
+                                
+                            # Emit property changed signal
+                            if hasattr(self.device.signals, 'property_changed'):
+                                self.device.signals.property_changed.emit(self.device, new_key, {
+                                    'value': value,
+                                    'display': old_display
+                                })
                     else:
                         # Handle value change
                         if new_key in self.device.properties:
                             # Preserve display state
-                            display_state = self.device.properties[new_key].get('display', False)
-                            self.device.properties[new_key] = {'value': value, 'display': display_state}
+                            old_value = self.device.properties[new_key]
+                            if isinstance(old_value, dict):
+                                old_display = old_value.get('display', False)
+                            else:
+                                old_display = False
+                            
+                            # Update value while preserving display state
+                            self.device.properties[new_key] = {
+                                'value': value,
+                                'display': old_display
+                            }
                             
                             # Emit property changed signal
                             if hasattr(self.device.signals, 'property_changed'):
-                                self.device.signals.property_changed.emit(self.device, new_key, {'value': value, 'display': display_state})
+                                self.device.signals.property_changed.emit(self.device, new_key, {
+                                    'value': value,
+                                    'display': old_display
+                                })
                 
                 # Reconnect signal
                 self.property_table.itemChanged.connect(self._property_changed)

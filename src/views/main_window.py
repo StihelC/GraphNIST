@@ -1141,43 +1141,26 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"Updated properties for {len(devices)} devices", 3000)
         
     def _on_theme_changed(self, theme_name):
-        """Handle theme changed event."""
-        from utils.theme_manager import ThemeManager
-        
-        self.logger.info(f"Theme changed to: {theme_name}")
-        
-        # Directly update device text colors to ensure visibility
-        text_color = QColor(240, 240, 240) if theme_name == ThemeManager.DARK_THEME else QColor(0, 0, 0)
-        
-        # Update all devices
-        for device in self.canvas.devices:
-            # Apply theme update via the device's method
-            if hasattr(device, 'update_theme'):
-                device.update_theme(theme) # type: ignore
+        """Handle theme change event."""
+        try:
+            # Update all devices
+            for device in self.canvas.devices:
+                device.update_theme(theme_name)
                 
-            # Directly set text colors in case update_theme doesn't work
-            if hasattr(device, 'text_item') and device.text_item:
-                device.text_item.setDefaultTextColor(text_color)
+            # Update all connections
+            for connection in self.canvas.connections:
+                connection.update_theme(theme_name)
                 
-                # Make text larger and bolder for visibility
-                font = device.text_item.font()
-                font.setPointSize(10)
-                font.setBold(True)
-                device.text_item.setFont(font)
+            # Update all boundaries
+            for boundary in self.canvas.boundaries:
+                boundary.update_theme(theme_name)
                 
-            # Update property labels too
-            if hasattr(device, 'property_labels'):
-                for label in device.property_labels.values():
-                    label.setDefaultTextColor(text_color)
-            
-            # Force visual update
-            device.update()
-            if device.scene():
-                update_rect = device.sceneBoundingRect().adjusted(-5, -5, 5, 5)
-                device.scene().update(update_rect)
-        
-        # Force canvas update
-        self.canvas.viewport().update()
+            # Update property panel
+            if hasattr(self, 'property_panel'):
+                self.property_panel.update_theme(theme_name)
+                
+        except Exception as e:
+            self.logger.error(f"Error updating theme: {str(e)}")
 
     def _on_add_device_requested(self):
         """Show dialog to add a device at center of view."""
